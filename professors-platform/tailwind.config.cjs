@@ -5,6 +5,17 @@ module.exports = {
     theme: {
         extend: {
             colors: {
+                // Brand colors from UI designs
+                "primary": "#0056b2",
+                "primary-hover": "#004494",
+                "brand-blue": "#1a1a5e",
+                "background-light": "#f0f4f8",
+                "background-dark": "#0f1923",
+                "text-main": "#101418",
+                "text-secondary": "#5e758d",
+                "border-color": "#dae0e7",
+
+                // shadcn semantic colors
                 background: "hsl(var(--background))",
                 foreground: "hsl(var(--foreground))",
                 card: {
@@ -14,10 +25,6 @@ module.exports = {
                 popover: {
                     DEFAULT: "hsl(var(--popover))",
                     foreground: "hsl(var(--popover-foreground))",
-                },
-                primary: {
-                    DEFAULT: "hsl(var(--primary))",
-                    foreground: "hsl(var(--primary-foreground))",
                 },
                 secondary: {
                     DEFAULT: "hsl(var(--secondary))",
@@ -38,18 +45,17 @@ module.exports = {
                 border: "hsl(var(--border))",
                 input: "hsl(var(--input))",
                 ring: "hsl(var(--ring))",
-                chart: {
-                    "1": "hsl(var(--chart-1))",
-                    "2": "hsl(var(--chart-2))",
-                    "3": "hsl(var(--chart-3))",
-                    "4": "hsl(var(--chart-4))",
-                    "5": "hsl(var(--chart-5))",
-                },
+            },
+            fontFamily: {
+                "display": ["Inter", "sans-serif"],
+                "sans": ["Inter", "sans-serif"],
             },
             borderRadius: {
-                lg: "var(--radius)",
-                md: "calc(var(--radius) - 2px)",
-                sm: "calc(var(--radius) - 4px)",
+                DEFAULT: "0.25rem",
+                lg: "0.5rem",
+                xl: "0.75rem",
+                "2xl": "1rem",
+                full: "9999px",
             },
         },
     },

@@ -1,34 +1,150 @@
 import { create } from 'zustand'
-import { persist } from 'zustand/middleware'
+import { persist, createJSONStorage } from 'zustand/middleware'
 
-interface User {
+export interface Professor {
     id: string
     email: string
-    name: string
+    firstName: string
+    lastName: string
+    role: 'student' | 'coach'
+    createdAt: string
+    profileImage?: string
+}
+
+export interface RegisterData {
+    firstName: string
+    lastName: string
+    email: string
+    password: string
+    role: 'student' | 'coach'
+    acceptTerms: boolean
+    acceptPrivacy: boolean
 }
 
 interface AuthState {
-    user: User | null
+    professor: Professor | null
     isAuthenticated: boolean
-    login: (email: string) => Promise<void>
+    isLoading: boolean
+    error: string | null
+    rememberMe: boolean
+
+    // Actions
+    login: (email: string, password: string, rememberMe?: boolean) => Promise<void>
+    register: (data: RegisterData) => Promise<void>
     logout: () => void
+    clearError: () => void
+    setLoading: (loading: boolean) => void
 }
 
 export const useAuthStore = create<AuthState>()(
     persist(
         (set) => ({
-            user: null,
+            professor: null,
             isAuthenticated: false,
-            login: async (email) => {
-                // Simulate API call
-                await new Promise((resolve) => setTimeout(resolve, 500))
+            isLoading: false,
+            error: null,
+            rememberMe: false,
+
+            login: async (email, password, rememberMe = false) => {
+                set({ isLoading: true, error: null })
+
+                try {
+                    // Simulate API call
+                    await new Promise((resolve) => setTimeout(resolve, 800))
+
+                    // Demo validation
+                    if (email === 'demo@trainer.com' && password === 'Demo1234') {
+                        set({
+                            professor: {
+                                id: '1',
+                                email,
+                                firstName: 'Juan',
+                                lastName: 'Pérez',
+                                role: 'coach',
+                                createdAt: new Date().toISOString(),
+                            },
+                            isAuthenticated: true,
+                            isLoading: false,
+                            rememberMe,
+                        })
+                    } else if (email && password.length >= 6) {
+                        // Accept any valid-looking credentials for testing
+                        set({
+                            professor: {
+                                id: crypto.randomUUID(),
+                                email,
+                                firstName: 'Usuario',
+                                lastName: 'Demo',
+                                role: 'coach',
+                                createdAt: new Date().toISOString(),
+                            },
+                            isAuthenticated: true,
+                            isLoading: false,
+                            rememberMe,
+                        })
+                    } else {
+                        throw new Error('Credenciales inválidas')
+                    }
+                } catch (error) {
+                    set({
+                        error: error instanceof Error ? error.message : 'Error de autenticación',
+                        isLoading: false
+                    })
+                    throw error
+                }
+            },
+
+            register: async (data) => {
+                set({ isLoading: true, error: null })
+
+                try {
+                    // Simulate API call
+                    await new Promise((resolve) => setTimeout(resolve, 1000))
+
+                    const newProfessor: Professor = {
+                        id: crypto.randomUUID(),
+                        email: data.email,
+                        firstName: data.firstName,
+                        lastName: data.lastName,
+                        role: data.role,
+                        createdAt: new Date().toISOString(),
+                    }
+
+                    set({
+                        professor: newProfessor,
+                        isAuthenticated: true,
+                        isLoading: false,
+                        rememberMe: true,
+                    })
+                } catch (error) {
+                    set({
+                        error: error instanceof Error ? error.message : 'Error en el registro',
+                        isLoading: false
+                    })
+                    throw error
+                }
+            },
+
+            logout: () => {
                 set({
-                    user: { id: '1', email, name: 'Professor User' },
-                    isAuthenticated: true,
+                    professor: null,
+                    isAuthenticated: false,
+                    error: null,
+                    rememberMe: false,
                 })
             },
-            logout: () => set({ user: null, isAuthenticated: false }),
+
+            clearError: () => set({ error: null }),
+
+            setLoading: (loading) => set({ isLoading: loading }),
         }),
-        { name: 'auth-storage' }
+        {
+            name: 'auth-storage',
+            storage: createJSONStorage(() => localStorage),
+            partialize: (state) =>
+                state.rememberMe
+                    ? { professor: state.professor, isAuthenticated: state.isAuthenticated, rememberMe: state.rememberMe }
+                    : {},
+        }
     )
 )
