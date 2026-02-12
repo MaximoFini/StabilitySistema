@@ -6,6 +6,10 @@ import Login from "@/features/auth/Login"
 import RegisterPage from "@/features/auth/RegisterPage"
 import StudentRegister from "@/features/auth/StudentRegister"
 import StudentProfileSetup from "@/features/auth/StudentProfileSetup"
+import StudentsList from "@/features/students/StudentsList"
+import BusinessMetrics from "@/features/metrics/BusinessMetrics"
+import Library from "@/features/library/Library"
+import NewPlan from "@/features/plans/NewPlan"
 
 export const router = createBrowserRouter([
     {
@@ -20,7 +24,22 @@ export const router = createBrowserRouter([
                 path: "/",
                 element: <RoleBasedDashboard />,
             },
-            // protected routes go here
+            {
+                path: "dashboard",
+                element: <StudentsList />,
+            },
+            {
+                path: "metrics",
+                element: <BusinessMetrics />,
+            },
+            {
+                path: "library",
+                element: <Library />,
+            },
+            {
+                path: "plans",
+                element: <NewPlan />,
+            },
         ],
     },
     {
