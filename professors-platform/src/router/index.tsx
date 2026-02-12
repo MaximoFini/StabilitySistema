@@ -1,10 +1,14 @@
-import { createBrowserRouter } from "react-router-dom"
+import { createBrowserRouter, Navigate } from "react-router-dom"
 import MainLayout from "@/components/layout/MainLayout"
 import { RequireAuth } from "@/components/layout/RequireAuth"
-import Dashboard from "@/features/dashboard/Dashboard"
 import Login from "@/features/auth/Login"
 import RegisterPage from "@/features/auth/RegisterPage"
 import StudentRegister from "@/features/auth/StudentRegister"
+import StudentsList from "@/features/students/StudentsList"
+import BusinessMetrics from "@/features/metrics/BusinessMetrics"
+import Library from "@/features/library/Library"
+import NewPlan from "@/features/plans/NewPlan"
+import ResourceLibrary from "@/features/resources/ResourceLibrary"
 
 export const router = createBrowserRouter([
     {
@@ -17,9 +21,28 @@ export const router = createBrowserRouter([
         children: [
             {
                 path: "/",
-                element: <Dashboard />,
+                element: <Navigate to="/dashboard" replace />,
             },
-            // protected routes go here
+            {
+                path: "dashboard",
+                element: <StudentsList />,
+            },
+            {
+                path: "metrics",
+                element: <BusinessMetrics />,
+            },
+            {
+                path: "library",
+                element: <Library />,
+            },
+            {
+                path: "plans",
+                element: <NewPlan />,
+            },
+            {
+                path: "resources",
+                element: <ResourceLibrary />,
+            },
         ],
     },
     {
