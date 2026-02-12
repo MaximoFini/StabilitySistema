@@ -1,14 +1,15 @@
-import { createBrowserRouter, Navigate } from "react-router-dom"
+import { createBrowserRouter } from "react-router-dom"
 import MainLayout from "@/components/layout/MainLayout"
 import { RequireAuth } from "@/components/layout/RequireAuth"
+import RoleBasedDashboard from "@/features/dashboard/RoleBasedDashboard"
 import Login from "@/features/auth/Login"
 import RegisterPage from "@/features/auth/RegisterPage"
 import StudentRegister from "@/features/auth/StudentRegister"
+import StudentProfileSetup from "@/features/auth/StudentProfileSetup"
 import StudentsList from "@/features/students/StudentsList"
 import BusinessMetrics from "@/features/metrics/BusinessMetrics"
 import Library from "@/features/library/Library"
 import NewPlan from "@/features/plans/NewPlan"
-import ResourceLibrary from "@/features/resources/ResourceLibrary"
 
 export const router = createBrowserRouter([
     {
@@ -21,7 +22,7 @@ export const router = createBrowserRouter([
         children: [
             {
                 path: "/",
-                element: <Navigate to="/dashboard" replace />,
+                element: <RoleBasedDashboard />,
             },
             {
                 path: "dashboard",
@@ -39,10 +40,6 @@ export const router = createBrowserRouter([
                 path: "plans",
                 element: <NewPlan />,
             },
-            {
-                path: "resources",
-                element: <ResourceLibrary />,
-            },
         ],
     },
     {
@@ -56,5 +53,13 @@ export const router = createBrowserRouter([
     {
         path: "/register/student",
         element: <StudentRegister />,
+    },
+    {
+        path: "/register/complete-profile",
+        element: (
+            <RequireAuth>
+                <StudentProfileSetup />
+            </RequireAuth>
+        ),
     },
 ])

@@ -60,6 +60,7 @@ export default function RegisterPage() {
     const [step, setStep] = useState(1)
     const [role, setRole] = useState<'student' | 'coach'>('coach')
     const [personalData, setPersonalData] = useState<PersonalDataForm | null>(null)
+    const [showSuccessModal, setShowSuccessModal] = useState(false)
     const navigate = useNavigate()
     const { register: registerUser, isLoading } = useAuthStore()
 
@@ -95,8 +96,22 @@ export default function RegisterPage() {
                 acceptTerms: data.acceptTerms,
                 acceptPrivacy: data.acceptPrivacy,
             })
-            toast.success('¡Cuenta creada exitosamente!')
-            navigate("/", { replace: true })
+
+            // Show success modal
+            setShowSuccessModal(true)
+
+            // Auto-redirect after 2 seconds
+            setTimeout(() => {
+                setShowSuccessModal(false)
+
+                // If student, redirect to complete profile
+                if (role === 'student') {
+                    navigate("/register/complete-profile", { replace: true })
+                } else {
+                    // If coach, go to dashboard
+                    navigate("/", { replace: true })
+                }
+            }, 2000)
         } catch {
             toast.error('Error al crear la cuenta')
         }
@@ -231,7 +246,7 @@ export default function RegisterPage() {
                                                 />
                                             </div>
                                             <span className={`text-xs font-medium ${passwordStrength.level === 'weak' ? 'text-red-500' :
-                                                    passwordStrength.level === 'medium' ? 'text-yellow-600' : 'text-green-500'
+                                                passwordStrength.level === 'medium' ? 'text-yellow-600' : 'text-green-500'
                                                 }`}>
                                                 {strengthLabels[passwordStrength.level]}
                                             </span>
@@ -356,6 +371,36 @@ export default function RegisterPage() {
                     </div>
                 </div>
             </main>
+
+            {/* Success Modal */}
+            {showSuccessModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+                    <div className="bg-white dark:bg-[#1a2632] rounded-xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-300">
+                        <div className="flex flex-col items-center text-center space-y-4">
+                            {/* Success Icon */}
+                            <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
+                                <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-4xl">check_circle</span>
+                            </div>
+
+                            {/* Title */}
+                            <h3 className="text-2xl font-bold text-text-main dark:text-white">
+                                ¡Cuenta creada exitosamente!
+                            </h3>
+
+                            {/* Message */}
+                            <p className="text-text-secondary dark:text-slate-400 text-sm">
+                                Hemos enviado un correo de confirmación a tu email.
+                            </p>
+
+                            {/* Loading indicator */}
+                            <div className="flex items-center gap-2 text-primary text-sm font-medium">
+                                <span className="material-symbols-outlined animate-spin text-[20px]">progress_activity</span>
+                                <span>Iniciando sesión...</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     )
 }
