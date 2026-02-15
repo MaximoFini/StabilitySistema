@@ -2,11 +2,10 @@ import { Link, useLocation } from "react-router-dom"
 import { cn } from "@/lib/utils"
 
 const navigation = [
-    { name: "Inicio", href: "/dashboard", icon: "home" },
-    { name: "Dashboard", href: "/metrics", icon: "bar_chart" },
-    { name: "Biblioteca", href: "/library", icon: "fitness_center" },
-    { name: "Planificador", href: "/plans", icon: "calendar_month" },
-    { name: "Recursos", href: "/resources", icon: "library_books" },
+    { name: "Inicio", href: "/inicio", icon: "home" },
+    { name: "Dashboard", href: "/dashboard", icon: "bar_chart" },
+    { name: "Biblioteca", href: "/biblioteca", icon: "fitness_center" },
+    { name: "Planificador", href: "/planificador", icon: "calendar_month" },
 ]
 
 export function Sidebar({ className }: { className?: string }) {

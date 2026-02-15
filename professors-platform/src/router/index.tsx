@@ -25,19 +25,19 @@ export const router = createBrowserRouter([
                 element: <RoleBasedDashboard />,
             },
             {
-                path: "dashboard",
+                path: "inicio",
                 element: <StudentsList />,
             },
             {
-                path: "metrics",
+                path: "dashboard",
                 element: <BusinessMetrics />,
             },
             {
-                path: "library",
+                path: "biblioteca",
                 element: <Library />,
             },
             {
-                path: "plans",
+                path: "planificador",
                 element: <NewPlan />,
             },
         ],

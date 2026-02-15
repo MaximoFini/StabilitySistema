@@ -39,7 +39,7 @@ export default function Login() {
         try {
             await login(data.email, data.password, data.rememberMe)
             toast.success('¡Bienvenido de nuevo!')
-            navigate("/", { replace: true })
+            navigate("/inicio", { replace: true })
         } catch {
             toast.error('Credenciales inválidas')
         }
