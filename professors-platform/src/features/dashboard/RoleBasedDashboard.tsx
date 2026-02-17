@@ -1,7 +1,7 @@
 import { Navigate } from "react-router-dom"
 import { useAuthStore } from "@/features/auth/store/authStore"
 import StudentDashboard from "./StudentDashboard"
-import CoachDashboard from "./CoachDashboard"
+import CoachDashboard from "../../../iu/CoachDashboard"
 
 export default function RoleBasedDashboard() {
     const { professor } = useAuthStore()
