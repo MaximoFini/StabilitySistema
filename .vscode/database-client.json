@@ -1,0 +1,19 @@
+{
+    "database.connections": [
+        {
+            "name": "Stability - Supabase",
+            "host": "db.hcvytsitbsandaphsxyn.supabase.co",
+            "port": 5432,
+            "user": "postgres",
+            "password": "Peladoysalta",
+            "database": "postgres",
+            "dbType": "PostgreSQL",
+            "global": false,
+            "timezone": "+00:00",
+            "encrypt": true,
+            "ssh": null,
+            "esModule": false,
+            "connectionUrl": "postgresql://postgres:Peladoysalta@db.hcvytsitbsandaphsxyn.supabase.co:5432/postgres"
+        }
+    ]
+}

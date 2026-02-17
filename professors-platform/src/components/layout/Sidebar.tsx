@@ -1,5 +1,6 @@
-import { Link, useLocation } from "react-router-dom"
+import { Link, useLocation, useNavigate } from "react-router-dom"
 import { cn } from "@/lib/utils"
+import { useAuthStore } from "@/features/auth/store/authStore"
 
 const navigation = [
     { name: "Inicio", href: "/inicio", icon: "home" },
@@ -10,6 +11,17 @@ const navigation = [
 
 export function Sidebar({ className }: { className?: string }) {
     const location = useLocation()
+    const navigate = useNavigate()
+    const { professor, logout } = useAuthStore()
+
+    const handleLogout = async () => {
+        try {
+            await logout()
+            navigate('/login', { replace: true })
+        } catch (error) {
+            console.error('Error al cerrar sesión:', error)
+        }
+    }
 
     return (
         <div className={cn("flex h-screen w-64 flex-col border-r bg-white dark:bg-slate-900", className)}>
@@ -36,15 +48,37 @@ export function Sidebar({ className }: { className?: string }) {
                     )
                 })}
             </nav>
-            <div className="p-4 border-t border-gray-100 dark:border-slate-800">
-                <button className="flex items-center gap-3 w-full px-2 py-2 text-left rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 transition-colors">
-                    <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0">
-                        <span className="material-symbols-outlined text-[20px]">person</span>
+            <div className="p-4 border-t border-gray-100 dark:border-slate-800 space-y-2">
+                {/* User Info */}
+                <div className="flex items-center gap-3 px-2 py-2">
+                    <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 overflow-hidden">
+                        {professor?.profileImage ? (
+                            <img
+                                src={professor.profileImage}
+                                alt={`${professor.firstName} ${professor.lastName}`}
+                                className="w-full h-full object-cover"
+                            />
+                        ) : (
+                            <span className="material-symbols-outlined text-[20px]">person</span>
+                        )}
                     </div>
                     <div className="flex-1 min-w-0">
-                        <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate">Coach Admin</p>
-                        <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate font-normal">admin@stability.com</p>
+                        <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate">
+                            {professor ? `${professor.firstName} ${professor.lastName}` : 'Usuario'}
+                        </p>
+                        <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate font-normal">
+                            {professor?.email || ''}
+                        </p>
                     </div>
+                </div>
+
+                {/* Logout Button */}
+                <button
+                    onClick={handleLogout}
+                    className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+                >
+                    <span className="material-symbols-outlined text-[20px]">logout</span>
+                    Cerrar Sesión
                 </button>
             </div>
         </div>
