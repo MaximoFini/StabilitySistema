@@ -1,393 +1,686 @@
-import { useState } from 'react';
-import { useExerciseStages } from '../../hooks/useExerciseStages';
-import AddStageModal from '../../components/AddStageModal';
-import ExerciseAutocomplete from '../../components/ExerciseAutocomplete';
-import DatePicker from '../../components/DatePicker';
-import type { PlanExercise } from '../../lib/types';
-import { toast } from 'sonner';
+import { useState, useEffect } from "react";
+import { useExerciseStages } from "../../hooks/useExerciseStages";
+import { useTrainingPlans } from "../../hooks/useTrainingPlans";
+import AddStageModal from "../../components/AddStageModal";
+import ExerciseAutocomplete from "../../components/ExerciseAutocomplete";
+import DatePicker from "../../components/DatePicker";
+import type { PlanExercise } from "../../lib/types";
+import { toast } from "sonner";
 
 interface Day {
-    id: string;
-    number: number;
-    name: string;
+  id: string;
+  number: number;
+  name: string;
 }
 
+const STORAGE_KEY = "newPlan_draft";
+
+// Helper functions for localStorage
+const loadFromStorage = () => {
+  try {
+    const saved = localStorage.getItem(STORAGE_KEY);
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      // Convert date strings back to Date objects
+      if (parsed.startDate) parsed.startDate = new Date(parsed.startDate);
+      if (parsed.endDate) parsed.endDate = new Date(parsed.endDate);
+      return parsed;
+    }
+  } catch (error) {
+    console.error("Error loading plan from storage:", error);
+  }
+  return null;
+};
+
+const saveToStorage = (data: any) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(data));
+  } catch (error) {
+    console.error("Error saving plan to storage:", error);
+  }
+};
+
 export default function NewPlan() {
-    const { stages, loading: stagesLoading, addStage } = useExerciseStages();
-    const [exercises, setExercises] = useState<PlanExercise[]>([
-        {
-            id: '1',
-            day_id: '1',
-            stage_id: '',
-            stage_name: 'Activación',
-            exercise_name: 'Plancha Lateral + Remo',
-            series: 3,
-            reps: '30s',
-            intensity: 6,
-            pause: '20s',
-            notes: 'Flexibilidad estática y dinámica',
-            order: 0
-        }
-    ]);
-    const [isAddStageModalOpen, setIsAddStageModalOpen] = useState(false);
+  const { stages, loading: stagesLoading, addStage } = useExerciseStages();
+  const { savePlan } = useTrainingPlans();
 
-    // Date state for plan duration
-    const [startDate, setStartDate] = useState<Date>(new Date(2023, 9, 12)); // Oct 12, 2023
-    const [endDate, setEndDate] = useState<Date>(new Date(2023, 9, 19)); // Oct 19, 2023
+  // Load initial state from localStorage or use defaults
+  const savedData = loadFromStorage();
 
-    // Day management state
-    const [days, setDays] = useState<Day[]>([
-        { id: '1', number: 1, name: 'Día 1' }
-    ]);
-    const [activeDay, setActiveDay] = useState<string>('1');
+  const [exercises, setExercises] = useState<PlanExercise[]>(
+    savedData?.exercises || [
+      {
+        id: "1",
+        day_id: "1",
+        stage_id: "",
+        stage_name: "Activación",
+        exercise_name: "Plancha Lateral + Remo",
+        series: 3,
+        reps: "30s",
+        intensity: 6,
+        pause: "20s",
+        notes: "Flexibilidad estática y dinámica",
+        order: 0,
+      },
+    ],
+  );
+  const [isAddStageModalOpen, setIsAddStageModalOpen] = useState(false);
 
-    const handleAddDay = () => {
-        const newDayNumber = days.length + 1;
-        const newDay: Day = {
-            id: Date.now().toString(),
-            number: newDayNumber,
-            name: `Día ${newDayNumber}`
-        };
-        setDays([...days, newDay]);
-        setActiveDay(newDay.id);
-        toast.success(`Día ${newDayNumber} agregado`);
+  // Date state for plan duration
+  const [startDate, setStartDate] = useState<Date>(
+    savedData?.startDate || new Date(2023, 9, 12),
+  );
+  const [endDate, setEndDate] = useState<Date>(
+    savedData?.endDate || new Date(2023, 9, 19),
+  );
+
+  // Day management state
+  const [days, setDays] = useState<Day[]>(
+    savedData?.days || [{ id: "1", number: 1, name: "Día 1" }],
+  );
+  const [activeDay, setActiveDay] = useState<string>(
+    savedData?.activeDay || "1",
+  );
+  const [planTitle, setPlanTitle] = useState<string>(
+    savedData?.planTitle || "Nuevo Plan: Hipertrofia Fase 1",
+  );
+  const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | null>(null);
+
+  // Auto-save to localStorage whenever state changes
+  useEffect(() => {
+    setSaveStatus("saving");
+    const dataToSave = {
+      exercises,
+      days,
+      activeDay,
+      startDate,
+      endDate,
+      planTitle,
     };
+    saveToStorage(dataToSave);
 
-    const handleDeleteDay = (dayId: string) => {
-        if (days.length === 1) {
-            toast.error('Debe haber al menos un día en el plan');
-            return;
-        }
+    // Show "saved" status briefly
+    const timer = setTimeout(() => {
+      setSaveStatus("saved");
+      const clearTimer = setTimeout(() => setSaveStatus(null), 2000);
+      return () => clearTimeout(clearTimer);
+    }, 300);
 
-        if (!confirm('¿Eliminar este día y todos sus ejercicios?')) {
-            return;
-        }
+    return () => clearTimeout(timer);
+  }, [exercises, days, activeDay, startDate, endDate, planTitle]);
 
-        // Remove exercises for this day
-        setExercises(prev => prev.filter(ex => ex.day_id !== dayId));
-
-        // Remove day
-        const newDays = days.filter(d => d.id !== dayId);
-
-        // Re-number days
-        const reorderedDays = newDays.map((d, index) => ({
-            ...d,
-            number: index + 1,
-            name: `Día ${index + 1}`
-        }));
-
-        setDays(reorderedDays);
-
-        // Switch active day if needed
-        if (activeDay === dayId) {
-            setActiveDay(reorderedDays[0].id);
-        }
-        toast.success('Día eliminado');
+  const handleAddDay = () => {
+    const newDayNumber = days.length + 1;
+    const newDay: Day = {
+      id: Date.now().toString(),
+      number: newDayNumber,
+      name: `Día ${newDayNumber}`,
     };
+    setDays([...days, newDay]);
+    setActiveDay(newDay.id);
+    toast.success(`Día ${newDayNumber} agregado`);
+  };
 
-    const handleAddExercise = () => {
-        const newExercise: PlanExercise = {
-            id: Date.now().toString(),
-            day_id: activeDay,
-            stage_id: stages.length > 0 ? stages[0].id : '',
-            stage_name: stages.length > 0 ? stages[0].name : '',
-            exercise_name: '',
-            series: 3,
-            reps: '10',
-            intensity: 7,
-            pause: '60s',
-            notes: '',
-            order: exercises.length
-        };
-        setExercises([...exercises, newExercise]);
+  const handleDeleteDay = (dayId: string) => {
+    if (days.length === 1) {
+      toast.error("Debe haber al menos un día en el plan");
+      return;
+    }
+
+    if (!confirm("¿Eliminar este día y todos sus ejercicios?")) {
+      return;
+    }
+
+    // Remove exercises for this day
+    setExercises((prev) => prev.filter((ex) => ex.day_id !== dayId));
+
+    // Remove day
+    const newDays = days.filter((d) => d.id !== dayId);
+
+    // Re-number days
+    const reorderedDays = newDays.map((d, index) => ({
+      ...d,
+      number: index + 1,
+      name: `Día ${index + 1}`,
+    }));
+
+    setDays(reorderedDays);
+
+    // Switch active day if needed
+    if (activeDay === dayId) {
+      setActiveDay(reorderedDays[0].id);
+    }
+    toast.success("Día eliminado");
+  };
+
+  const handleAddExercise = () => {
+    const newExercise: PlanExercise = {
+      id: Date.now().toString(),
+      day_id: activeDay,
+      stage_id: stages.length > 0 ? stages[0].id : "",
+      stage_name: stages.length > 0 ? stages[0].name : "",
+      exercise_name: "",
+      series: 3,
+      reps: "10",
+      intensity: 7,
+      pause: "60s",
+      notes: "",
+      order: exercises.length,
     };
+    setExercises([...exercises, newExercise]);
+  };
 
-    const handleDeleteExercise = (id: string) => {
-        setExercises(exercises.filter(ex => ex.id !== id));
-    };
+  const handleDeleteExercise = (id: string) => {
+    setExercises(exercises.filter((ex) => ex.id !== id));
+  };
 
-    const handleUpdateExercise = (id: string, field: keyof PlanExercise, value: any) => {
-        setExercises(prevExercises => prevExercises.map(ex =>
-            ex.id === id ? { ...ex, [field]: value } : ex
-        ));
-    };
-
-    const handleStageChange = (exerciseId: string, stageId: string) => {
-        const stage = stages.find(s => s.id === stageId);
-        if (stage) {
-            handleUpdateExercise(exerciseId, 'stage_id', stageId);
-            handleUpdateExercise(exerciseId, 'stage_name', stage.name);
-        }
-    };
-
-    const handleAddStage = async (name: string, color: string) => {
-        return await addStage(name, color);
-    };
-
-    const getStageColor = (stageName: string) => {
-        const stage = stages.find(s => s.name === stageName);
-        return stage?.color || '#3B82F6';
-    };
-
-    const handleExerciseSelect = (exerciseId: string, exercise: any) => {
-        handleUpdateExercise(exerciseId, 'exercise_name', exercise.name);
-        handleUpdateExercise(exerciseId, 'video_url', exercise.video_url);
-        handleUpdateExercise(exerciseId, 'notes', exercise.notes || '');
-    };
-
-    return (
-        <div className="flex flex-col h-full overflow-hidden relative min-w-0 bg-background-light dark:bg-background-dark">
-            <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 z-20">
-                <div className="px-8 pt-5 pb-1">
-                    <div className="flex justify-between items-start mb-2">
-                        <div className="flex items-center gap-2 text-xs font-medium text-gray-400">
-                            <span className="hover:text-primary cursor-pointer">Planificador</span>
-                            <span className="material-symbols-outlined text-[10px]">chevron_right</span>
-                            <span className="text-gray-600 dark:text-gray-300">Nuevo Plan</span>
-                        </div>
-                        <div className="flex gap-3">
-                            <button className="flex items-center justify-center rounded-lg h-9 px-4 bg-sky-100 hover:bg-sky-200 text-primary-light text-primary font-bold transition-colors text-sm">
-                                <span className="material-symbols-outlined text-lg mr-2">content_copy</span>
-                                Duplicar Semana
-                            </button>
-                            <button className="flex items-center justify-center rounded-lg h-9 px-5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold transition-colors text-sm shadow-sm">
-                                <span className="material-symbols-outlined text-lg mr-2">save</span>
-                                Guardar en Biblioteca
-                            </button>
-                            <button className="flex items-center justify-center rounded-lg h-9 px-5 bg-[#0056b3] text-white text-sm font-bold shadow-sm hover:bg-[#004494] transition-colors">
-                                <span className="material-symbols-outlined text-lg mr-2">person_add</span>
-                                Asignar plan a alumno
-                            </button>
-                        </div>
-                    </div>
-                    <div className="flex items-center gap-2 mb-4">
-                        <input className="w-full max-w-2xl bg-transparent text-2xl font-bold leading-tight border-none p-0 focus:ring-0 text-[#101418] dark:text-white placeholder-gray-400 hover:bg-gray-50 rounded px-1 -ml-1 transition-colors" type="text" defaultValue="Nuevo Plan: Hipertrofia Fase 1" />
-                        <span className="material-symbols-outlined text-gray-400 text-xl">edit</span>
-                    </div>
-                </div>
-                <div className="px-8 flex flex-col gap-4 pb-0">
-                    <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4">
-                        <div className="flex items-center gap-6">
-                            <div className="flex items-center gap-3">
-                                <DatePicker
-                                    label="Desde"
-                                    icon="calendar_today"
-                                    value={startDate}
-                                    onChange={setStartDate}
-                                />
-                                <span className="text-gray-300 material-symbols-outlined text-sm">arrow_forward</span>
-                                <DatePicker
-                                    label="Hasta"
-                                    icon="event"
-                                    value={endDate}
-                                    onChange={setEndDate}
-                                />
-                            </div>
-                        </div>
-                        <div className="flex items-center gap-6 text-sm text-[#5e758d] bg-gray-50 dark:bg-gray-800 px-4 py-1.5 rounded-full">
-                            <div className="flex items-center gap-2">
-                                <span className="material-symbols-outlined text-lg">fitness_center</span>
-                                <span className="font-medium">Total Series: <b className="text-[#101418] dark:text-white">{exercises.reduce((sum, ex) => sum + ex.series, 0)}</b></span>
-                            </div>
-                        </div>
-                    </div>
-                    <div className="flex items-end gap-1 mt-2 overflow-x-auto">
-                        {days.map((day) => (
-                            <div key={day.id} className="relative group">
-                                <button
-                                    onClick={() => setActiveDay(day.id)}
-                                    className={`px-6 py-2.5 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeDay === day.id
-                                        ? "border-primary text-primary bg-white dark:bg-[#1a202c] font-bold"
-                                        : "border-transparent text-[#5e758d] hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                                        }`}
-                                >
-                                    {day.name}
-                                </button>
-                                {days.length > 1 && (
-                                    <button
-                                        onClick={(e) => {
-                                            e.stopPropagation();
-                                            handleDeleteDay(day.id);
-                                        }}
-                                        className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-slate-800 rounded-full shadow-sm hover:scale-110 p-0.5 z-10"
-                                        title="Eliminar día"
-                                    >
-                                        <span className="material-symbols-outlined text-red-500 text-[14px] leading-tight block">delete</span>
-                                    </button>
-                                )}
-                            </div>
-                        ))}
-                        <button
-                            onClick={handleAddDay}
-                            className="ml-2 flex items-center gap-1 px-3 py-2 text-[#5e758d] hover:text-primary font-bold text-xs uppercase tracking-wide transition-colors whitespace-nowrap mb-0.5"
-                        >
-                            <span className="material-symbols-outlined text-lg">add_circle</span>
-                            Agregar Día
-                        </button>
-                    </div>
-                </div>
-            </header>
-            <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-6">
-                <div className="bg-white dark:bg-[#1a202c] shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden min-w-[900px]">
-                    <div className="grid grid-cols-[140px_40px_3fr_50px_80px_80px_100px_80px_2fr_50px] gap-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-[11px] font-bold text-[#5e758d] uppercase tracking-wider items-center sticky top-0 z-10">
-                        <div className="py-3 text-center border-r border-gray-200 dark:border-gray-700">Etapa</div>
-                        <div className="py-3 text-center">#</div>
-                        <div className="py-3 px-3 border-l border-gray-100 dark:border-gray-800">Ejercicio</div>
-                        <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">Video</div>
-                        <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">Series</div>
-                        <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">Reps</div>
-                        <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">Intensidad</div>
-                        <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">Pausa</div>
-                        <div className="py-3 px-3 border-l border-gray-100 dark:border-gray-800">Notas</div>
-                        <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800"></div>
-                    </div>
-
-                    {/* Exercise Rows */}
-                    {exercises
-                        .filter(ex => ex.day_id === activeDay)
-                        .map((exercise) => {
-                            const stageColor = getStageColor(exercise.stage_name || '');
-                            return (
-                                <div key={exercise.id} className="group relative border-b border-gray-200 dark:border-gray-700 last:border-b-0">
-                                    <div
-                                        className="absolute left-0 top-0 bottom-0 w-1 z-10"
-                                        style={{ backgroundColor: stageColor }}
-                                    ></div>
-                                    <div className="grid grid-cols-[140px_40px_3fr_50px_80px_80px_100px_80px_2fr_50px] items-stretch hover:bg-blue-50/30 transition-colors">
-                                        <div className="px-2 py-2 flex items-center justify-center border-r border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
-                                            <div className="relative w-full">
-                                                <select
-                                                    value={exercise.stage_id}
-                                                    onChange={(e) => handleStageChange(exercise.id, e.target.value)}
-                                                    className="w-full text-[10px] font-bold uppercase tracking-wide text-primary bg-white border border-blue-200 dark:border-blue-900 rounded py-1.5 pl-2 pr-6 focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer appearance-none shadow-sm"
-                                                    disabled={stagesLoading}
-                                                >
-                                                    {stages.map(stage => (
-                                                        <option key={stage.id} value={stage.id}>
-                                                            {stage.name}
-                                                        </option>
-                                                    ))}
-                                                </select>
-                                                <span className="absolute right-1 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary text-sm pointer-events-none">arrow_drop_down</span>
-                                            </div>
-                                        </div>
-                                        <div className="flex items-center justify-center h-12 text-gray-300 cursor-grab active:cursor-grabbing hover:text-primary">
-                                            <span className="material-symbols-outlined text-lg">drag_indicator</span>
-                                        </div>
-                                        <div className="px-3 h-12 flex items-center border-l border-gray-100 dark:border-gray-800">
-                                            <div className="relative w-full">
-                                                <ExerciseAutocomplete
-                                                    value={exercise.exercise_name}
-                                                    onChange={(value) => handleUpdateExercise(exercise.id, 'exercise_name', value)}
-                                                    onSelectExercise={(selectedExercise) => handleExerciseSelect(exercise.id, selectedExercise)}
-                                                    placeholder="Nombre del ejercicio"
-                                                />
-                                            </div>
-                                        </div>
-                                        <div className="h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
-                                            {exercise.video_url ? (
-                                                <a
-                                                    href={exercise.video_url}
-                                                    target="_blank"
-                                                    rel="noopener noreferrer"
-                                                    className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
-                                                    title="Ver video"
-                                                >
-                                                    <span className="material-symbols-outlined text-[18px]">play_circle</span>
-                                                </a>
-                                            ) : (
-                                                <span className="material-symbols-outlined text-[18px] text-gray-300">videocam_off</span>
-                                            )}
-                                        </div>
-                                        <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
-                                            <input
-                                                className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0"
-                                                type="number"
-                                                value={exercise.series}
-                                                onChange={(e) => handleUpdateExercise(exercise.id, 'series', parseInt(e.target.value) || 0)}
-                                            />
-                                        </div>
-                                        <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
-                                            <input
-                                                className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0"
-                                                type="text"
-                                                value={exercise.reps}
-                                                onChange={(e) => handleUpdateExercise(exercise.id, 'reps', e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
-                                            <div className="relative w-full">
-                                                <input
-                                                    className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0 pr-4"
-                                                    type="number"
-                                                    value={exercise.intensity}
-                                                    onChange={(e) => handleUpdateExercise(exercise.id, 'intensity', parseInt(e.target.value) || 0)}
-                                                    min="1"
-                                                    max="10"
-                                                />
-                                                <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold pointer-events-none">RPE</span>
-                                            </div>
-                                        </div>
-                                        <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
-                                            <input
-                                                className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0"
-                                                type="text"
-                                                value={exercise.pause}
-                                                onChange={(e) => handleUpdateExercise(exercise.id, 'pause', e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="px-3 h-12 flex items-center border-l border-gray-100 dark:border-gray-800">
-                                            <input
-                                                className="w-full text-xs text-[#5e758d] bg-transparent border-none p-0 focus:ring-0 placeholder-gray-300"
-                                                placeholder="Notas..."
-                                                type="text"
-                                                value={exercise.notes || ''}
-                                                onChange={(e) => handleUpdateExercise(exercise.id, 'notes', e.target.value)}
-                                            />
-                                        </div>
-                                        <div className="h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800 group/row">
-                                            <button
-                                                onClick={() => handleDeleteExercise(exercise.id)}
-                                                className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover/row:opacity-100"
-                                            >
-                                                <span className="material-symbols-outlined text-[20px]">delete</span>
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                            );
-                        })}
-                </div>
-
-                {/* Add New Exercise Button Area */}
-                <div className="mt-4 flex gap-3">
-                    <button
-                        onClick={() => setIsAddStageModalOpen(true)}
-                        className="flex items-center justify-center gap-2 h-12 px-6 rounded-lg border-2 border-dashed border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-400 transition-all shadow-sm bg-white dark:bg-gray-800"
-                        title="Agregar nueva etapa"
-                    >
-                        <span className="material-symbols-outlined">add</span>
-                        <span className="font-bold text-sm">Nueva Etapa</span>
-                    </button>
-
-                    <button
-                        onClick={handleAddExercise}
-                        className="flex-1 flex items-center justify-center gap-2 h-12 rounded-lg border-2 border-dashed border-[#dae0e7] dark:border-gray-600 text-primary hover:bg-primary/5 hover:border-primary transition-all shadow-sm bg-white dark:bg-gray-800"
-                    >
-                        <span className="material-symbols-outlined">add_circle</span>
-                        <span className="font-bold text-sm">Agregar Nuevo Ejercicio</span>
-                    </button>
-                </div>
-
-                <div className="h-12"></div>
-            </main>
-
-            {/* Add Stage Modal */}
-            <AddStageModal
-                isOpen={isAddStageModalOpen}
-                onClose={() => setIsAddStageModalOpen(false)}
-                onAdd={handleAddStage}
-            />
-        </div>
+  const handleUpdateExercise = (
+    id: string,
+    field: keyof PlanExercise,
+    value: any,
+  ) => {
+    setExercises((prevExercises) =>
+      prevExercises.map((ex) =>
+        ex.id === id ? { ...ex, [field]: value } : ex,
+      ),
     );
+  };
+
+  const handleStageChange = (exerciseId: string, stageId: string) => {
+    const stage = stages.find((s) => s.id === stageId);
+    if (stage) {
+      handleUpdateExercise(exerciseId, "stage_id", stageId);
+      handleUpdateExercise(exerciseId, "stage_name", stage.name);
+    }
+  };
+
+  const handleAddStage = async (name: string, color: string) => {
+    return await addStage(name, color);
+  };
+
+  const handleClearDraft = () => {
+    if (
+      !confirm(
+        "¿Deseas limpiar el borrador y comenzar un nuevo plan? Esta acción no se puede deshacer.",
+      )
+    ) {
+      return;
+    }
+
+    // Clear localStorage
+    localStorage.removeItem(STORAGE_KEY);
+
+    // Reset to initial state
+    setExercises([
+      {
+        id: "1",
+        day_id: "1",
+        stage_id: "",
+        stage_name: "Activación",
+        exercise_name: "Plancha Lateral + Remo",
+        series: 3,
+        reps: "30s",
+        intensity: 6,
+        pause: "20s",
+        notes: "Flexibilidad estática y dinámica",
+        order: 0,
+      },
+    ]);
+    setDays([{ id: "1", number: 1, name: "Día 1" }]);
+    setActiveDay("1");
+    setStartDate(new Date(2023, 9, 12));
+    setEndDate(new Date(2023, 9, 19));
+    setPlanTitle("Nuevo Plan: Hipertrofia Fase 1");
+
+    toast.success("Borrador limpiado");
+  };
+
+  const handleSaveToLibrary = async () => {
+    // Validation
+    if (!planTitle.trim()) {
+      toast.error("El plan debe tener un título");
+      return;
+    }
+
+    if (exercises.length === 0) {
+      toast.error("El plan debe tener al menos un ejercicio");
+      return;
+    }
+
+    if (days.length === 0) {
+      toast.error("El plan debe tener al menos un día");
+      return;
+    }
+
+    // Show loading toast
+    const loadingToast = toast.loading("Guardando plan en biblioteca...");
+
+    const result = await savePlan({
+      title: planTitle,
+      description: null,
+      startDate,
+      endDate,
+      days,
+      exercises,
+      isTemplate: true, // Save as template in library
+    });
+
+    toast.dismiss(loadingToast);
+
+    if (result.success) {
+      toast.success("Plan guardado exitosamente en biblioteca");
+      // Optional: Clear draft after successful save
+      // handleClearDraft();
+    } else {
+      toast.error(`Error al guardar: ${result.error}`);
+    }
+  };
+
+  const getStageColor = (stageName: string) => {
+    const stage = stages.find((s) => s.name === stageName);
+    return stage?.color || "#3B82F6";
+  };
+
+  const handleExerciseSelect = (exerciseId: string, exercise: any) => {
+    handleUpdateExercise(exerciseId, "exercise_name", exercise.name);
+    handleUpdateExercise(exerciseId, "video_url", exercise.video_url);
+    handleUpdateExercise(exerciseId, "notes", exercise.notes || "");
+  };
+
+  return (
+    <div className="flex flex-col h-full overflow-hidden relative min-w-0 bg-background-light dark:bg-background-dark">
+      <header className="bg-white dark:bg-slate-900 border-b border-gray-200 dark:border-gray-700 flex-shrink-0 z-20">
+        <div className="px-8 pt-5 pb-1">
+          <div className="flex justify-between items-start mb-2">
+            <div className="flex items-center gap-3 text-xs font-medium text-gray-400">
+              <div className="flex items-center gap-2">
+                <span className="hover:text-primary cursor-pointer">
+                  Planificador
+                </span>
+                <span className="material-symbols-outlined text-[10px]">
+                  chevron_right
+                </span>
+                <span className="text-gray-600 dark:text-gray-300">
+                  Nuevo Plan
+                </span>
+              </div>
+              {saveStatus && (
+                <div className="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-gray-400 ml-2 transition-opacity">
+                  {saveStatus === "saving" ? (
+                    <>
+                      <span className="material-symbols-outlined text-[14px] animate-spin">
+                        progress_activity
+                      </span>
+                      <span>Guardando...</span>
+                    </>
+                  ) : (
+                    <>
+                      <span className="material-symbols-outlined text-[14px] text-green-600 dark:text-green-500">
+                        check_circle
+                      </span>
+                      <span className="text-green-600 dark:text-green-500">
+                        Cambios guardados
+                      </span>
+                    </>
+                  )}
+                </div>
+              )}
+            </div>
+            <div className="flex gap-3">
+              <button
+                onClick={handleClearDraft}
+                className="flex items-center justify-center rounded-lg h-9 px-4 bg-white border border-gray-300 text-gray-600 hover:bg-red-50 hover:border-red-300 hover:text-red-600 font-bold transition-colors text-sm shadow-sm"
+                title="Limpiar borrador y comenzar nuevo plan"
+              >
+                <span className="material-symbols-outlined text-lg mr-2">
+                  refresh
+                </span>
+                Nuevo Borrador
+              </button>
+              <button className="flex items-center justify-center rounded-lg h-9 px-4 bg-sky-100 hover:bg-sky-200 text-primary-light text-primary font-bold transition-colors text-sm">
+                <span className="material-symbols-outlined text-lg mr-2">
+                  content_copy
+                </span>
+                Duplicar Semana
+              </button>
+              <button
+                onClick={handleSaveToLibrary}
+                className="flex items-center justify-center rounded-lg h-9 px-5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold transition-colors text-sm shadow-sm"
+              >
+                <span className="material-symbols-outlined text-lg mr-2">
+                  save
+                </span>
+                Guardar en Biblioteca
+              </button>
+              <button className="flex items-center justify-center rounded-lg h-9 px-5 bg-[#0056b3] text-white text-sm font-bold shadow-sm hover:bg-[#004494] transition-colors">
+                <span className="material-symbols-outlined text-lg mr-2">
+                  person_add
+                </span>
+                Asignar plan a alumno
+              </button>
+            </div>
+          </div>
+          <div className="flex items-center gap-2 mb-4">
+            <input
+              className="w-full max-w-2xl bg-transparent text-2xl font-bold leading-tight border-none p-0 focus:ring-0 text-[#101418] dark:text-white placeholder-gray-400 hover:bg-gray-50 rounded px-1 -ml-1 transition-colors"
+              type="text"
+              value={planTitle}
+              onChange={(e) => setPlanTitle(e.target.value)}
+              placeholder="Nombre del plan..."
+            />
+            <span className="material-symbols-outlined text-gray-400 text-xl">
+              edit
+            </span>
+          </div>
+        </div>
+        <div className="px-8 flex flex-col gap-4 pb-0">
+          <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4">
+            <div className="flex items-center gap-6">
+              <div className="flex items-center gap-3">
+                <DatePicker
+                  label="Desde"
+                  icon="calendar_today"
+                  value={startDate}
+                  onChange={setStartDate}
+                />
+                <span className="text-gray-300 material-symbols-outlined text-sm">
+                  arrow_forward
+                </span>
+                <DatePicker
+                  label="Hasta"
+                  icon="event"
+                  value={endDate}
+                  onChange={setEndDate}
+                />
+              </div>
+            </div>
+            <div className="flex items-center gap-6 text-sm text-[#5e758d] bg-gray-50 dark:bg-gray-800 px-4 py-1.5 rounded-full">
+              <div className="flex items-center gap-2">
+                <span className="material-symbols-outlined text-lg">
+                  fitness_center
+                </span>
+                <span className="font-medium">
+                  Total Series:{" "}
+                  <b className="text-[#101418] dark:text-white">
+                    {exercises.reduce((sum, ex) => sum + ex.series, 0)}
+                  </b>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-end gap-1 mt-2 overflow-x-auto">
+            {days.map((day) => (
+              <div key={day.id} className="relative group">
+                <button
+                  onClick={() => setActiveDay(day.id)}
+                  className={`px-6 py-2.5 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                    activeDay === day.id
+                      ? "border-primary text-primary bg-white dark:bg-[#1a202c] font-bold"
+                      : "border-transparent text-[#5e758d] hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  }`}
+                >
+                  {day.name}
+                </button>
+                {days.length > 1 && (
+                  <button
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleDeleteDay(day.id);
+                    }}
+                    className="absolute -top-1 -right-1 opacity-0 group-hover:opacity-100 transition-opacity bg-white dark:bg-slate-800 rounded-full shadow-sm hover:scale-110 p-0.5 z-10"
+                    title="Eliminar día"
+                  >
+                    <span className="material-symbols-outlined text-red-500 text-[14px] leading-tight block">
+                      delete
+                    </span>
+                  </button>
+                )}
+              </div>
+            ))}
+            <button
+              onClick={handleAddDay}
+              className="ml-2 flex items-center gap-1 px-3 py-2 text-[#5e758d] hover:text-primary font-bold text-xs uppercase tracking-wide transition-colors whitespace-nowrap mb-0.5"
+            >
+              <span className="material-symbols-outlined text-lg">
+                add_circle
+              </span>
+              Agregar Día
+            </button>
+          </div>
+        </div>
+      </header>
+      <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-6">
+        <div className="bg-white dark:bg-[#1a202c] shadow-sm rounded-lg border border-gray-200 dark:border-gray-700 overflow-hidden min-w-[900px]">
+          <div className="grid grid-cols-[140px_40px_3fr_50px_80px_80px_100px_80px_2fr_50px] gap-0 border-b border-gray-200 dark:border-gray-700 bg-gray-50 dark:bg-gray-900 text-[11px] font-bold text-[#5e758d] uppercase tracking-wider items-center sticky top-0 z-10">
+            <div className="py-3 text-center border-r border-gray-200 dark:border-gray-700">
+              Etapa
+            </div>
+            <div className="py-3 text-center">#</div>
+            <div className="py-3 px-3 border-l border-gray-100 dark:border-gray-800">
+              Ejercicio
+            </div>
+            <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">
+              Video
+            </div>
+            <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">
+              Series
+            </div>
+            <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">
+              Reps
+            </div>
+            <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">
+              Intensidad
+            </div>
+            <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">
+              Pausa
+            </div>
+            <div className="py-3 px-3 border-l border-gray-100 dark:border-gray-800">
+              Notas
+            </div>
+            <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800"></div>
+          </div>
+
+          {/* Exercise Rows */}
+          {exercises
+            .filter((ex) => ex.day_id === activeDay)
+            .map((exercise) => {
+              const stageColor = getStageColor(exercise.stage_name || "");
+              return (
+                <div
+                  key={exercise.id}
+                  className="group relative border-b border-gray-200 dark:border-gray-700 last:border-b-0"
+                >
+                  <div
+                    className="absolute left-0 top-0 bottom-0 w-1 z-10"
+                    style={{ backgroundColor: stageColor }}
+                  ></div>
+                  <div className="grid grid-cols-[140px_40px_3fr_50px_80px_80px_100px_80px_2fr_50px] items-stretch hover:bg-blue-50/30 transition-colors">
+                    <div className="px-2 py-2 flex items-center justify-center border-r border-gray-200 dark:border-gray-700 bg-gray-50/50 dark:bg-gray-900/50">
+                      <div className="relative w-full">
+                        <select
+                          value={exercise.stage_id}
+                          onChange={(e) =>
+                            handleStageChange(exercise.id, e.target.value)
+                          }
+                          className="w-full text-[10px] font-bold uppercase tracking-wide text-primary bg-white border border-blue-200 dark:border-blue-900 rounded py-1.5 pl-2 pr-6 focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer appearance-none shadow-sm"
+                          disabled={stagesLoading}
+                        >
+                          {stages.map((stage) => (
+                            <option key={stage.id} value={stage.id}>
+                              {stage.name}
+                            </option>
+                          ))}
+                        </select>
+                        <span className="absolute right-1 top-1/2 -translate-y-1/2 material-symbols-outlined text-primary text-sm pointer-events-none">
+                          arrow_drop_down
+                        </span>
+                      </div>
+                    </div>
+                    <div className="flex items-center justify-center h-12 text-gray-300 cursor-grab active:cursor-grabbing hover:text-primary">
+                      <span className="material-symbols-outlined text-lg">
+                        drag_indicator
+                      </span>
+                    </div>
+                    <div className="px-3 h-12 flex items-center border-l border-gray-100 dark:border-gray-800">
+                      <div className="relative w-full">
+                        <ExerciseAutocomplete
+                          value={exercise.exercise_name}
+                          onChange={(value) =>
+                            handleUpdateExercise(
+                              exercise.id,
+                              "exercise_name",
+                              value,
+                            )
+                          }
+                          onSelectExercise={(selectedExercise) =>
+                            handleExerciseSelect(exercise.id, selectedExercise)
+                          }
+                          placeholder="Nombre del ejercicio"
+                        />
+                      </div>
+                    </div>
+                    <div className="h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
+                      {exercise.video_url ? (
+                        <a
+                          href={exercise.video_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-blue-600 dark:text-blue-400 hover:text-blue-800 dark:hover:text-blue-300 transition-colors"
+                          title="Ver video"
+                        >
+                          <span className="material-symbols-outlined text-[18px]">
+                            play_circle
+                          </span>
+                        </a>
+                      ) : (
+                        <span className="material-symbols-outlined text-[18px] text-gray-300">
+                          videocam_off
+                        </span>
+                      )}
+                    </div>
+                    <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
+                      <input
+                        className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0"
+                        type="number"
+                        value={exercise.series}
+                        onChange={(e) =>
+                          handleUpdateExercise(
+                            exercise.id,
+                            "series",
+                            parseInt(e.target.value) || 0,
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
+                      <input
+                        className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0"
+                        type="text"
+                        value={exercise.reps}
+                        onChange={(e) =>
+                          handleUpdateExercise(
+                            exercise.id,
+                            "reps",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
+                      <div className="relative w-full">
+                        <input
+                          className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0 pr-4"
+                          type="number"
+                          value={exercise.intensity}
+                          onChange={(e) =>
+                            handleUpdateExercise(
+                              exercise.id,
+                              "intensity",
+                              parseInt(e.target.value) || 0,
+                            )
+                          }
+                          min="1"
+                          max="10"
+                        />
+                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold pointer-events-none">
+                          RPE
+                        </span>
+                      </div>
+                    </div>
+                    <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
+                      <input
+                        className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0"
+                        type="text"
+                        value={exercise.pause}
+                        onChange={(e) =>
+                          handleUpdateExercise(
+                            exercise.id,
+                            "pause",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="px-3 h-12 flex items-center border-l border-gray-100 dark:border-gray-800">
+                      <input
+                        className="w-full text-xs text-[#5e758d] bg-transparent border-none p-0 focus:ring-0 placeholder-gray-300"
+                        placeholder="Notas..."
+                        type="text"
+                        value={exercise.notes || ""}
+                        onChange={(e) =>
+                          handleUpdateExercise(
+                            exercise.id,
+                            "notes",
+                            e.target.value,
+                          )
+                        }
+                      />
+                    </div>
+                    <div className="h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800 group/row">
+                      <button
+                        onClick={() => handleDeleteExercise(exercise.id)}
+                        className="text-gray-300 hover:text-red-500 transition-colors opacity-0 group-hover/row:opacity-100"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          delete
+                        </span>
+                      </button>
+                    </div>
+                  </div>
+                </div>
+              );
+            })}
+        </div>
+
+        {/* Add New Exercise Button Area */}
+        <div className="mt-4 flex gap-3">
+          <button
+            onClick={() => setIsAddStageModalOpen(true)}
+            className="flex items-center justify-center gap-2 h-12 px-6 rounded-lg border-2 border-dashed border-purple-200 dark:border-purple-800 text-purple-600 dark:text-purple-400 hover:bg-purple-50 dark:hover:bg-purple-900/20 hover:border-purple-400 transition-all shadow-sm bg-white dark:bg-gray-800"
+            title="Agregar nueva etapa"
+          >
+            <span className="material-symbols-outlined">add</span>
+            <span className="font-bold text-sm">Nueva Etapa</span>
+          </button>
+
+          <button
+            onClick={handleAddExercise}
+            className="flex-1 flex items-center justify-center gap-2 h-12 rounded-lg border-2 border-dashed border-[#dae0e7] dark:border-gray-600 text-primary hover:bg-primary/5 hover:border-primary transition-all shadow-sm bg-white dark:bg-gray-800"
+          >
+            <span className="material-symbols-outlined">add_circle</span>
+            <span className="font-bold text-sm">Agregar Nuevo Ejercicio</span>
+          </button>
+        </div>
+
+        <div className="h-12"></div>
+      </main>
+
+      {/* Add Stage Modal */}
+      <AddStageModal
+        isOpen={isAddStageModalOpen}
+        onClose={() => setIsAddStageModalOpen(false)}
+        onAdd={handleAddStage}
+      />
+    </div>
+  );
 }
