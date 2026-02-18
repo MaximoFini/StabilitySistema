@@ -11,7 +11,16 @@ import BusinessMetrics from "@/features/metrics/BusinessMetrics"
 import Library from "@/features/library/Library"
 import NewPlan from "@/features/plans/NewPlan"
 
+// ── Student training screens ───────────────────────────────────────────────
+import TrainingLayout from "@/features/training/TrainingLayout"
+import TrainingHome from "@/features/training/TrainingHome"
+import ExerciseList from "@/features/training/ExerciseList"
+import ExerciseDetail from "@/features/training/ExerciseDetail"
+import WorkoutComplete from "@/features/training/WorkoutComplete"
+import { TrainingProgress, TrainingProfile } from "@/features/training/TrainingPlaceholders"
+
 export const router = createBrowserRouter([
+    // ── Coach routes (sidebar layout) ──────────────────────────────────────
     {
         path: "/",
         element: (
@@ -42,6 +51,48 @@ export const router = createBrowserRouter([
             },
         ],
     },
+
+    // ── Student training routes (mobile layout with bottom nav) ─────────────
+    {
+        path: "/entrenamiento",
+        element: (
+            <RequireAuth>
+                <TrainingLayout />
+            </RequireAuth>
+        ),
+        children: [
+            { index: true, element: <TrainingHome /> },
+            { path: "progreso", element: <TrainingProgress /> },
+            { path: "perfil", element: <TrainingProfile /> },
+        ],
+    },
+    // Workout flow — full-screen, no bottom nav
+    {
+        path: "/entrenamiento/dia/:dayId",
+        element: (
+            <RequireAuth>
+                <ExerciseList />
+            </RequireAuth>
+        ),
+    },
+    {
+        path: "/entrenamiento/dia/:dayId/ejercicio/:exerciseNum",
+        element: (
+            <RequireAuth>
+                <ExerciseDetail />
+            </RequireAuth>
+        ),
+    },
+    {
+        path: "/entrenamiento/completado",
+        element: (
+            <RequireAuth>
+                <WorkoutComplete />
+            </RequireAuth>
+        ),
+    },
+
+    // ── Auth routes ────────────────────────────────────────────────────────
     {
         path: "/login",
         element: <Login />,

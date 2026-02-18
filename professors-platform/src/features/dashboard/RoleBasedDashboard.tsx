@@ -1,6 +1,5 @@
 import { Navigate } from "react-router-dom"
 import { useAuthStore } from "@/features/auth/store/authStore"
-import StudentDashboard from "./StudentDashboard"
 import CoachDashboard from "../../../iu/CoachDashboard"
 
 export default function RoleBasedDashboard() {
@@ -15,9 +14,9 @@ export default function RoleBasedDashboard() {
         return <Navigate to="/register/complete-profile" replace />
     }
 
-    // Show appropriate dashboard based on role
+    // Students go to the mobile training app
     if (professor.role === 'student') {
-        return <StudentDashboard />
+        return <Navigate to="/entrenamiento" replace />
     }
 
     return <CoachDashboard />
