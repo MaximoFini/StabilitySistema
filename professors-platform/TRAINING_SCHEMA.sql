@@ -9,10 +9,10 @@ DROP TABLE IF EXISTS training_plans CASCADE;
 DROP TABLE IF EXISTS exercise_stages CASCADE;
 
 -- Drop existing policies if they exist
-DROP POLICY IF EXISTS "Users can view their own exercise stages" ON exercise_stages;
-DROP POLICY IF EXISTS "Users can create their own exercise stages" ON exercise_stages;
-DROP POLICY IF EXISTS "Users can update their own exercise stages" ON exercise_stages;
-DROP POLICY IF EXISTS "Users can delete their own exercise stages" ON exercise_stages;
+DROP POLICY IF EXISTS "Coaches can view all exercise stages" ON exercise_stages;
+DROP POLICY IF EXISTS "Coaches can create exercise stages" ON exercise_stages;
+DROP POLICY IF EXISTS "Coaches can update exercise stages" ON exercise_stages;
+DROP POLICY IF EXISTS "Coaches can delete exercise stages" ON exercise_stages;
 DROP POLICY IF EXISTS "Coaches can view their own plans" ON training_plans;
 DROP POLICY IF EXISTS "Students can view assigned plans" ON training_plans;
 DROP POLICY IF EXISTS "Coaches can create plans" ON training_plans;
@@ -28,13 +28,12 @@ DROP POLICY IF EXISTS "Coaches can create assignments" ON training_plan_assignme
 DROP POLICY IF EXISTS "Coaches can update their assignments" ON training_plan_assignments;
 DROP POLICY IF EXISTS "Coaches can delete their assignments" ON training_plan_assignments;
 
--- 1. Exercise Stages Table
+-- 1. Exercise Stages Table (shared between all coaches)
 CREATE TABLE IF NOT EXISTS exercise_stages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     color TEXT NOT NULL DEFAULT '#3B82F6',
     display_order INTEGER NOT NULL,
-    coach_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -111,7 +110,6 @@ CREATE INDEX IF NOT EXISTS idx_training_plan_exercises_day ON training_plan_exer
 CREATE INDEX IF NOT EXISTS idx_training_plan_assignments_plan ON training_plan_assignments(plan_id);
 CREATE INDEX IF NOT EXISTS idx_training_plan_assignments_student ON training_plan_assignments(student_id);
 CREATE INDEX IF NOT EXISTS idx_training_plan_assignments_coach ON training_plan_assignments(coach_id);
-CREATE INDEX IF NOT EXISTS idx_exercise_stages_coach ON exercise_stages(coach_id);
 
 -- Row Level Security (RLS) Policies
 
@@ -122,22 +120,46 @@ ALTER TABLE training_plan_days ENABLE ROW LEVEL SECURITY;
 ALTER TABLE training_plan_exercises ENABLE ROW LEVEL SECURITY;
 ALTER TABLE training_plan_assignments ENABLE ROW LEVEL SECURITY;
 
--- Exercise Stages Policies
-CREATE POLICY "Users can view their own exercise stages"
+-- Exercise Stages Policies (shared between all coaches)
+CREATE POLICY "Coaches can view all exercise stages"
     ON exercise_stages FOR SELECT
-    USING (auth.uid() = coach_id);
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid()
+            AND profiles.role = 'coach'
+        )
+    );
 
-CREATE POLICY "Users can create their own exercise stages"
+CREATE POLICY "Coaches can create exercise stages"
     ON exercise_stages FOR INSERT
-    WITH CHECK (auth.uid() = coach_id);
+    WITH CHECK (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid()
+            AND profiles.role = 'coach'
+        )
+    );
 
-CREATE POLICY "Users can update their own exercise stages"
+CREATE POLICY "Coaches can update exercise stages"
     ON exercise_stages FOR UPDATE
-    USING (auth.uid() = coach_id);
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid()
+            AND profiles.role = 'coach'
+        )
+    );
 
-CREATE POLICY "Users can delete their own exercise stages"
+CREATE POLICY "Coaches can delete exercise stages"
     ON exercise_stages FOR DELETE
-    USING (auth.uid() = coach_id);
+    USING (
+        EXISTS (
+            SELECT 1 FROM profiles
+            WHERE profiles.id = auth.uid()
+            AND profiles.role = 'coach'
+        )
+    );
 
 -- Training Plans Policies
 CREATE POLICY "Coaches can view their own plans"

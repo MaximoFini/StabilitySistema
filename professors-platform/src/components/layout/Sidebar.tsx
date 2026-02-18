@@ -2,12 +2,13 @@ import { Link, useLocation, useNavigate } from "react-router-dom";
 import { X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuthStore } from "@/features/auth/store/authStore";
+import { useState } from "react";
 
 const coachNavigation = [
   { name: "Alumnos", href: "/inicio", icon: "group" },
-  { name: "Dashboard", href: "/dashboard", icon: "bar_chart" },
+  { name: "Planificación", href: "/planificador", icon: "calendar_month" },
   { name: "Biblioteca", href: "/biblioteca", icon: "fitness_center" },
-  { name: "Planificador", href: "/planificador", icon: "calendar_month" },
+  { name: "Dashboard", href: "/dashboard", icon: "bar_chart" },
 ];
 
 const studentNavigation = [
@@ -27,6 +28,7 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
   const location = useLocation();
   const navigate = useNavigate();
   const { professor, logout } = useAuthStore();
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const isStudent = professor?.role === "student";
   const navigation = isStudent ? studentNavigation : coachNavigation;
@@ -44,9 +46,11 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex h-16 items-center justify-between px-6 border-b border-gray-100 dark:border-slate-800 shrink-0">
-        <span className="text-xl font-bold tracking-tight text-primary">
-          Stability
-        </span>
+        {!isCollapsed && (
+          <span className="text-xl font-bold tracking-tight text-primary">
+            Stability
+          </span>
+        )}
         {/* Close button — only visible on mobile */}
         <button
           onClick={onClose}
@@ -55,10 +59,20 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
         >
           <X size={18} />
         </button>
+        {/* Collapse button — only visible on desktop */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-auto"
+          aria-label={isCollapsed ? "Expandir menú" : "Colapsar menú"}
+        >
+          <span className="material-symbols-outlined text-[20px]">
+            {isCollapsed ? "chevron_right" : "chevron_left"}
+          </span>
+        </button>
       </div>
 
       {/* Role badge */}
-      {professor && (
+      {professor && !isCollapsed && (
         <div className="px-4 pt-3 pb-1">
           <span
             className={cn(
@@ -85,11 +99,13 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
               key={item.href}
               to={item.href}
               onClick={onClose}
+              title={isCollapsed ? item.name : undefined}
               className={cn(
                 "flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors hover:bg-gray-50 dark:hover:bg-slate-800 hover:text-primary",
                 isActive
                   ? "bg-blue-50 dark:bg-blue-900/20 text-primary"
                   : "text-gray-500 dark:text-slate-400",
+                isCollapsed && "justify-center",
               )}
             >
               <span
@@ -100,7 +116,7 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
               >
                 {item.icon}
               </span>
-              {item.name}
+              {!isCollapsed && item.name}
             </Link>
           );
         })}
@@ -108,38 +124,54 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
 
       {/* Footer: user info + logout */}
       <div className="p-4 border-t border-gray-100 dark:border-slate-800 space-y-2 shrink-0">
-        <div className="flex items-center gap-3 px-2 py-2">
-          <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 overflow-hidden">
-            {professor?.profileImage ? (
-              <img
-                src={professor.profileImage}
-                alt={`${professor.firstName} ${professor.lastName}`}
-                className="w-full h-full object-cover"
-              />
-            ) : (
+        {!isCollapsed ? (
+          <>
+            <div className="flex items-center gap-3 px-2 py-2">
+              <div className="w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-700 flex items-center justify-center text-slate-500 dark:text-slate-400 shrink-0 overflow-hidden">
+                {professor?.profileImage ? (
+                  <img
+                    src={professor.profileImage}
+                    alt={`${professor.firstName} ${professor.lastName}`}
+                    className="w-full h-full object-cover"
+                  />
+                ) : (
+                  <span className="material-symbols-outlined text-[20px]">
+                    person
+                  </span>
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate">
+                  {professor
+                    ? `${professor.firstName} ${professor.lastName}`
+                    : "Usuario"}
+                </p>
+                <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate font-normal">
+                  {professor?.email || ""}
+                </p>
+              </div>
+            </div>
+            <button
+              onClick={handleLogout}
+              className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+            >
               <span className="material-symbols-outlined text-[20px]">
-                person
+                logout
               </span>
-            )}
-          </div>
-          <div className="flex-1 min-w-0">
-            <p className="text-[13px] font-bold text-slate-900 dark:text-white truncate">
-              {professor
-                ? `${professor.firstName} ${professor.lastName}`
-                : "Usuario"}
-            </p>
-            <p className="text-[11px] text-slate-400 dark:text-slate-500 truncate font-normal">
-              {professor?.email || ""}
-            </p>
-          </div>
-        </div>
-        <button
-          onClick={handleLogout}
-          className="flex items-center gap-3 w-full px-3 py-2.5 text-sm font-medium rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
-        >
-          <span className="material-symbols-outlined text-[20px]">logout</span>
-          Cerrar Sesión
-        </button>
+              Cerrar Sesión
+            </button>
+          </>
+        ) : (
+          <button
+            onClick={handleLogout}
+            title="Cerrar Sesión"
+            className="flex items-center justify-center w-full px-3 py-2.5 text-sm font-medium rounded-lg text-red-600 dark:text-red-400 hover:bg-red-50 dark:hover:bg-red-900/20 transition-colors"
+          >
+            <span className="material-symbols-outlined text-[20px]">
+              logout
+            </span>
+          </button>
+        )}
       </div>
     </div>
   );
@@ -149,7 +181,8 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
       {/* Desktop sidebar — always visible */}
       <aside
         className={cn(
-          "hidden lg:flex h-screen w-64 flex-col border-r bg-white dark:bg-slate-900 shrink-0",
+          "hidden lg:flex h-screen flex-col border-r bg-white dark:bg-slate-900 shrink-0 transition-all duration-300",
+          isCollapsed ? "w-[72px]" : "w-64",
           className,
         )}
       >
