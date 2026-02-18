@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { useTrainingPlanDetail } from "../../hooks/useTrainingPlans";
 
 interface PlanPreviewProps {
@@ -32,8 +33,14 @@ interface TrainingPlanExercise {
 }
 
 export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
+  const navigate = useNavigate();
   const { plan, loading, error } = useTrainingPlanDetail(planId);
   const [activeDay, setActiveDay] = useState(0);
+
+  const handleEditPlan = () => {
+    navigate(`/planificador?planId=${planId}&mode=edit`);
+    onClose();
+  };
 
   if (loading) {
     return (
@@ -41,7 +48,9 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 max-w-4xl w-full">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
-            <p className="text-slate-600 dark:text-slate-400">Cargando plan...</p>
+            <p className="text-slate-600 dark:text-slate-400">
+              Cargando plan...
+            </p>
           </div>
         </div>
       </div>
@@ -53,7 +62,9 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
       <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 max-w-4xl w-full">
           <div className="text-center">
-            <span className="material-symbols-outlined text-6xl text-red-400 mb-4">error</span>
+            <span className="material-symbols-outlined text-6xl text-red-400 mb-4">
+              error
+            </span>
             <p className="text-slate-600 dark:text-slate-400 mb-4">
               {error || "No se pudo cargar el plan"}
             </p>
@@ -71,7 +82,8 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
 
   const days = (plan.training_plan_days || []) as TrainingPlanDay[];
   const currentDay = days[activeDay];
-  const exercises = (currentDay?.training_plan_exercises || []) as TrainingPlanExercise[];
+  const exercises = (currentDay?.training_plan_exercises ||
+    []) as TrainingPlanExercise[];
 
   // Format dates
   const formatDate = (dateStr: string) => {
@@ -89,8 +101,8 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
               {plan.title}
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
-              {formatDate(plan.start_date)} - {formatDate(plan.end_date)} · {plan.total_weeks}{" "}
-              semanas · {plan.days_per_week} días/sem
+              {formatDate(plan.start_date)} - {formatDate(plan.end_date)} ·{" "}
+              {plan.total_weeks} semanas · {plan.days_per_week} días/sem
             </p>
           </div>
           <button
@@ -193,7 +205,9 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
                             </span>
                           </a>
                         ) : (
-                          <span className="text-slate-300 dark:text-slate-600">—</span>
+                          <span className="text-slate-300 dark:text-slate-600">
+                            —
+                          </span>
                         )}
                       </td>
                       <td className="py-3 px-4 text-center text-sm text-slate-700 dark:text-slate-300">
@@ -227,7 +241,10 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
           >
             Cerrar
           </button>
-          <button className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium flex items-center gap-2">
+          <button
+            onClick={handleEditPlan}
+            className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium flex items-center gap-2"
+          >
             <span className="material-symbols-outlined text-[18px]">edit</span>
             Editar Plan
           </button>

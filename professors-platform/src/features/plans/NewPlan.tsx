@@ -1,7 +1,12 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useExerciseStages } from "../../hooks/useExerciseStages";
-import { useTrainingPlans } from "../../hooks/useTrainingPlans";
+import {
+  useTrainingPlans,
+  useTrainingPlanDetail,
+} from "../../hooks/useTrainingPlans";
 import AddStageModal from "../../components/AddStageModal";
+import AssignPlanModal from "../../components/AssignPlanModal";
 import ExerciseAutocomplete from "../../components/ExerciseAutocomplete";
 import DatePicker from "../../components/DatePicker";
 import type { PlanExercise } from "../../lib/types";
@@ -42,10 +47,21 @@ const saveToStorage = (data: any) => {
 
 export default function NewPlan() {
   const { stages, loading: stagesLoading, addStage } = useExerciseStages();
-  const { savePlan } = useTrainingPlans();
+  const { savePlan, updatePlan, assignPlanToStudents } = useTrainingPlans();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
-  // Load initial state from localStorage or use defaults
-  const savedData = loadFromStorage();
+  // Detect edit mode from URL params
+  const planId = searchParams.get("planId");
+  const isEditMode = searchParams.get("mode") === "edit" && !!planId;
+
+  // Load existing plan data when in edit mode
+  const { plan: loadedPlan, loading: planLoading } =
+    useTrainingPlanDetail(planId);
+  const planLoadedRef = useRef(false);
+
+  // Load initial state from localStorage or use defaults (only for new plans)
+  const savedData = isEditMode ? null : loadFromStorage();
 
   const [exercises, setExercises] = useState<PlanExercise[]>(
     savedData?.exercises || [
@@ -68,10 +84,10 @@ export default function NewPlan() {
 
   // Date state for plan duration
   const [startDate, setStartDate] = useState<Date>(
-    savedData?.startDate || new Date(2023, 9, 12),
+    savedData?.startDate || new Date(2026, 1, 18),
   );
   const [endDate, setEndDate] = useState<Date>(
-    savedData?.endDate || new Date(2023, 9, 19),
+    savedData?.endDate || new Date(2026, 1, 25),
   );
 
   // Day management state
@@ -85,6 +101,9 @@ export default function NewPlan() {
     savedData?.planTitle || "Nuevo Plan: Hipertrofia Fase 1",
   );
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | null>(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [isAssigning, setIsAssigning] = useState(false);
+  const [savedPlanId, setSavedPlanId] = useState<string | null>(null);
 
   // Auto-save to localStorage whenever state changes
   useEffect(() => {
@@ -228,8 +247,8 @@ export default function NewPlan() {
     ]);
     setDays([{ id: "1", number: 1, name: "Día 1" }]);
     setActiveDay("1");
-    setStartDate(new Date(2023, 9, 12));
-    setEndDate(new Date(2023, 9, 19));
+    setStartDate(new Date(2026, 1, 18));
+    setEndDate(new Date(2026, 1, 25));
     setPlanTitle("Nuevo Plan: Hipertrofia Fase 1");
 
     toast.success("Borrador limpiado");
@@ -257,7 +276,7 @@ export default function NewPlan() {
 
     const result = await savePlan({
       title: planTitle,
-      description: null,
+      description: undefined,
       startDate,
       endDate,
       days,
@@ -273,6 +292,60 @@ export default function NewPlan() {
       // handleClearDraft();
     } else {
       toast.error(`Error al guardar: ${result.error}`);
+    }
+  };
+
+  const handleAssignPlan = async (studentIds: string[]) => {
+    try {
+      setIsAssigning(true);
+
+      // If plan is not saved yet, save it first
+      let planIdToAssign = savedPlanId || planId;
+
+      if (!planIdToAssign) {
+        // Save the plan first
+        const saveResult = await savePlan({
+          title: planTitle,
+          description: "",
+          startDate,
+          endDate,
+          days,
+          exercises,
+          isTemplate: false,
+        });
+
+        if (!saveResult.success) {
+          toast.error(saveResult.error || "Error al guardar el plan");
+          return;
+        }
+
+        planIdToAssign = saveResult.planId!;
+        setSavedPlanId(planIdToAssign);
+      }
+
+      // Assign to students
+      if (assignPlanToStudents && planIdToAssign) {
+        const result = await assignPlanToStudents(
+          planIdToAssign,
+          studentIds,
+          startDate,
+          endDate,
+        );
+
+        if (result.success) {
+          toast.success(
+            `Plan asignado a ${studentIds.length} ${studentIds.length === 1 ? "alumno" : "alumnos"}`,
+          );
+          setIsAssignModalOpen(false);
+        } else {
+          toast.error(result.error || "Error al asignar plan");
+        }
+      }
+    } catch (error) {
+      console.error("Error assigning plan:", error);
+      toast.error("Error al asignar plan");
+    } finally {
+      setIsAssigning(false);
     }
   };
 
@@ -337,12 +410,6 @@ export default function NewPlan() {
                 </span>
                 Nuevo Borrador
               </button>
-              <button className="flex items-center justify-center rounded-lg h-9 px-4 bg-sky-100 hover:bg-sky-200 text-primary-light text-primary font-bold transition-colors text-sm">
-                <span className="material-symbols-outlined text-lg mr-2">
-                  content_copy
-                </span>
-                Duplicar Semana
-              </button>
               <button
                 onClick={handleSaveToLibrary}
                 className="flex items-center justify-center rounded-lg h-9 px-5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold transition-colors text-sm shadow-sm"
@@ -352,7 +419,10 @@ export default function NewPlan() {
                 </span>
                 Guardar en Biblioteca
               </button>
-              <button className="flex items-center justify-center rounded-lg h-9 px-5 bg-[#0056b3] text-white text-sm font-bold shadow-sm hover:bg-[#004494] transition-colors">
+              <button
+                onClick={() => setIsAssignModalOpen(true)}
+                className="flex items-center justify-center rounded-lg h-9 px-5 bg-[#0056b3] text-white text-sm font-bold shadow-sm hover:bg-[#004494] transition-colors"
+              >
                 <span className="material-symbols-outlined text-lg mr-2">
                   person_add
                 </span>
@@ -680,6 +750,14 @@ export default function NewPlan() {
         isOpen={isAddStageModalOpen}
         onClose={() => setIsAddStageModalOpen(false)}
         onAdd={handleAddStage}
+      />
+
+      {/* Assign Plan Modal */}
+      <AssignPlanModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        onAssign={handleAssignPlan}
+        isSubmitting={isAssigning}
       />
     </div>
   );

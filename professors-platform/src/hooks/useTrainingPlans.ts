@@ -1,8 +1,8 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../features/auth/store/authStore';
-import type { PlanExercise } from '../lib/types';
-import type { Professor } from '../features/auth/store/authStore';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "../lib/supabase";
+import { useAuthStore } from "../features/auth/store/authStore";
+import type { PlanExercise } from "../lib/types";
+import type { Professor } from "../features/auth/store/authStore";
 
 interface Day {
   id: string;
@@ -57,31 +57,38 @@ export function useTrainingPlans() {
 
       // Fetch plans with assignment counts
       const { data: plansData, error: fetchError } = await supabase
-        .from('training_plans')
-        .select(`
+        .from("training_plans")
+        .select(
+          `
           *,
           training_plan_assignments(count)
-        `)
-        .eq('coach_id', professor.id)
-        .eq('is_archived', false)
-        .order('created_at', { ascending: false });
+        `,
+        )
+        .eq("coach_id", professor.id)
+        .eq("is_archived", false)
+        .order("created_at", { ascending: false });
 
       if (fetchError) throw fetchError;
 
       // Transform the data to include assignedCount
-      interface PlanWithAssignments extends Omit<TrainingPlanSummary, 'assignedCount'> {
+      interface PlanWithAssignments extends Omit<
+        TrainingPlanSummary,
+        "assignedCount"
+      > {
         training_plan_assignments?: Array<{ count: number }>;
       }
-      
-      const transformedPlans: TrainingPlanSummary[] = (plansData || []).map((plan: PlanWithAssignments) => ({
-        ...plan,
-        assignedCount: plan.training_plan_assignments?.[0]?.count || 0,
-      }));
+
+      const transformedPlans: TrainingPlanSummary[] = (plansData || []).map(
+        (plan: PlanWithAssignments) => ({
+          ...plan,
+          assignedCount: plan.training_plan_assignments?.[0]?.count || 0,
+        }),
+      );
 
       setPlans(transformedPlans);
     } catch (err) {
-      console.error('Error loading training plans:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error("Error loading training plans:", err);
+      setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setLoading(false);
     }
@@ -95,41 +102,45 @@ export function useTrainingPlans() {
 
   const savePlan = async (planData: SavePlanData) => {
     if (!professor) {
-      return { success: false, error: 'No hay usuario autenticado' };
+      return { success: false, error: "No hay usuario autenticado" };
     }
 
     try {
       // Calculate plan metadata
       const totalDays = planData.days.length;
       const msPerDay = 24 * 60 * 60 * 1000;
-      const totalDaysInPeriod = Math.ceil(
-        (planData.endDate.getTime() - planData.startDate.getTime()) / msPerDay
-      ) + 1;
+      const totalDaysInPeriod =
+        Math.ceil(
+          (planData.endDate.getTime() - planData.startDate.getTime()) /
+            msPerDay,
+        ) + 1;
       const totalWeeks = Math.ceil(totalDaysInPeriod / 7);
       const daysPerWeek = Math.ceil(totalDays / totalWeeks);
 
       // 1. Insert the main training plan
       const { data: insertedPlan, error: planError } = await supabase
-        .from('training_plans')
-        .insert([{
-          coach_id: professor.id,
-          title: planData.title,
-          description: planData.description || null,
-          start_date: planData.startDate.toISOString().split('T')[0],
-          end_date: planData.endDate.toISOString().split('T')[0],
-          total_days: totalDays,
-          days_per_week: daysPerWeek,
-          total_weeks: totalWeeks,
-          plan_type: planData.isTemplate ? 'template' : 'custom',
-          difficulty_level: null,
-          is_template: planData.isTemplate,
-          is_archived: false,
-        }])
+        .from("training_plans")
+        .insert([
+          {
+            coach_id: professor.id,
+            title: planData.title,
+            description: planData.description || null,
+            start_date: planData.startDate.toISOString().split("T")[0],
+            end_date: planData.endDate.toISOString().split("T")[0],
+            total_days: totalDays,
+            days_per_week: daysPerWeek,
+            total_weeks: totalWeeks,
+            plan_type: planData.isTemplate ? "template" : "custom",
+            difficulty_level: null,
+            is_template: planData.isTemplate,
+            is_archived: false,
+          },
+        ])
         .select()
         .single();
 
       if (planError) throw planError;
-      if (!insertedPlan) throw new Error('No se pudo crear el plan');
+      if (!insertedPlan) throw new Error("No se pudo crear el plan");
 
       // 2. Insert training plan days
       const daysToInsert = planData.days.map((day, index) => ({
@@ -140,12 +151,12 @@ export function useTrainingPlans() {
       }));
 
       const { data: insertedDays, error: daysError } = await supabase
-        .from('training_plan_days')
+        .from("training_plan_days")
         .insert(daysToInsert)
         .select();
 
       if (daysError) throw daysError;
-      if (!insertedDays) throw new Error('No se pudieron crear los días');
+      if (!insertedDays) throw new Error("No se pudieron crear los días");
 
       // 3. Create a mapping from old day IDs to new day IDs
       const dayIdMap = new Map<string, string>();
@@ -168,7 +179,7 @@ export function useTrainingPlans() {
             stage_id: ex.stage_id || null,
             stage_name: ex.stage_name,
             exercise_name: ex.exercise_name,
-            video_url: null,
+            video_url: ex.video_url || null,
             series: ex.series,
             reps: ex.reps,
             intensity: ex.intensity,
@@ -182,7 +193,7 @@ export function useTrainingPlans() {
 
       if (exercisesToInsert.length > 0) {
         const { error: exercisesError } = await supabase
-          .from('training_plan_exercises')
+          .from("training_plan_exercises")
           .insert(exercisesToInsert);
 
         if (exercisesError) throw exercisesError;
@@ -193,10 +204,234 @@ export function useTrainingPlans() {
 
       return { success: true, planId: insertedPlan.id };
     } catch (err) {
-      console.error('Error saving training plan:', err);
+      console.error("Error saving training plan:", err);
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'Error desconocido',
+        error: err instanceof Error ? err.message : "Error desconocido",
+      };
+    }
+  };
+
+  const updatePlan = async (planId: string, planData: SavePlanData) => {
+    if (!professor) {
+      return { success: false, error: "No hay usuario autenticado" };
+    }
+
+    try {
+      // Calculate plan metadata
+      const totalDays = planData.days.length;
+      const msPerDay = 24 * 60 * 60 * 1000;
+      const totalDaysInPeriod =
+        Math.ceil(
+          (planData.endDate.getTime() - planData.startDate.getTime()) /
+            msPerDay,
+        ) + 1;
+      const totalWeeks = Math.ceil(totalDaysInPeriod / 7);
+      const daysPerWeek = Math.ceil(totalDays / totalWeeks);
+
+      // 1. Update the main training plan record
+      const { error: planError } = await supabase
+        .from("training_plans")
+        .update({
+          title: planData.title,
+          description: planData.description || null,
+          start_date: planData.startDate.toISOString().split("T")[0],
+          end_date: planData.endDate.toISOString().split("T")[0],
+          total_days: totalDays,
+          days_per_week: daysPerWeek,
+          total_weeks: totalWeeks,
+          updated_at: new Date().toISOString(),
+        })
+        .eq("id", planId)
+        .eq("coach_id", professor.id);
+
+      if (planError) throw planError;
+
+      // 2. Fetch existing days from DB
+      const { data: existingDays, error: fetchDaysError } = await supabase
+        .from("training_plan_days")
+        .select("id")
+        .eq("plan_id", planId);
+
+      if (fetchDaysError) throw fetchDaysError;
+
+      const existingDayIds = new Set(
+        (existingDays || []).map((d: { id: string }) => d.id),
+      );
+      const newDayIds = new Set(planData.days.map((d) => d.id));
+
+      // Categorize days: update existing, insert new, delete removed
+      const daysToUpdate = planData.days.filter((d) =>
+        existingDayIds.has(d.id),
+      );
+      const daysToInsert = planData.days.filter(
+        (d) => !existingDayIds.has(d.id),
+      );
+      const dayIdsToDelete = [...existingDayIds].filter(
+        (id) => !newDayIds.has(id),
+      );
+
+      // 3. Delete removed days (CASCADE handles exercises automatically)
+      if (dayIdsToDelete.length > 0) {
+        const { error: deleteDaysError } = await supabase
+          .from("training_plan_days")
+          .delete()
+          .in("id", dayIdsToDelete);
+        if (deleteDaysError) throw deleteDaysError;
+      }
+
+      // 4. Update existing days metadata
+      for (const day of daysToUpdate) {
+        const dayIndex = planData.days.indexOf(day);
+        const { error: updateDayError } = await supabase
+          .from("training_plan_days")
+          .update({
+            day_number: day.number,
+            day_name: day.name,
+            display_order: dayIndex,
+          })
+          .eq("id", day.id);
+        if (updateDayError) throw updateDayError;
+      }
+
+      // 5. Insert new days and build ID map (tempId → newDbId)
+      const dayIdMap = new Map<string, string>();
+      daysToUpdate.forEach((d) => dayIdMap.set(d.id, d.id)); // existing days map to themselves
+
+      if (daysToInsert.length > 0) {
+        const daysToInsertData = daysToInsert.map((day) => ({
+          plan_id: planId,
+          day_number: day.number,
+          day_name: day.name,
+          display_order: planData.days.indexOf(day),
+        }));
+
+        const { data: insertedDays, error: insertDaysError } = await supabase
+          .from("training_plan_days")
+          .insert(daysToInsertData)
+          .select();
+
+        if (insertDaysError) throw insertDaysError;
+        daysToInsert.forEach((day, index) => {
+          dayIdMap.set(day.id, insertedDays![index].id);
+        });
+      }
+
+      // 6. For each existing day, granularly update exercises
+      for (const day of daysToUpdate) {
+        const dbDayId = dayIdMap.get(day.id)!;
+        const dayExercises = planData.exercises.filter(
+          (ex) => ex.day_id === day.id,
+        );
+
+        const { data: existingExercises, error: fetchExError } = await supabase
+          .from("training_plan_exercises")
+          .select("id")
+          .eq("day_id", dbDayId);
+
+        if (fetchExError) throw fetchExError;
+
+        const existingExIds = new Set(
+          (existingExercises || []).map((e: { id: string }) => e.id),
+        );
+        const newExIds = new Set(dayExercises.map((e) => e.id));
+
+        const exToUpdate = dayExercises.filter((e) => existingExIds.has(e.id));
+        const exToInsert = dayExercises.filter((e) => !existingExIds.has(e.id));
+        const exIdsToDelete = [...existingExIds].filter(
+          (id) => !newExIds.has(id),
+        );
+
+        // Delete removed exercises
+        if (exIdsToDelete.length > 0) {
+          const { error: deleteExError } = await supabase
+            .from("training_plan_exercises")
+            .delete()
+            .in("id", exIdsToDelete);
+          if (deleteExError) throw deleteExError;
+        }
+
+        // Update existing exercises
+        for (const ex of exToUpdate) {
+          const { error: updateExError } = await supabase
+            .from("training_plan_exercises")
+            .update({
+              stage_id: ex.stage_id || null,
+              stage_name: ex.stage_name,
+              exercise_name: ex.exercise_name,
+              video_url: ex.video_url || null,
+              series: ex.series,
+              reps: ex.reps,
+              intensity: ex.intensity,
+              pause: ex.pause,
+              notes: ex.notes || null,
+              display_order: dayExercises.indexOf(ex),
+            })
+            .eq("id", ex.id);
+          if (updateExError) throw updateExError;
+        }
+
+        // Insert new exercises for existing days
+        if (exToInsert.length > 0) {
+          const { error: insertExError } = await supabase
+            .from("training_plan_exercises")
+            .insert(
+              exToInsert.map((ex) => ({
+                day_id: dbDayId,
+                stage_id: ex.stage_id || null,
+                stage_name: ex.stage_name,
+                exercise_name: ex.exercise_name,
+                video_url: ex.video_url || null,
+                series: ex.series,
+                reps: ex.reps,
+                intensity: ex.intensity,
+                pause: ex.pause,
+                notes: ex.notes || null,
+                coach_instructions: null,
+                display_order: dayExercises.indexOf(ex),
+              })),
+            );
+          if (insertExError) throw insertExError;
+        }
+      }
+
+      // 7. For completely new days, insert all their exercises
+      for (const day of daysToInsert) {
+        const dbDayId = dayIdMap.get(day.id)!;
+        const dayExercises = planData.exercises.filter(
+          (ex) => ex.day_id === day.id,
+        );
+
+        if (dayExercises.length > 0) {
+          const { error: insertExError } = await supabase
+            .from("training_plan_exercises")
+            .insert(
+              dayExercises.map((ex, idx) => ({
+                day_id: dbDayId,
+                stage_id: ex.stage_id || null,
+                stage_name: ex.stage_name,
+                exercise_name: ex.exercise_name,
+                video_url: ex.video_url || null,
+                series: ex.series,
+                reps: ex.reps,
+                intensity: ex.intensity,
+                pause: ex.pause,
+                notes: ex.notes || null,
+                coach_instructions: null,
+                display_order: idx,
+              })),
+            );
+          if (insertExError) throw insertExError;
+        }
+      }
+
+      await loadPlans();
+      return { success: true, planId };
+    } catch (err) {
+      console.error("Error updating training plan:", err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Error desconocido",
       };
     }
   };
@@ -205,10 +440,10 @@ export function useTrainingPlans() {
     try {
       // Soft delete - just mark as archived
       const { error: updateError } = await supabase
-        .from('training_plans')
+        .from("training_plans")
         .update({ is_archived: true })
-        .eq('id', planId)
-        .eq('coach_id', professor?.id); // Ensure coach owns this plan
+        .eq("id", planId)
+        .eq("coach_id", professor?.id); // Ensure coach owns this plan
 
       if (updateError) throw updateError;
 
@@ -217,10 +452,49 @@ export function useTrainingPlans() {
 
       return { success: true };
     } catch (err) {
-      console.error('Error deleting training plan:', err);
+      console.error("Error deleting training plan:", err);
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'Error desconocido',
+        error: err instanceof Error ? err.message : "Error desconocido",
+      };
+    }
+  };
+
+  const assignPlanToStudents = async (
+    planId: string,
+    studentIds: string[],
+    startDate: Date,
+    endDate: Date,
+  ) => {
+    if (!professor) {
+      return { success: false, error: "No hay usuario autenticado" };
+    }
+
+    try {
+      // Create assignments for each student
+      const assignments = studentIds.map((studentId) => ({
+        plan_id: planId,
+        student_id: studentId,
+        coach_id: professor.id,
+        start_date: startDate.toISOString().split("T")[0],
+        end_date: endDate.toISOString().split("T")[0],
+        status: "active",
+        current_day_number: 1,
+        completed_days: 0,
+      }));
+
+      const { error: assignError } = await supabase
+        .from("training_plan_assignments")
+        .insert(assignments);
+
+      if (assignError) throw assignError;
+
+      return { success: true };
+    } catch (err) {
+      console.error("Error assigning plan to students:", err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Error desconocido",
       };
     }
   };
@@ -230,7 +504,9 @@ export function useTrainingPlans() {
     loading,
     error,
     savePlan,
+    updatePlan,
     deletePlan,
+    assignPlanToStudents,
     reload: loadPlans,
   };
 }
@@ -254,23 +530,25 @@ export function useTrainingPlanDetail(planId: string | null) {
 
         // Fetch plan with days and exercises
         const { data: planData, error: planError } = await supabase
-          .from('training_plans')
-          .select(`
+          .from("training_plans")
+          .select(
+            `
             *,
             training_plan_days (
               *,
               training_plan_exercises (*)
             )
-          `)
-          .eq('id', planId)
+          `,
+          )
+          .eq("id", planId)
           .single();
 
         if (planError) throw planError;
 
         setPlan(planData);
       } catch (err) {
-        console.error('Error loading plan detail:', err);
-        setError(err instanceof Error ? err.message : 'Error desconocido');
+        console.error("Error loading plan detail:", err);
+        setError(err instanceof Error ? err.message : "Error desconocido");
       } finally {
         setLoading(false);
       }

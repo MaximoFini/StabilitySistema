@@ -8,13 +8,12 @@ DROP TABLE IF EXISTS training_plan_days CASCADE;
 DROP TABLE IF EXISTS training_plans CASCADE;
 DROP TABLE IF EXISTS exercise_stages CASCADE;
 
--- 1. Exercise Stages Table
+-- 1. Exercise Stages Table (shared between all coaches)
 CREATE TABLE exercise_stages (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     name TEXT NOT NULL,
     color TEXT NOT NULL DEFAULT '#3B82F6',
     display_order INTEGER NOT NULL,
-    coach_id UUID NOT NULL REFERENCES profiles(id) ON DELETE CASCADE,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT NOW(),
     updated_at TIMESTAMP WITH TIME ZONE DEFAULT NOW()
 );
@@ -91,7 +90,6 @@ CREATE INDEX idx_training_plan_exercises_day ON training_plan_exercises(day_id);
 CREATE INDEX idx_training_plan_assignments_plan ON training_plan_assignments(plan_id);
 CREATE INDEX idx_training_plan_assignments_student ON training_plan_assignments(student_id);
 CREATE INDEX idx_training_plan_assignments_coach ON training_plan_assignments(coach_id);
-CREATE INDEX idx_exercise_stages_coach ON exercise_stages(coach_id);
 
 -- Simple message
 SELECT 'Tables created successfully!' as result;
