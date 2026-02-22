@@ -39,7 +39,9 @@ export default function Login() {
         try {
             await login(data.email, data.password, data.rememberMe)
             toast.success('¡Bienvenido de nuevo!')
-            navigate("/inicio", { replace: true })
+            // Redirigir según el rol seleccionado
+            const redirectPath = role === 'coach' ? '/inicio' : '/entrenamiento'
+            navigate(redirectPath, { replace: true })
         } catch {
             toast.error('Credenciales inválidas')
         }
