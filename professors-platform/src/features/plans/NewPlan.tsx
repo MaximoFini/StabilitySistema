@@ -7,6 +7,8 @@ import {
 } from "../../hooks/useTrainingPlans";
 import AddStageModal from "../../components/AddStageModal";
 import AssignPlanModal from "../../components/AssignPlanModal";
+import SavePlanModal from "../../components/SavePlanModal";
+import type { SavePlanFormData } from "../../components/SavePlanModal";
 import ExerciseAutocomplete from "../../components/ExerciseAutocomplete";
 import DatePicker from "../../components/DatePicker";
 import type { PlanExercise } from "../../lib/types";
@@ -57,6 +59,7 @@ export default function NewPlan() {
   // Detect edit mode from URL params
   const planId = searchParams.get("planId");
   const isEditMode = searchParams.get("mode") === "edit" && !!planId;
+  const shouldOpenAssign = searchParams.get("openAssign") === "true";
 
   // Load existing plan data when in edit mode
   const { plan: _loadedPlan, loading: _planLoading } =
@@ -130,10 +133,117 @@ export default function NewPlan() {
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | null>(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
-  const [savedPlanId, setSavedPlanId] = useState<string | null>(null);
+  const [savedPlanId, setSavedPlanId] = useState<string | null>(planId || null);
+  const [isSaveModalOpen, setIsSaveModalOpen] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
+  const [editAssignedCount, setEditAssignedCount] = useState(0);
 
+ funcionalidades
+  // Hydrate state from loaded plan (edit mode)
+  useEffect(() => {
+    if (!isEditMode || !loadedPlan || planLoadedRef.current) return;
+    planLoadedRef.current = true;
+
+    console.log('[NewPlan] Hydrating plan from DB:', loadedPlan);
+
+    // Set plan metadata
+    setPlanTitle(loadedPlan.title);
+    setStartDate(new Date(loadedPlan.start_date));
+    setEndDate(new Date(loadedPlan.end_date));
+
+    // Build days from loaded plan
+    interface LoadedDay {
+      id: string;
+      day_number: number;
+      day_name: string;
+      display_order: number;
+      training_plan_exercises?: LoadedExercise[];
+    }
+    interface LoadedExercise {
+      id: string;
+      stage_id: string | null;
+      stage_name: string | null;
+      exercise_name: string;
+      video_url: string | null;
+      series: number;
+      reps: string;
+      intensity: number;
+      pause: string;
+      notes: string | null;
+      display_order: number;
+    }
+
+    const sortedDays = [...(loadedPlan.training_plan_days || [])]
+      .sort((a: LoadedDay, b: LoadedDay) => a.display_order - b.display_order);
+
+    const hydratedDays: Day[] = sortedDays.map((d: LoadedDay) => ({
+      id: d.id,
+      number: d.day_number,
+      name: d.day_name,
+    }));
+
+    const hydratedExercises: PlanExercise[] = [];
+    for (const day of sortedDays) {
+      const dayExercises = [...(day.training_plan_exercises || [])]
+        .sort((a: LoadedExercise, b: LoadedExercise) => a.display_order - b.display_order);
+      for (const ex of dayExercises) {
+        hydratedExercises.push({
+          id: ex.id,
+          day_id: day.id,
+          stage_id: ex.stage_id || "",
+          stage_name: ex.stage_name || "",
+          exercise_name: ex.exercise_name,
+          video_url: ex.video_url,
+          series: ex.series,
+          reps: ex.reps,
+          intensity: ex.intensity,
+          pause: ex.pause,
+          notes: ex.notes || "",
+          order: ex.display_order,
+        });
+      }
+    }
+
+    if (hydratedDays.length > 0) {
+      setDays(hydratedDays);
+      setActiveDay(hydratedDays[0].id);
+    }
+    if (hydratedExercises.length > 0) {
+      setExercises(hydratedExercises);
+    }
+
+    // Get assigned count
+    const assignedCount = loadedPlan.training_plan_assignments?.[0]?.count || 0;
+    setEditAssignedCount(assignedCount);
+
+    // Open assign modal if requested via URL
+    if (shouldOpenAssign) {
+      setIsAssignModalOpen(true);
+    }
+
+    console.log('[NewPlan] Hydrated:', hydratedDays.length, 'days,', hydratedExercises.length, 'exercises');
+  }, [loadedPlan, isEditMode, shouldOpenAssign]);
+
+  // Auto-save to localStorage whenever state changes (only for new plans)
+  useEffect(() => {
+    if (isEditMode) return; // Don't auto-save when editing existing plans
+
+    setSaveStatus("saving");
+    const dataToSave = {
+      exercises,
+      days,
+      activeDay,
+      startDate,
+      endDate,
+      planTitle,
+    };
+    saveToStorage(dataToSave);
+
+    // Show "saved" status briefly
+=======
   // Auto-save to localStorage con debounce de 1000ms
   useEffect(() => {
+ main
     const timer = setTimeout(() => {
       setSaveStatus("saving");
       const dataToSave = {
@@ -152,7 +262,7 @@ export default function NewPlan() {
     }, 1000);
 
     return () => clearTimeout(timer);
-  }, [exercises, days, activeDay, startDate, endDate, planTitle]);
+  }, [exercises, days, activeDay, startDate, endDate, planTitle, isEditMode]);
 
   const handleAddDay = () => {
     const newDayNumber = days.length + 1;
@@ -255,40 +365,40 @@ export default function NewPlan() {
     // Clear localStorage
     localStorage.removeItem(STORAGE_KEY);
 
-    // Reset to initial state
+    const newDayId = Date.now().toString();
+    const today = new Date();
+
+    // Reset to completely empty state
     setExercises([
       {
-        id: "1",
-        day_id: "1",
+        id: Date.now().toString() + "_ex",
+        day_id: newDayId,
         stage_id: "",
-        stage_name: "Activación",
-        exercise_name: "Plancha Lateral + Remo",
-        series: 3,
-        reps: "30s",
-        intensity: 6,
-        pause: "20s",
-        notes: "Flexibilidad estática y dinámica",
+        stage_name: "",
+        exercise_name: "",
+        series: 0,
+        reps: "",
+        intensity: 0,
+        pause: "",
+        notes: "",
         order: 0,
       },
     ]);
-    setDays([{ id: "1", number: 1, name: "Día 1" }]);
-    setActiveDay("1");
-    setStartDate(new Date(2026, 1, 18));
-    setEndDate(new Date(2026, 1, 25));
-    setPlanTitle("Nuevo Plan: Hipertrofia Fase 1");
+    setDays([{ id: newDayId, number: 1, name: "Día 1" }]);
+    setActiveDay(newDayId);
+    setStartDate(today);
+    setEndDate(today);
+    setPlanTitle("Nuevo Plan: [Sin título]");
+    setSavedPlanId(null);
 
-    toast.success("Borrador limpiado");
+    toast.success("Borrador limpiado — nuevo plan en blanco");
   };
 
-  const handleSaveToLibrary = async () => {
-    // Validation
-    if (!planTitle.trim()) {
-      toast.error("El plan debe tener un título");
-      return;
-    }
-
-    if (exercises.length === 0) {
-      toast.error("El plan debe tener al menos un ejercicio");
+  const handleOpenSaveModal = () => {
+    // Validation before opening modal
+    const exercisesWithContent = exercises.filter((ex) => ex.exercise_name.trim());
+    if (exercisesWithContent.length === 0) {
+      toast.error("El plan debe tener al menos un ejercicio con nombre");
       return;
     }
 
@@ -297,27 +407,51 @@ export default function NewPlan() {
       return;
     }
 
-    // Show loading toast
-    const loadingToast = toast.loading("Guardando plan en biblioteca...");
+    setIsSaveModalOpen(true);
+  };
 
-    const result = await savePlan({
-      title: planTitle,
-      description: undefined,
-      startDate,
-      endDate,
-      days,
-      exercises,
-      isTemplate: true, // Save as template in library
-    });
+  const handleSaveToLibrary = async (formData: SavePlanFormData) => {
+    try {
+      setIsSaving(true);
 
-    toast.dismiss(loadingToast);
+      const planPayload = {
+        title: formData.name,
+        description: formData.description || undefined,
+        startDate,
+        endDate,
+        days,
+        exercises: exercises.filter((ex) => ex.exercise_name.trim()),
+        isTemplate: true,
+        durationWeeks: formData.durationWeeks,
+        daysPerWeek: formData.frequencyPerWeek,
+      };
 
-    if (result.success) {
-      toast.success("Plan guardado exitosamente en biblioteca");
-      // Optional: Clear draft after successful save
-      // handleClearDraft();
-    } else {
-      toast.error(`Error al guardar: ${result.error}`);
+      const result = isEditMode && planId
+        ? await updatePlan(planId, planPayload)
+        : await savePlan(planPayload);
+
+      if (result.success) {
+        setSavedPlanId(result.planId!);
+        toast.success(
+          isEditMode ? "Plan actualizado" : "Plan guardado en biblioteca",
+          {
+            description: isEditMode
+              ? `"${formData.name}" actualizado correctamente`
+              : `"${formData.name}" disponible en Biblioteca > Planes y Rutinas`,
+          },
+        );
+        setIsSaveModalOpen(false);
+        if (isEditMode) {
+          navigate("/biblioteca");
+        }
+      } else {
+        toast.error(`Error al guardar: ${result.error}`);
+      }
+    } catch (error) {
+      console.error("Error saving plan:", error);
+      toast.error("Error inesperado al guardar el plan");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -400,10 +534,18 @@ export default function NewPlan() {
                   chevron_right
                 </span>
                 <span className="text-gray-600 dark:text-gray-300">
-                  Nuevo Plan
+                  {isEditMode ? "Editar Plan" : "Nuevo Plan"}
                 </span>
               </div>
-              {saveStatus && (
+              {planLoading && (
+                <div className="flex items-center gap-1.5 text-[10px] text-primary ml-2">
+                  <span className="material-symbols-outlined text-[14px] animate-spin">
+                    progress_activity
+                  </span>
+                  <span>Cargando plan...</span>
+                </div>
+              )}
+              {saveStatus && !planLoading && (
                 <div className="flex items-center gap-1.5 text-[10px] text-gray-500 dark:text-gray-400 ml-2 transition-opacity">
                   {saveStatus === "saving" ? (
                     <>
@@ -426,24 +568,41 @@ export default function NewPlan() {
               )}
             </div>
             <div className="flex gap-3">
+              {!isEditMode && (
+                <button
+                  onClick={handleClearDraft}
+                  className="flex items-center justify-center rounded-lg h-9 px-4 bg-white border border-gray-300 text-gray-600 hover:bg-red-50 hover:border-red-300 hover:text-red-600 font-bold transition-colors text-sm shadow-sm"
+                  title="Limpiar borrador y comenzar nuevo plan"
+                >
+                  <span className="material-symbols-outlined text-lg mr-2">
+                    refresh
+                  </span>
+                  Nuevo Borrador
+                </button>
+              )}
+              {isEditMode && (
+                <button
+                  onClick={() => navigate('/biblioteca')}
+                  className="flex items-center justify-center rounded-lg h-9 px-4 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 font-bold transition-colors text-sm shadow-sm"
+                >
+                  <span className="material-symbols-outlined text-lg mr-2">
+                    arrow_back
+                  </span>
+                  Volver a Biblioteca
+                </button>
+              )}
               <button
-                onClick={handleClearDraft}
-                className="flex items-center justify-center rounded-lg h-9 px-4 bg-white border border-gray-300 text-gray-600 hover:bg-red-50 hover:border-red-300 hover:text-red-600 font-bold transition-colors text-sm shadow-sm"
-                title="Limpiar borrador y comenzar nuevo plan"
+                onClick={handleOpenSaveModal}
+                className={`flex items-center justify-center rounded-lg h-9 px-5 font-bold transition-colors text-sm shadow-sm ${
+                  isEditMode
+                    ? 'bg-primary text-white hover:bg-primary/90'
+                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                }`}
               >
                 <span className="material-symbols-outlined text-lg mr-2">
-                  refresh
+                  {isEditMode ? 'sync' : 'save'}
                 </span>
-                Nuevo Borrador
-              </button>
-              <button
-                onClick={handleSaveToLibrary}
-                className="flex items-center justify-center rounded-lg h-9 px-5 bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 font-bold transition-colors text-sm shadow-sm"
-              >
-                <span className="material-symbols-outlined text-lg mr-2">
-                  save
-                </span>
-                Guardar en Biblioteca
+                {isEditMode ? 'Actualizar Plan' : 'Guardar en Biblioteca'}
               </button>
               <button
                 onClick={() => setIsAssignModalOpen(true)}
@@ -456,7 +615,7 @@ export default function NewPlan() {
               </button>
             </div>
           </div>
-          <div className="flex items-center gap-2 mb-4">
+          <div className="flex items-center gap-2 mb-2">
             <input
               className="w-full max-w-2xl bg-transparent text-2xl font-bold leading-tight border-none p-0 focus:ring-0 text-[#101418] dark:text-white placeholder-gray-400 hover:bg-gray-50 rounded px-1 -ml-1 transition-colors"
               type="text"
@@ -468,6 +627,21 @@ export default function NewPlan() {
               edit
             </span>
           </div>
+          {isEditMode && (
+            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium mb-2 ${
+              editAssignedCount > 0
+                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
+                : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
+            }`}>
+              <span className="material-symbols-outlined text-[16px]">
+                {editAssignedCount > 0 ? 'warning' : 'edit_note'}
+              </span>
+              {editAssignedCount > 0
+                ? `Editando plan con ${editAssignedCount} ${editAssignedCount === 1 ? 'alumno asignado' : 'alumnos asignados'}. Los cambios se reflejarán en sus planes activos.`
+                : 'Modo edición — los cambios se guardarán al hacer click en "Actualizar Plan".'
+              }
+            </div>
+          )}
         </div>
         <div className="px-8 flex flex-col gap-4 pb-0">
           <div className="flex items-center justify-between border-t border-gray-100 dark:border-gray-800 pt-4">
@@ -598,9 +772,18 @@ export default function NewPlan() {
                           onChange={(e) =>
                             handleStageChange(exercise.id, e.target.value)
                           }
-                          className="w-full text-[10px] font-bold uppercase tracking-wide text-primary bg-white border border-blue-200 dark:border-blue-900 rounded py-1.5 pl-2 pr-6 focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer appearance-none shadow-sm"
+                          className={`w-full text-[10px] font-bold uppercase tracking-wide bg-white border rounded py-1.5 pl-2 pr-6 focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer appearance-none shadow-sm ${
+                            exercise.stage_id
+                              ? "text-primary border-blue-200 dark:border-blue-900"
+                              : "text-gray-400 border-gray-200 dark:border-gray-600"
+                          }`}
                           disabled={stagesLoading}
                         >
+                          {!exercise.stage_id && (
+                            <option value="" disabled>
+                              Seleccionar etapa
+                            </option>
+                          )}
                           {stages.map((stage) => (
                             <option key={stage.id} value={stage.id}>
                               {stage.name}
@@ -784,6 +967,23 @@ export default function NewPlan() {
         onClose={() => setIsAssignModalOpen(false)}
         onAssign={handleAssignPlan}
         isSubmitting={isAssigning}
+        planTitle={planTitle}
+        planStartDate={startDate}
+        planEndDate={endDate}
+      />
+
+      {/* Save Plan Modal */}
+      <SavePlanModal
+        isOpen={isSaveModalOpen}
+        onClose={() => setIsSaveModalOpen(false)}
+        onSave={handleSaveToLibrary}
+        isSubmitting={isSaving}
+        initialData={{
+          title: planTitle,
+          daysCount: days.length,
+          startDate,
+          endDate,
+        }}
       />
     </div>
   );

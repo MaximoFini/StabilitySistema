@@ -3,12 +3,14 @@ import { useNavigate } from "react-router-dom"
 import { toast } from "sonner"
 import { useTrainingPlans } from "../../hooks/useTrainingPlans"
 import PlanPreview from "./PlanPreview"
+import AssignedStudentsModal from "../../components/AssignedStudentsModal"
 
 export default function RoutineList({ searchQuery }: { searchQuery: string }) {
     const navigate = useNavigate()
     const { plans, loading, deletePlan } = useTrainingPlans()
     const [openMenuId, setOpenMenuId] = useState<string | null>(null)
     const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null)
+    const [assignedModalPlan, setAssignedModalPlan] = useState<{ id: string; title: string } | null>(null)
 
     // Filter Logic
     const filteredPlans = plans.filter(plan => 
@@ -20,20 +22,20 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
         setSelectedPlanId(id)
     }
 
-    const handleMenuAction = async (e: React.MouseEvent, action: string, planId: string) => {
+    const handleMenuAction = async (e: React.MouseEvent, action: string, plan: { id: string; title: string }) => {
         e.stopPropagation()
         setOpenMenuId(null)
         
         switch(action) {
             case 'edit':
-                navigate(`/planificador?planId=${planId}&mode=edit`)
+                navigate(`/planificador?planId=${plan.id}&mode=edit`)
                 break
             case 'duplicate':
                 toast.info("Función de duplicar próximamente...")
                 break
             case 'delete':
                 if (window.confirm("¿Seguro que quieres eliminar este plan?")) {
-                    const result = await deletePlan(planId)
+                    const result = await deletePlan(plan.id)
                     if (result.success) {
                         toast.success("Plan eliminado")
                     } else {
@@ -42,9 +44,17 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
                 }
                 break
             case 'assign':
-                toast.info("Abriendo selector de alumnos...")
+                navigate(`/planificador?planId=${plan.id}&mode=edit&openAssign=true`)
+                break
+            case 'viewStudents':
+                setAssignedModalPlan(plan)
                 break
         }
+    }
+
+    const handleAvatarClick = (e: React.MouseEvent, plan: { id: string; title: string }) => {
+        e.stopPropagation()
+        setAssignedModalPlan(plan)
     }
 
     // Show loading state
@@ -103,11 +113,27 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
                             {/* Custom Dropdown */}
                             {openMenuId === plan.id && (
                                 <div className="absolute right-0 top-8 z-10 w-48 bg-white dark:bg-slate-800 rounded-md shadow-lg border border-slate-200 dark:border-slate-700 py-1">
-                                    <button onClick={(e) => handleMenuAction(e, 'edit', plan.id)} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">Editar plan</button>
-                                    <button onClick={(e) => handleMenuAction(e, 'duplicate', plan.id)} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">Duplicar plan</button>
-                                    <button onClick={(e) => handleMenuAction(e, 'assign', plan.id)} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700">Asignar a alumno</button>
+                                    <button onClick={(e) => handleMenuAction(e, 'edit', plan)} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[16px]">edit</span>
+                                        Editar plan
+                                    </button>
+                                    <button onClick={(e) => handleMenuAction(e, 'duplicate', plan)} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[16px]">content_copy</span>
+                                        Duplicar plan
+                                    </button>
+                                    <button onClick={(e) => handleMenuAction(e, 'viewStudents', plan)} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[16px]">group</span>
+                                        Ver alumnos asignados
+                                    </button>
+                                    <button onClick={(e) => handleMenuAction(e, 'assign', plan)} className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[16px]">person_add</span>
+                                        Asignar a alumno
+                                    </button>
                                     <div className="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
-                                    <button onClick={(e) => handleMenuAction(e, 'delete', plan.id)} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20">Eliminar plan</button>
+                                    <button onClick={(e) => handleMenuAction(e, 'delete', plan)} className="w-full text-left px-4 py-2 text-sm text-red-600 hover:bg-red-50 dark:hover:bg-red-900/20 flex items-center gap-2">
+                                        <span className="material-symbols-outlined text-[16px]">delete</span>
+                                        Eliminar plan
+                                    </button>
                                 </div>
                             )}
                         </div>
@@ -116,7 +142,7 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
                     <div className="flex gap-2 mb-6 flex-wrap">
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 text-xs font-medium border border-blue-100 dark:border-blue-800">
                             <span className="material-symbols-outlined text-[14px]">schedule</span>
-                            {plan.total_weeks} Semanas
+                            {plan.total_weeks} {plan.total_weeks === 1 ? 'Semana' : 'Semanas'}
                         </span>
                         <span className="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-md bg-slate-100 dark:bg-slate-700/50 text-slate-600 dark:text-slate-300 text-xs font-medium border border-slate-200 dark:border-slate-600">
                             <span className="material-symbols-outlined text-[14px]">calendar_today</span>
@@ -134,21 +160,31 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
                         <span className="text-xs text-slate-500 dark:text-slate-400 font-medium">Asignado a:</span>
                         <div className="flex items-center gap-2">
                              {plan.assignedCount === 0 ? (
-                                <div className="flex items-center text-slate-400">
-                                    <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-slate-50 dark:bg-slate-700 flex items-center justify-center">
+                                <button
+                                    onClick={(e) => {
+                                        e.stopPropagation()
+                                        navigate(`/planificador?planId=${plan.id}&mode=edit&openAssign=true`)
+                                    }}
+                                    className="flex items-center gap-1.5 text-primary hover:text-primary/80 transition-colors"
+                                >
+                                    <div className="w-8 h-8 rounded-full border-2 border-dashed border-primary/30 flex items-center justify-center">
                                         <span className="material-symbols-outlined text-[16px]">person_add</span>
                                     </div>
-                                    <span className="ml-2 text-xs">Sin asignar</span>
-                                </div>
+                                    <span className="text-xs font-medium">Asignar</span>
+                                </button>
                              ) : (
-                                <div className="flex items-center gap-2">
+                                <button
+                                    onClick={(e) => handleAvatarClick(e, plan)}
+                                    className="flex items-center gap-2 hover:opacity-80 transition-opacity"
+                                    title="Ver alumnos asignados"
+                                >
                                     <div className="w-8 h-8 rounded-full border-2 border-white dark:border-slate-800 bg-primary flex items-center justify-center">
                                         <span className="material-symbols-outlined text-[16px] text-white">group</span>
                                     </div>
                                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                                         {plan.assignedCount} {plan.assignedCount === 1 ? 'alumno' : 'alumnos'}
                                     </span>
-                                </div>
+                                </button>
                              )}
                         </div>
                     </div>
@@ -161,6 +197,16 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
             <PlanPreview 
                 planId={selectedPlanId} 
                 onClose={() => setSelectedPlanId(null)} 
+            />
+        )}
+
+        {/* Assigned Students Modal */}
+        {assignedModalPlan && (
+            <AssignedStudentsModal
+                isOpen={true}
+                onClose={() => setAssignedModalPlan(null)}
+                planId={assignedModalPlan.id}
+                planTitle={assignedModalPlan.title}
             />
         )}
         </>
