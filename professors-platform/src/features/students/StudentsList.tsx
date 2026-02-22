@@ -5,20 +5,32 @@ export default function StudentsList() {
 
   return (
     <div className="flex flex-col h-full bg-background-light dark:bg-background-dark relative">
-            <header className="h-20 bg-white dark:bg-card-dark border-b border-gray-100 dark:border-gray-800 hidden md:flex items-center justify-between px-8 z-10 flex-shrink-0">
-                <h2 className="text-xl font-bold text-gray-900 dark:text-white">Inicio</h2>
-                <div className="flex items-center gap-6">
-                    <div className="h-10 w-10 rounded-full bg-gray-200 bg-cover bg-center border-2 border-white dark:border-gray-700 shadow-sm cursor-pointer hover:ring-2 ring-primary ring-offset-2 transition-all" data-alt="Coach profile picture" style={{ backgroundImage: "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAqcu8MmoySDYMncJpwpcC79mTV-KGJvTEZOAB1KXSGUKBzavr03LhdG6lQYsoHR9pTlFNj5Xgw29yhdTNnh0ikoerlh8e4j9KugKm7kiKqrEauH7VdWFt6z-I-JNXmXW79cQV6AjyjVIXARiAdNgmRsJ50CnUc3L-dTfaXpPGMmTxeisQ1Y9P7j0olzGy0LlhIwYXHMPqOIl9MzrncoeOEFxTlDYeJtLSbMd7cWXemVoE8bbpct1sxWc_04HG9xANh6z0Ee0224SP5')" }}>
-                    </div>
-                </div>
-            </header>
+      <header className="h-20 bg-white dark:bg-card-dark border-b border-gray-100 dark:border-gray-800 hidden md:flex items-center justify-between px-8 z-10 flex-shrink-0">
+        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
+          Inicio
+        </h2>
+        <div className="flex items-center gap-6">
+          <div
+            className="h-10 w-10 rounded-full bg-gray-200 bg-cover bg-center border-2 border-white dark:border-gray-700 shadow-sm cursor-pointer hover:ring-2 ring-primary ring-offset-2 transition-all"
+            data-alt="Coach profile picture"
+            style={{
+              backgroundImage:
+                "url('https://lh3.googleusercontent.com/aida-public/AB6AXuAqcu8MmoySDYMncJpwpcC79mTV-KGJvTEZOAB1KXSGUKBzavr03LhdG6lQYsoHR9pTlFNj5Xgw29yhdTNnh0ikoerlh8e4j9KugKm7kiKqrEauH7VdWFt6z-I-JNXmXW79cQV6AjyjVIXARiAdNgmRsJ50CnUc3L-dTfaXpPGMmTxeisQ1Y9P7j0olzGy0LlhIwYXHMPqOIl9MzrncoeOEFxTlDYeJtLSbMd7cWXemVoE8bbpct1sxWc_04HG9xANh6z0Ee0224SP5')",
+            }}
+          ></div>
+        </div>
+      </header>
       <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-8 lg:p-12">
         <div className="max-w-7xl mx-auto flex flex-col gap-8">
           <div className="flex flex-col gap-1">
             <div className="flex items-center justify-between">
-              <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">Mis Alumnos</h2>
+              <h2 className="text-3xl font-bold text-gray-900 dark:text-white tracking-tight">
+                Mis Alumnos
+              </h2>
             </div>
-            <p className="text-secondary text-sm md:text-base">Gestiona los programas de entrenamiento y monitorea el progreso.</p>
+            <p className="text-secondary text-sm md:text-base">
+              Gestiona los programas de entrenamiento y monitorea el progreso.
+            </p>
           </div>
 
           {/* Error State */}
@@ -38,7 +50,9 @@ export default function StudentsList() {
             <div className="flex items-center justify-center py-12">
               <div className="text-center">
                 <div className="inline-block animate-spin rounded-full h-8 w-8 border-b-2 border-primary mb-4"></div>
-                <p className="text-slate-600 dark:text-slate-400">Cargando alumnos...</p>
+                <p className="text-slate-600 dark:text-slate-400">
+                  Cargando alumnos...
+                </p>
               </div>
             </div>
           ) : students.length === 0 ? (
@@ -52,7 +66,8 @@ export default function StudentsList() {
                   No hay alumnos registrados
                 </p>
                 <p className="text-sm text-slate-500 dark:text-slate-500">
-                  Los alumnos aparecerán aquí una vez que se registren en el sistema
+                  Los alumnos aparecerán aquí una vez que se registren en el
+                  sistema
                 </p>
               </div>
             </div>
@@ -74,13 +89,17 @@ export default function StudentsList() {
                       }}
                     />
                   </div>
-                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">{student.fullName}</h3>
-                  <p className="text-sm text-secondary font-medium mb-6 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">
+                  <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-1">
+                    {student.fullName}
+                  </h3>
+                  <p className="text-sm text-gray-700 dark:text-gray-200 font-medium mb-6 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">
                     {getStudentTag(student.trainingLevel, student.primaryGoal)}
                   </p>
                   <button className="w-full mt-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-primary dark:text-blue-400 text-sm font-semibold py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 group-hover:border-blue-200">
                     Ver Perfil
-                    <span className="material-symbols-outlined text-[18px]">chevron_right</span>
+                    <span className="material-symbols-outlined text-[18px]">
+                      chevron_right
+                    </span>
                   </button>
                 </div>
               ))}

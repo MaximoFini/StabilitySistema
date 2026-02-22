@@ -227,7 +227,46 @@ export const useAuthStore = create<AuthState>()(
               password,
             });
 
-            if (error) throw error;
+            if (error) {
+              console.error("[Login Error]", {
+                message: error.message,
+                status: error.status,
+                code: error.code,
+              });
+
+              // Detectar tipo de error específico
+              let errorMessage = "Credenciales inválidas";
+
+              if (
+                error.message
+                  .toLowerCase()
+                  .includes("invalid login credentials") ||
+                error.message
+                  .toLowerCase()
+                  .includes("invalid email or password")
+              ) {
+                // Supabase retorna este mensaje genérico para ambos casos
+                // Por ahora lo dejamos así, pero técnicamente no distingue entre email no existe vs contraseña incorrecta
+                errorMessage = "Email o contraseña incorrectos";
+              } else if (
+                error.message.toLowerCase().includes("user not found")
+              ) {
+                errorMessage =
+                  "Este email no está registrado en nuestro sistema";
+              } else if (
+                error.message.toLowerCase().includes("email not confirmed")
+              ) {
+                errorMessage =
+                  "Debes confirmar tu email antes de iniciar sesión";
+              } else if (
+                error.message.toLowerCase().includes("too many login attempts")
+              ) {
+                errorMessage =
+                  "Has intentado login demasiadas veces. Intenta más tarde";
+              }
+
+              throw new Error(errorMessage);
+            }
 
             if (data.user) {
               const professor = await userToProfessor(data.user);
@@ -418,50 +457,113 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true, error: null });
 
           try {
+            console.log(
+              "[completeStudentProfile] 🚀 INICIANDO registro de perfil",
+            );
+
             const {
               data: { user },
             } = await supabase.auth.getUser();
-            if (!user) throw new Error("Usuario no autenticado");
+
+            if (!user) {
+              console.error(
+                "[completeStudentProfile] ❌ Usuario no autenticado",
+              );
+              throw new Error("Usuario no autenticado");
+            }
+
+            console.log(
+              "[completeStudentProfile] ✅ Usuario autenticado:",
+              user.id,
+            );
 
             const professor = get().professor;
             if (!professor || professor.role !== "student") {
+              console.error(
+                "[completeStudentProfile] ❌ Rol inválido:",
+                professor?.role,
+              );
               throw new Error("Solo los alumnos pueden completar este perfil");
             }
+
+            console.log("[completeStudentProfile] ✅ Rol verificado: student");
 
             // Upload profile image if provided
             let profileImageUrl: string | null = null;
             if (data.profileImage) {
-              profileImageUrl = await uploadProfileImage(
-                user.id,
-                data.profileImage,
+              console.log(
+                "[completeStudentProfile] 📤 Subiendo imagen de perfil...",
+              );
+              try {
+                profileImageUrl = await uploadProfileImage(
+                  user.id,
+                  data.profileImage,
+                );
+                console.log(
+                  "[completeStudentProfile] ✅ Imagen subida exitosamente:",
+                  profileImageUrl,
+                );
+              } catch (uploadError) {
+                console.error(
+                  "[completeStudentProfile] ⚠️ Error al subir imagen (continuando sin imagen):",
+                  uploadError,
+                );
+                // Continuar sin imagen en lugar de fallar completamente
+                profileImageUrl = null;
+              }
+            } else {
+              console.log("[completeStudentProfile] ℹ️ Sin imagen de perfil");
+            }
+
+            // Prepare data for insertion
+            const insertData = {
+              id: user.id,
+              phone: data.phone,
+              instagram: data.instagram || null,
+              profile_image_url: profileImageUrl,
+              birth_date: data.birthDate,
+              gender: data.gender,
+              height_cm: data.height,
+              weight_kg: data.weight,
+              activity_level: data.activityLevel,
+              primary_goal: data.primaryGoal,
+              training_experience: data.trainingExperience,
+              sports: data.sports,
+              previous_injuries: data.previousInjuries || null,
+              medical_conditions: data.medicalConditions || null,
+            };
+
+            console.log(
+              "[completeStudentProfile] 📝 Datos a insertar:",
+              insertData,
+            );
+
+            // Insert student profile data
+            console.log(
+              "[completeStudentProfile] 💾 Insertando en student_profiles...",
+            );
+            const { data: insertedData, error: profileError } = await supabase
+              .from("student_profiles")
+              .insert(insertData)
+              .select();
+
+            if (profileError) {
+              console.error("[completeStudentProfile] ❌ ERROR EN INSERT:", {
+                error: profileError,
+                message: profileError.message,
+                details: profileError.details,
+                hint: profileError.hint,
+                code: profileError.code,
+              });
+              throw new Error(
+                `Error al guardar perfil: ${profileError.message}`,
               );
             }
 
-            // Calculate BMI
-            const bmi = data.weight / Math.pow(data.height / 100, 2);
-
-            // Insert student profile data
-            const { error: profileError } = await supabase
-              .from("student_profiles")
-              .insert({
-                id: user.id,
-                phone: data.phone,
-                instagram: data.instagram || null,
-                profile_image_url: profileImageUrl,
-                birth_date: data.birthDate,
-                gender: data.gender,
-                height_cm: data.height,
-                weight_kg: data.weight,
-                // bmi is auto-calculated by database
-                activity_level: data.activityLevel,
-                primary_goal: data.primaryGoal,
-                training_experience: data.trainingExperience,
-                sports: data.sports,
-                previous_injuries: data.previousInjuries || null,
-                medical_conditions: data.medicalConditions || null,
-              });
-
-            if (profileError) throw profileError;
+            console.log(
+              "[completeStudentProfile] ✅ Datos insertados exitosamente:",
+              insertedData,
+            );
 
             // Update professor state with new data
             set({
@@ -470,18 +572,31 @@ export const useAuthStore = create<AuthState>()(
                 profileImage: profileImageUrl || undefined,
                 hasCompletedProfile: true,
               },
-              isLoading: false,
             });
 
-            console.log("Perfil de alumno completado exitosamente");
+            console.log(
+              "[completeStudentProfile] 🎉 PERFIL COMPLETADO EXITOSAMENTE",
+            );
           } catch (error) {
+            console.error("[completeStudentProfile] ❌ ERROR CRÍTICO:", error);
+            console.error(
+              "[completeStudentProfile] Tipo de error:",
+              typeof error,
+            );
+            console.error(
+              "[completeStudentProfile] Error completo:",
+              JSON.stringify(error, null, 2),
+            );
+
             const errorMessage =
               error instanceof Error
                 ? error.message
                 : "Error al completar el perfil";
-            set({ error: errorMessage, isLoading: false });
-            console.error("Error completing student profile:", error);
+            set({ error: errorMessage });
             throw error;
+          } finally {
+            // Siempre resetear isLoading, incluso si hay error
+            set({ isLoading: false });
           }
         },
 
