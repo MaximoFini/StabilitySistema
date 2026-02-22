@@ -18,6 +18,8 @@ interface SavePlanData {
   days: Day[];
   exercises: PlanExercise[];
   isTemplate: boolean;
+  durationWeeks?: number;
+  daysPerWeek?: number;
 }
 
 export interface TrainingPlanSummary {
@@ -114,8 +116,10 @@ export function useTrainingPlans() {
           (planData.endDate.getTime() - planData.startDate.getTime()) /
             msPerDay,
         ) + 1;
-      const totalWeeks = Math.ceil(totalDaysInPeriod / 7);
-      const daysPerWeek = Math.ceil(totalDays / totalWeeks);
+      const calculatedWeeks = Math.ceil(totalDaysInPeriod / 7);
+      const totalWeeks = planData.durationWeeks ?? calculatedWeeks;
+      const daysPerWeek = planData.daysPerWeek ?? Math.ceil(totalDays / totalWeeks);
+      console.log('[savePlan] duration_weeks:', totalWeeks, 'days_per_week:', daysPerWeek, '(user provided:', !!planData.durationWeeks, ')');
 
       // 1. Insert the main training plan
       const { data: insertedPlan, error: planError } = await supabase
@@ -226,8 +230,10 @@ export function useTrainingPlans() {
           (planData.endDate.getTime() - planData.startDate.getTime()) /
             msPerDay,
         ) + 1;
-      const totalWeeks = Math.ceil(totalDaysInPeriod / 7);
-      const daysPerWeek = Math.ceil(totalDays / totalWeeks);
+      const calculatedWeeks = Math.ceil(totalDaysInPeriod / 7);
+      const totalWeeks = planData.durationWeeks ?? calculatedWeeks;
+      const daysPerWeek = planData.daysPerWeek ?? Math.ceil(totalDays / totalWeeks);
+      console.log('[updatePlan] duration_weeks:', totalWeeks, 'days_per_week:', daysPerWeek, '(user provided:', !!planData.durationWeeks, ')');
 
       // 1. Update the main training plan record
       const { error: planError } = await supabase
@@ -499,6 +505,104 @@ export function useTrainingPlans() {
     }
   };
 
+  const getAssignedStudents = async (planIdToFetch: string) => {
+    console.log('[getAssignedStudents] fetching for planId:', planIdToFetch);
+    try {
+      // Step 1: fetch assignments only (no JOIN, avoids FK name issues)
+      const { data: assignments, error: assignError } = await supabase
+        .from('training_plan_assignments')
+        .select('id, student_id, start_date, end_date, status, current_day_number, completed_days, created_at')
+        .eq('plan_id', planIdToFetch);
+
+      console.log('[getAssignedStudents] assignments:', assignments, 'error:', assignError);
+
+      if (assignError) {
+        console.error('[getAssignedStudents] DB error:', assignError.message, assignError.details, assignError.hint);
+        throw new Error(`Error al leer asignaciones: ${assignError.message}`);
+      }
+
+      if (!assignments || assignments.length === 0) {
+        console.log('[getAssignedStudents] no assignments found');
+        return { success: true, students: [] };
+      }
+
+      // Step 2: fetch plan total_days
+      const { data: planRow } = await supabase
+        .from('training_plans')
+        .select('total_days')
+        .eq('id', planIdToFetch)
+        .single();
+      const totalDays = planRow?.total_days || 0;
+
+      // Step 3: fetch profiles separately (avoids FK constraints)
+      const studentIds = assignments.map((a) => a.student_id);
+      console.log('[getAssignedStudents] fetching profiles for:', studentIds);
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('id, full_name, email, avatar_url')
+        .in('id', studentIds);
+
+      console.log('[getAssignedStudents] profiles:', profiles, 'error:', profilesError);
+
+      if (profilesError) {
+        // Non-fatal: show students without profile data
+        console.warn('[getAssignedStudents] profiles error (non-fatal):', profilesError.message);
+      }
+
+      const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
+
+      return {
+        success: true,
+        students: assignments.map((row) => {
+          const profile = profileMap.get(row.student_id);
+          return {
+            assignmentId: row.id,
+            studentId: row.student_id,
+            fullName: profile?.full_name || 'Sin nombre',
+            email: profile?.email || 'Sin email',
+            avatarUrl: profile?.avatar_url || null,
+            startDate: row.start_date,
+            endDate: row.end_date,
+            status: row.status || 'active',
+            currentDay: row.current_day_number || 1,
+            completedDays: row.completed_days || 0,
+            totalDays,
+            assignedAt: row.created_at,
+          };
+        }),
+      };
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err);
+      console.error('[getAssignedStudents] caught error:', msg);
+      return {
+        success: false,
+        students: [],
+        error: msg,
+      };
+    }
+  };
+
+  const unassignStudent = async (assignmentId: string) => {
+    try {
+      const { error: deleteError } = await supabase
+        .from('training_plan_assignments')
+        .delete()
+        .eq('id', assignmentId);
+
+      if (deleteError) throw deleteError;
+
+      await loadPlans(); // Refresh counts
+      return { success: true };
+    } catch (err) {
+      console.error('Error unassigning student:', err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : 'Error desconocido',
+      };
+    }
+  };
+
   return {
     plans,
     loading,
@@ -507,6 +611,8 @@ export function useTrainingPlans() {
     updatePlan,
     deletePlan,
     assignPlanToStudents,
+    getAssignedStudents,
+    unassignStudent,
     reload: loadPlans,
   };
 }
@@ -537,7 +643,8 @@ export function useTrainingPlanDetail(planId: string | null) {
             training_plan_days (
               *,
               training_plan_exercises (*)
-            )
+            ),
+            training_plan_assignments (count)
           `,
           )
           .eq("id", planId)
