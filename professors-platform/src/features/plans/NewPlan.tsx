@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams, useNavigate } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useExerciseStages } from "../../hooks/useExerciseStages";
 import {
   useTrainingPlans,
@@ -49,9 +49,12 @@ const saveToStorage = (data: any) => {
 
 export default function NewPlan() {
   const { stages, loading: stagesLoading, addStage } = useExerciseStages();
-  const { savePlan, updatePlan, assignPlanToStudents } = useTrainingPlans();
+  const {
+    savePlan,
+    updatePlan: _updatePlan,
+    assignPlanToStudents,
+  } = useTrainingPlans();
   const [searchParams] = useSearchParams();
-  const navigate = useNavigate();
 
   // Detect edit mode from URL params
   const planId = searchParams.get("planId");
@@ -59,50 +62,74 @@ export default function NewPlan() {
   const shouldOpenAssign = searchParams.get("openAssign") === "true";
 
   // Load existing plan data when in edit mode
-  const { plan: loadedPlan, loading: planLoading } =
+  const { plan: _loadedPlan, loading: _planLoading } =
     useTrainingPlanDetail(planId);
-  const planLoadedRef = useRef(false);
 
-  // Load initial state from localStorage or use defaults (only for new plans)
-  const savedData = isEditMode ? null : loadFromStorage();
-
-  const [exercises, setExercises] = useState<PlanExercise[]>(
-    savedData?.exercises || [
-      {
-        id: "1",
-        day_id: "1",
-        stage_id: "",
-        stage_name: "Activación",
-        exercise_name: "Plancha Lateral + Remo",
-        series: 3,
-        reps: "30s",
-        intensity: 6,
-        pause: "20s",
-        notes: "Flexibilidad estática y dinámica",
-        order: 0,
-      },
-    ],
+  // Carga única desde localStorage usando useRef para evitar llamadas repetidas
+  const initialData = useRef<ReturnType<typeof loadFromStorage> | null>(
+    isEditMode ? null : loadFromStorage(),
   );
+
+  const [exercises, setExercises] = useState<PlanExercise[]>(() => {
+    if (isEditMode)
+      return [
+        {
+          id: "1",
+          day_id: "1",
+          stage_id: "",
+          stage_name: "Activación",
+          exercise_name: "Plancha Lateral + Remo",
+          series: 3,
+          reps: "30s",
+          intensity: 6,
+          pause: "20s",
+          notes: "Flexibilidad estática y dinámica",
+          order: 0,
+        },
+      ];
+    return (
+      initialData.current?.exercises || [
+        {
+          id: "1",
+          day_id: "1",
+          stage_id: "",
+          stage_name: "Activación",
+          exercise_name: "Plancha Lateral + Remo",
+          series: 3,
+          reps: "30s",
+          intensity: 6,
+          pause: "20s",
+          notes: "Flexibilidad estática y dinámica",
+          order: 0,
+        },
+      ]
+    );
+  });
   const [isAddStageModalOpen, setIsAddStageModalOpen] = useState(false);
 
   // Date state for plan duration
-  const [startDate, setStartDate] = useState<Date>(
-    savedData?.startDate || new Date(2026, 1, 18),
-  );
-  const [endDate, setEndDate] = useState<Date>(
-    savedData?.endDate || new Date(2026, 1, 25),
-  );
+  const [startDate, setStartDate] = useState<Date>(() => {
+    if (isEditMode) return new Date(2026, 1, 18);
+    return initialData.current?.startDate || new Date(2026, 1, 18);
+  });
+  const [endDate, setEndDate] = useState<Date>(() => {
+    if (isEditMode) return new Date(2026, 1, 25);
+    return initialData.current?.endDate || new Date(2026, 1, 25);
+  });
 
   // Day management state
-  const [days, setDays] = useState<Day[]>(
-    savedData?.days || [{ id: "1", number: 1, name: "Día 1" }],
-  );
-  const [activeDay, setActiveDay] = useState<string>(
-    savedData?.activeDay || "1",
-  );
-  const [planTitle, setPlanTitle] = useState<string>(
-    savedData?.planTitle || "Nuevo Plan: Hipertrofia Fase 1",
-  );
+  const [days, setDays] = useState<Day[]>(() => {
+    if (isEditMode) return [{ id: "1", number: 1, name: "Día 1" }];
+    return initialData.current?.days || [{ id: "1", number: 1, name: "Día 1" }];
+  });
+  const [activeDay, setActiveDay] = useState<string>(() => {
+    if (isEditMode) return "1";
+    return initialData.current?.activeDay || "1";
+  });
+  const [planTitle, setPlanTitle] = useState<string>(() => {
+    if (isEditMode) return "Nuevo Plan: Hipertrofia Fase 1";
+    return initialData.current?.planTitle || "Nuevo Plan: Hipertrofia Fase 1";
+  });
   const [saveStatus, setSaveStatus] = useState<"saved" | "saving" | null>(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
   const [isAssigning, setIsAssigning] = useState(false);
@@ -111,6 +138,7 @@ export default function NewPlan() {
   const [isSaving, setIsSaving] = useState(false);
   const [editAssignedCount, setEditAssignedCount] = useState(0);
 
+ funcionalidades
   // Hydrate state from loaded plan (edit mode)
   useEffect(() => {
     if (!isEditMode || !loadedPlan || planLoadedRef.current) return;
@@ -212,11 +240,26 @@ export default function NewPlan() {
     saveToStorage(dataToSave);
 
     // Show "saved" status briefly
+=======
+  // Auto-save to localStorage con debounce de 1000ms
+  useEffect(() => {
+ main
     const timer = setTimeout(() => {
+      setSaveStatus("saving");
+      const dataToSave = {
+        exercises,
+        days,
+        activeDay,
+        startDate,
+        endDate,
+        planTitle,
+      };
+      saveToStorage(dataToSave);
+
       setSaveStatus("saved");
       const clearTimer = setTimeout(() => setSaveStatus(null), 2000);
       return () => clearTimeout(clearTimer);
-    }, 300);
+    }, 1000);
 
     return () => clearTimeout(timer);
   }, [exercises, days, activeDay, startDate, endDate, planTitle, isEditMode]);
