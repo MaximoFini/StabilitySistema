@@ -28,12 +28,12 @@ const WorkoutComplete = lazy(
   () => import("@/features/training/WorkoutComplete"),
 );
 const TrainingProgress = lazy(() =>
-  import("@/features/training/TrainingPlaceholders").then((m) => ({
+  import("@/features/training/TrainingProgress").then((m) => ({
     default: m.TrainingProgress,
   })),
 );
 const TrainingProfile = lazy(() =>
-  import("@/features/training/TrainingPlaceholders").then((m) => ({
+  import("@/features/training/TrainingProfile").then((m) => ({
     default: m.TrainingProfile,
   })),
 );

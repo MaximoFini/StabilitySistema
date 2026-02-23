@@ -51,7 +51,7 @@ export default function NewPlan() {
   const { stages, loading: stagesLoading, addStage } = useExerciseStages();
   const {
     savePlan,
-    updatePlan: _updatePlan,
+    updatePlan,
     assignPlanToStudents,
   } = useTrainingPlans();
   const [searchParams] = useSearchParams();
@@ -62,8 +62,11 @@ export default function NewPlan() {
   const shouldOpenAssign = searchParams.get("openAssign") === "true";
 
   // Load existing plan data when in edit mode
-  const { plan: _loadedPlan, loading: _planLoading } =
+  const { plan: loadedPlan, loading: planLoading } =
     useTrainingPlanDetail(planId);
+
+  // Track if plan has been loaded to prevent re-hydration
+  const planLoadedRef = useRef(false);
 
   // Carga única desde localStorage usando useRef para evitar llamadas repetidas
   const initialData = useRef<ReturnType<typeof loadFromStorage> | null>(
@@ -138,13 +141,12 @@ export default function NewPlan() {
   const [isSaving, setIsSaving] = useState(false);
   const [editAssignedCount, setEditAssignedCount] = useState(0);
 
- funcionalidades
   // Hydrate state from loaded plan (edit mode)
   useEffect(() => {
     if (!isEditMode || !loadedPlan || planLoadedRef.current) return;
     planLoadedRef.current = true;
 
-    console.log('[NewPlan] Hydrating plan from DB:', loadedPlan);
+    console.log("[NewPlan] Hydrating plan from DB:", loadedPlan);
 
     // Set plan metadata
     setPlanTitle(loadedPlan.title);
@@ -173,8 +175,9 @@ export default function NewPlan() {
       display_order: number;
     }
 
-    const sortedDays = [...(loadedPlan.training_plan_days || [])]
-      .sort((a: LoadedDay, b: LoadedDay) => a.display_order - b.display_order);
+    const sortedDays = [...(loadedPlan.training_plan_days || [])].sort(
+      (a: LoadedDay, b: LoadedDay) => a.display_order - b.display_order,
+    );
 
     const hydratedDays: Day[] = sortedDays.map((d: LoadedDay) => ({
       id: d.id,
@@ -184,8 +187,10 @@ export default function NewPlan() {
 
     const hydratedExercises: PlanExercise[] = [];
     for (const day of sortedDays) {
-      const dayExercises = [...(day.training_plan_exercises || [])]
-        .sort((a: LoadedExercise, b: LoadedExercise) => a.display_order - b.display_order);
+      const dayExercises = [...(day.training_plan_exercises || [])].sort(
+        (a: LoadedExercise, b: LoadedExercise) =>
+          a.display_order - b.display_order,
+      );
       for (const ex of dayExercises) {
         hydratedExercises.push({
           id: ex.id,
@@ -221,29 +226,19 @@ export default function NewPlan() {
       setIsAssignModalOpen(true);
     }
 
-    console.log('[NewPlan] Hydrated:', hydratedDays.length, 'days,', hydratedExercises.length, 'exercises');
+    console.log(
+      "[NewPlan] Hydrated:",
+      hydratedDays.length,
+      "days,",
+      hydratedExercises.length,
+      "exercises",
+    );
   }, [loadedPlan, isEditMode, shouldOpenAssign]);
 
   // Auto-save to localStorage whenever state changes (only for new plans)
   useEffect(() => {
     if (isEditMode) return; // Don't auto-save when editing existing plans
 
-    setSaveStatus("saving");
-    const dataToSave = {
-      exercises,
-      days,
-      activeDay,
-      startDate,
-      endDate,
-      planTitle,
-    };
-    saveToStorage(dataToSave);
-
-    // Show "saved" status briefly
-=======
-  // Auto-save to localStorage con debounce de 1000ms
-  useEffect(() => {
- main
     const timer = setTimeout(() => {
       setSaveStatus("saving");
       const dataToSave = {
@@ -396,7 +391,9 @@ export default function NewPlan() {
 
   const handleOpenSaveModal = () => {
     // Validation before opening modal
-    const exercisesWithContent = exercises.filter((ex) => ex.exercise_name.trim());
+    const exercisesWithContent = exercises.filter((ex) =>
+      ex.exercise_name.trim(),
+    );
     if (exercisesWithContent.length === 0) {
       toast.error("El plan debe tener al menos un ejercicio con nombre");
       return;
@@ -426,9 +423,10 @@ export default function NewPlan() {
         daysPerWeek: formData.frequencyPerWeek,
       };
 
-      const result = isEditMode && planId
-        ? await updatePlan(planId, planPayload)
-        : await savePlan(planPayload);
+      const result =
+        isEditMode && planId
+          ? await updatePlan(planId, planPayload)
+          : await savePlan(planPayload);
 
       if (result.success) {
         setSavedPlanId(result.planId!);
@@ -582,7 +580,7 @@ export default function NewPlan() {
               )}
               {isEditMode && (
                 <button
-                  onClick={() => navigate('/biblioteca')}
+                  onClick={() => navigate("/biblioteca")}
                   className="flex items-center justify-center rounded-lg h-9 px-4 bg-white border border-gray-300 text-gray-600 hover:bg-gray-50 font-bold transition-colors text-sm shadow-sm"
                 >
                   <span className="material-symbols-outlined text-lg mr-2">
@@ -595,14 +593,14 @@ export default function NewPlan() {
                 onClick={handleOpenSaveModal}
                 className={`flex items-center justify-center rounded-lg h-9 px-5 font-bold transition-colors text-sm shadow-sm ${
                   isEditMode
-                    ? 'bg-primary text-white hover:bg-primary/90'
-                    : 'bg-white border border-gray-300 text-gray-700 hover:bg-gray-50'
+                    ? "bg-primary text-white hover:bg-primary/90"
+                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
                 }`}
               >
                 <span className="material-symbols-outlined text-lg mr-2">
-                  {isEditMode ? 'sync' : 'save'}
+                  {isEditMode ? "sync" : "save"}
                 </span>
-                {isEditMode ? 'Actualizar Plan' : 'Guardar en Biblioteca'}
+                {isEditMode ? "Actualizar Plan" : "Guardar en Biblioteca"}
               </button>
               <button
                 onClick={() => setIsAssignModalOpen(true)}
@@ -628,18 +626,19 @@ export default function NewPlan() {
             </span>
           </div>
           {isEditMode && (
-            <div className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium mb-2 ${
-              editAssignedCount > 0
-                ? 'bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800'
-                : 'bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800'
-            }`}>
+            <div
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium mb-2 ${
+                editAssignedCount > 0
+                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                  : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+              }`}
+            >
               <span className="material-symbols-outlined text-[16px]">
-                {editAssignedCount > 0 ? 'warning' : 'edit_note'}
+                {editAssignedCount > 0 ? "warning" : "edit_note"}
               </span>
               {editAssignedCount > 0
-                ? `Editando plan con ${editAssignedCount} ${editAssignedCount === 1 ? 'alumno asignado' : 'alumnos asignados'}. Los cambios se reflejarán en sus planes activos.`
-                : 'Modo edición — los cambios se guardarán al hacer click en "Actualizar Plan".'
-              }
+                ? `Editando plan con ${editAssignedCount} ${editAssignedCount === 1 ? "alumno asignado" : "alumnos asignados"}. Los cambios se reflejarán en sus planes activos.`
+                : 'Modo edición — los cambios se guardarán al hacer click en "Actualizar Plan".'}
             </div>
           )}
         </div>

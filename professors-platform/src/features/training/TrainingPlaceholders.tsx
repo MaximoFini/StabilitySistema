@@ -52,8 +52,13 @@ export function TrainingProfile() {
   const { professor, logout, isLoading } = useAuthStore();
 
   const handleLogout = async () => {
-    await logout();
-    navigate("/login", { replace: true });
+    try {
+      await logout();
+      navigate("/login", { replace: true });
+    } catch (error) {
+      console.error("Error al cerrar sesión:", error);
+      navigate("/login", { replace: true }); // Navegar igual aunque falle
+    }
   };
 
   if (!professor) {
