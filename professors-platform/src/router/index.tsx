@@ -20,6 +20,7 @@ const BusinessMetrics = lazy(
 );
 const Library = lazy(() => import("@/features/library/Library"));
 const NewPlan = lazy(() => import("@/features/plans/NewPlan"));
+const StudentProfile = lazy(() => import("@/features/students/StudentProfile"));
 const TrainingLayout = lazy(() => import("@/features/training/TrainingLayout"));
 const TrainingHome = lazy(() => import("@/features/training/TrainingHome"));
 const ExerciseList = lazy(() => import("@/features/training/ExerciseList"));
@@ -90,6 +91,10 @@ export const router = createBrowserRouter([
       {
         path: "planificador",
         element: withSuspense(NewPlan),
+      },
+      {
+        path: "alumno/:studentId",
+        element: withSuspense(StudentProfile),
       },
     ],
   },

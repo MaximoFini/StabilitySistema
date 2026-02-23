@@ -1,7 +1,9 @@
+import { useNavigate } from "react-router-dom";
 import { useStudents, getStudentTag } from "../../hooks/useStudents";
 
 export default function StudentsList() {
   const { students, loading, error } = useStudents();
+  const navigate = useNavigate();
 
   return (
     <div className="flex flex-col h-full bg-background-light dark:bg-background-dark relative">
@@ -95,7 +97,10 @@ export default function StudentsList() {
                   <p className="text-sm text-gray-700 dark:text-gray-200 font-medium mb-6 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">
                     {getStudentTag(student.trainingLevel, student.primaryGoal)}
                   </p>
-                  <button className="w-full mt-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-primary dark:text-blue-400 text-sm font-semibold py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 group-hover:border-blue-200">
+                  <button
+                    onClick={() => navigate(`/alumno/${student.id}`)}
+                    className="w-full mt-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-primary dark:text-blue-400 text-sm font-semibold py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 group-hover:border-blue-200"
+                  >
                     Ver Perfil
                     <span className="material-symbols-outlined text-[18px]">
                       chevron_right
