@@ -77,31 +77,32 @@ let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
 // Helper function to convert Supabase user to Professor
 const userToProfessor = async (user: User): Promise<Professor | null> => {
   try {
-    const { data: profile, error } = await supabase
+    // Query 1: siempre necesaria
+    const profilePromise = supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .single();
+
+    // Query 2: lanzarla en paralelo desde ya (no esperamos el resultado de profiles)
+    const studentProfilePromise = supabase
+      .from("student_profiles")
+      .select("id")
+      .eq("id", user.id)
+      .single();
+
+    // Esperar ambas en paralelo
+    const [{ data: profile, error }, { data: studentProfile }] =
+      await Promise.all([profilePromise, studentProfilePromise]);
 
     if (error || !profile) {
       console.error("Error fetching profile:", error);
       return null;
     }
 
-    // Check if student has completed profile
-    let hasCompletedProfile = false;
-    if (profile.role === "student") {
-      const { data: studentProfile } = await supabase
-        .from("student_profiles")
-        .select("id")
-        .eq("id", user.id)
-        .single();
-
-      hasCompletedProfile = !!studentProfile;
-    } else {
-      // Coaches always have completed profile
-      hasCompletedProfile = true;
-    }
+    // Para coaches, ignorar el resultado de student_profiles
+    const hasCompletedProfile =
+      profile.role === "coach" ? true : !!studentProfile;
 
     return {
       id: profile.id,
@@ -158,18 +159,41 @@ export const useAuthStore = create<AuthState>()(
               data: { session },
             } = await supabase.auth.getSession();
 
-            if (session?.user) {
-              const professor = await userToProfessor(session.user);
-              if (professor) {
+            if (!session?.user) {
+              // No hay sesión activa → limpiar estado por si había datos stale
+              set({
+                professor: null,
+                isAuthenticated: false,
+                lastActivity: null,
+                tokenExpiry: null,
+              });
+            } else {
+              // Hay sesión activa
+              const currentState = get();
+
+              if (currentState.professor && currentState.isAuthenticated) {
+                // Zustand ya tiene datos hidratados desde localStorage → no hacer fetch
+                // Solo actualizar timestamps
                 const now = Date.now();
                 set({
-                  professor,
-                  isAuthenticated: true,
                   lastActivity: now,
                   tokenExpiry: now + TOKEN_EXPIRY_TIME,
                 });
-                get().updateActivity();
+              } else {
+                // No hay datos en store → hacer fetch normal
+                const professor = await userToProfessor(session.user);
+                if (professor) {
+                  const now = Date.now();
+                  set({
+                    professor,
+                    isAuthenticated: true,
+                    lastActivity: now,
+                    tokenExpiry: now + TOKEN_EXPIRY_TIME,
+                  });
+                }
               }
+
+              get().updateActivity();
             }
 
             // Listen for auth changes (e.g., token expiration, sign out from another tab)
@@ -187,15 +211,22 @@ export const useAuthStore = create<AuthState>()(
                 });
               } else if (event === "SIGNED_IN" || event === "TOKEN_REFRESHED") {
                 if (session?.user) {
-                  const professor = await userToProfessor(session.user);
-                  if (professor) {
-                    const now = Date.now();
-                    set({
-                      professor,
-                      isAuthenticated: true,
-                      lastActivity: now,
-                      tokenExpiry: now + TOKEN_EXPIRY_TIME,
-                    });
+                  const currentState = get();
+                  // Solo re-fetch si el usuario cambió o no hay datos
+                  if (
+                    !currentState.professor ||
+                    currentState.professor.id !== session.user.id
+                  ) {
+                    const professor = await userToProfessor(session.user);
+                    if (professor) {
+                      const now = Date.now();
+                      set({
+                        professor,
+                        isAuthenticated: true,
+                        lastActivity: now,
+                        tokenExpiry: now + TOKEN_EXPIRY_TIME,
+                      });
+                    }
                   }
                 }
               }
@@ -329,10 +360,7 @@ export const useAuthStore = create<AuthState>()(
 
             console.log("User created:", authData.user.id);
 
-            // 2. Wait a bit for trigger to execute
-            await new Promise((resolve) => setTimeout(resolve, 1000));
-
-            // 3. Try to get the profile (trigger should have created it)
+            // 2. Try to get the profile (trigger should have created it)
             let professor = await userToProfessor(authData.user);
 
             // 4. If profile doesn't exist, create it manually
@@ -431,18 +459,13 @@ export const useAuthStore = create<AuthState>()(
         },
 
         logout: async () => {
-          // Clear timers
+          // 1. Limpiar timer de inactividad
           if (inactivityTimer) {
             clearTimeout(inactivityTimer);
             inactivityTimer = null;
           }
 
-          try {
-            await supabase.auth.signOut();
-          } catch (error) {
-            console.error("Error signing out:", error);
-          }
-
+          // 2. Limpiar estado local INMEDIATAMENTE (el usuario ve el logout al instante)
           set({
             professor: null,
             isAuthenticated: false,
@@ -450,6 +473,14 @@ export const useAuthStore = create<AuthState>()(
             rememberMe: false,
             lastActivity: null,
             tokenExpiry: null,
+          });
+
+          // 3. Llamar a Supabase en segundo plano (fire-and-forget, no bloquea)
+          supabase.auth.signOut().catch((error) => {
+            console.error(
+              "Error signing out from Supabase (non-blocking):",
+              error,
+            );
           });
         },
 

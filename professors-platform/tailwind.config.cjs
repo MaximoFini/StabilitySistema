@@ -9,11 +9,15 @@ module.exports = {
         primary: "#0056b3",
         "primary-hover": "#004494",
         "brand-blue": "#1a1a5e",
-        "background-light": "#F3F6F8",
-        "background-dark": "#0F172A",
+        "background-light": "#f8f9fa",
+        "background-dark": "#0f1923",
+        "surface-light": "#F3F4F6",
+        "surface-dark": "#1e293b",
         "text-main": "#101418",
         "text-secondary": "#5e758d",
+        "text-muted": "#5e758d",
         "border-color": "#dae0e7",
+        success: "#10b981",
 
         // Additional colors from new design
         secondary: "#1a202c",
@@ -60,7 +64,7 @@ module.exports = {
         ring: "hsl(var(--ring))",
       },
       fontFamily: {
-        display: ["Inter", "sans-serif"],
+        display: ["Lexend", "Inter", "sans-serif"],
         sans: ["Inter", "sans-serif"],
         serif: ["Playfair Display", "serif"],
       },

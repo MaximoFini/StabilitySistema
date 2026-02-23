@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from 'react';
-import { supabase } from '../lib/supabase';
-import { useAuthStore } from '../features/auth/store/authStore';
+import { useState, useEffect, useCallback } from "react";
+import { supabase } from "../lib/supabase";
+import { useAuthStore } from "../features/auth/store/authStore";
 
 interface ActiveAssignment {
   plan_id: string;
@@ -69,10 +69,10 @@ export function useStudents() {
 
       // Fetch students from profiles table (role = 'student')
       const { data: profilesData, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, first_name, last_name')
-        .eq('role', 'student')
-        .order('created_at', { ascending: false });
+        .from("profiles")
+        .select("id, first_name, last_name")
+        .eq("role", "student")
+        .order("created_at", { ascending: false });
 
       if (profilesError) throw profilesError;
       if (!profilesData || profilesData.length === 0) {
@@ -81,32 +81,41 @@ export function useStudents() {
       }
 
       // Get all student IDs
-      const studentIds = (profilesData as ProfileRow[]).map((p: ProfileRow) => p.id);
+      const studentIds = (profilesData as ProfileRow[]).map(
+        (p: ProfileRow) => p.id,
+      );
 
-      // Fetch detailed student profiles
-      const { data: studentDetails, error: detailsError } = await supabase
-        .from('student_profiles')
-        .select('id, profile_image_url, training_experience, primary_goal, activity_level, phone, instagram')
-        .in('id', studentIds);
+      // Fetch queries 2 and 3 in parallel (no dependen entre sí)
+      const [
+        { data: studentDetails, error: detailsError },
+        { data: assignmentsData, error: assignmentsError },
+      ] = await Promise.all([
+        supabase
+          .from("student_profiles")
+          .select(
+            "id, profile_image_url, training_experience, primary_goal, activity_level, phone, instagram",
+          )
+          .in("id", studentIds),
+        supabase
+          .from("training_plan_assignments")
+          .select(
+            `
+            student_id,
+            plan_id,
+            start_date,
+            end_date,
+            status,
+            training_plans ( title )
+          `,
+          )
+          .in("student_id", studentIds)
+          .in("status", ["active", "paused"]),
+      ]);
 
       if (detailsError) throw detailsError;
 
-      // Fetch active assignments for all students with plan titles
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from('training_plan_assignments')
-        .select(`
-          student_id,
-          plan_id,
-          start_date,
-          end_date,
-          status,
-          training_plans ( title )
-        `)
-        .in('student_id', studentIds)
-        .in('status', ['active', 'paused']);
-
       if (assignmentsError) {
-        console.warn('Could not load assignments:', assignmentsError);
+        console.warn("Could not load assignments:", assignmentsError);
       }
 
       // Build assignments map: studentId -> assignments[]
@@ -116,7 +125,7 @@ export function useStudents() {
           const existing = assignmentsMap.get(row.student_id) || [];
           existing.push({
             plan_id: row.plan_id,
-            plan_title: row.training_plans?.title || 'Plan sin nombre',
+            plan_title: row.training_plans?.title || "Plan sin nombre",
             start_date: row.start_date,
             end_date: row.end_date,
             status: row.status,
@@ -127,7 +136,9 @@ export function useStudents() {
 
       // Create a map for quick lookup
       const detailsMap = new Map(
-        (studentDetails as StudentDetailRow[] || []).map((d: StudentDetailRow) => [d.id, d])
+        ((studentDetails as StudentDetailRow[]) || []).map(
+          (d: StudentDetailRow) => [d.id, d],
+        ),
       );
 
       // Combine data
@@ -139,9 +150,9 @@ export function useStudents() {
             id: profile.id,
             fullName: `${profile.first_name} ${profile.last_name}`,
             profileImageUrl: details?.profile_image_url || null,
-            trainingLevel: details?.training_experience || 'beginner',
-            primaryGoal: details?.primary_goal || 'health',
-            activityLevel: details?.activity_level || 'moderate',
+            trainingLevel: details?.training_experience || "beginner",
+            primaryGoal: details?.primary_goal || "health",
+            activityLevel: details?.activity_level || "moderate",
             phone: details?.phone || undefined,
             instagram: details?.instagram || undefined,
             activeAssignments: assignmentsMap.get(profile.id) || [],
@@ -150,8 +161,8 @@ export function useStudents() {
 
       setStudents(transformedStudents);
     } catch (err) {
-      console.error('Error loading students:', err);
-      setError(err instanceof Error ? err.message : 'Error desconocido');
+      console.error("Error loading students:", err);
+      setError(err instanceof Error ? err.message : "Error desconocido");
     } finally {
       setLoading(false);
     }
@@ -172,40 +183,44 @@ export function useStudents() {
 // Helper function to map training experience level to display text
 export const getTrainingLevelDisplay = (level: string): string => {
   const levels: Record<string, string> = {
-    'none': 'Sin experiencia',
-    'beginner': 'Principiante',
-    'intermediate': 'Intermedio',
-    'advanced': 'Avanzado',
+    none: "Sin experiencia",
+    beginner: "Principiante",
+    intermediate: "Intermedio",
+    advanced: "Avanzado",
   };
-  return levels[level] || 'Sin especificar';
+  return levels[level] || "Sin especificar";
 };
 
 // Helper function to map primary goal to display text
 export const getPrimaryGoalDisplay = (goal: string): string => {
   const goals: Record<string, string> = {
-    'aesthetic': 'Estética',
-    'sports': 'Deporte',
-    'health': 'Salud',
-    'rehabilitation': 'Rehabilitación',
+    aesthetic: "Estética",
+    sports: "Deporte",
+    health: "Salud",
+    rehabilitation: "Rehabilitación",
   };
-  return goals[goal] || 'Sin especificar';
+  return goals[goal] || "Sin especificar";
 };
 
 // Helper function to map activity level to display text
 export const getActivityLevelDisplay = (level: string): string => {
   const levels: Record<string, string> = {
-    'sedentary': 'Sedentario',
-    'light': 'Ligero',
-    'moderate': 'Moderado',
-    'active': 'Activo',
-    'very_active': 'Muy activo',
+    sedentary: "Sedentario",
+    light: "Ligero",
+    moderate: "Moderado",
+    active: "Activo",
+    very_active: "Muy activo",
   };
-  return levels[level] || 'Sin especificar';
+  return levels[level] || "Sin especificar";
 };
 
 // Get a meaningful tag combining level + goal
-export const getStudentTag = (trainingLevel: string, primaryGoal: string): string => {
-  const levelShort = getTrainingLevelDisplay(trainingLevel)?.split(' ')[0] || 'Nivel';
-  const goalDisplay = getPrimaryGoalDisplay(primaryGoal) || 'Objetivo';
+export const getStudentTag = (
+  trainingLevel: string,
+  primaryGoal: string,
+): string => {
+  const levelShort =
+    getTrainingLevelDisplay(trainingLevel)?.split(" ")[0] || "Nivel";
+  const goalDisplay = getPrimaryGoalDisplay(primaryGoal) || "Objetivo";
   return `${levelShort} • ${goalDisplay}`;
 };

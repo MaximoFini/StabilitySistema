@@ -39,6 +39,7 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
       navigate("/login", { replace: true });
     } catch (error) {
       console.error("Error al cerrar sesión:", error);
+      navigate("/login", { replace: true }); // Navegar igual aunque falle
     }
   };
 
