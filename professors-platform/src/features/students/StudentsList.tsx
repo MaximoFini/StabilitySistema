@@ -1,9 +1,45 @@
 import { useNavigate } from "react-router-dom";
+import { useState, useEffect } from "react";
+import { supabase } from "@/lib/supabase";
 import { useStudents, getStudentTag } from "../../hooks/useStudents";
+import { detectRpeAlert } from "@/lib/rpeHelpers";
 
 export default function StudentsList() {
   const { students, loading, error } = useStudents();
   const navigate = useNavigate();
+  const [rpeAlerts, setRpeAlerts] = useState<
+    Map<string, "high" | "low" | null>
+  >(new Map());
+
+  // Load RPE alerts for each student
+  useEffect(() => {
+    const loadRpeAlerts = async () => {
+      const newAlerts = new Map<string, "high" | "low" | null>();
+
+      for (const student of students) {
+        const { data, error } = await supabase
+          .from("workout_completions")
+          .select("rpe")
+          .eq("student_id", student.id)
+          .order("completed_at", { ascending: false })
+          .limit(3);
+
+        if (!error && data && data.length > 0) {
+          const rpes = (data as { rpe: number | null }[]).map((d) => d.rpe);
+          const alert = detectRpeAlert(rpes);
+          newAlerts.set(student.id, alert);
+        } else {
+          newAlerts.set(student.id, null);
+        }
+      }
+
+      setRpeAlerts(newAlerts);
+    };
+
+    if (students.length > 0) {
+      loadRpeAlerts();
+    }
+  }, [students]);
 
   return (
     <div className="flex flex-col h-full bg-background-light dark:bg-background-dark relative">
@@ -97,6 +133,27 @@ export default function StudentsList() {
                   <p className="text-sm text-gray-700 dark:text-gray-200 font-medium mb-6 bg-gray-50 dark:bg-gray-800 px-3 py-1 rounded-full">
                     {getStudentTag(student.trainingLevel, student.primaryGoal)}
                   </p>
+
+                  {/* RPE Alert Badge */}
+                  {rpeAlerts.get(student.id) && (
+                    <div
+                      className={`flex items-center gap-1.5 text-xs font-semibold px-2.5 py-1 rounded-full mb-4 w-fit mx-auto border ${
+                        rpeAlerts.get(student.id) === "high"
+                          ? "bg-red-50 dark:bg-red-900/20 text-red-600 dark:text-red-400 border-red-200 dark:border-red-800"
+                          : "bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 border-amber-200 dark:border-amber-800"
+                      }`}
+                    >
+                      <span className="material-symbols-outlined text-[14px]">
+                        {rpeAlerts.get(student.id) === "high"
+                          ? "warning"
+                          : "info"}
+                      </span>
+                      {rpeAlerts.get(student.id) === "high"
+                        ? "RPE muy alto"
+                        : "RPE muy bajo"}
+                    </div>
+                  )}
+
                   <button
                     onClick={() => navigate(`/alumno/${student.id}`)}
                     className="w-full mt-auto bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 text-primary dark:text-blue-400 text-sm font-semibold py-2.5 rounded-xl hover:bg-blue-50 dark:hover:bg-gray-700 transition-colors flex items-center justify-center gap-2 group-hover:border-blue-200"

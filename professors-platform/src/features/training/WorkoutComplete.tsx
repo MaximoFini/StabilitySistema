@@ -1,5 +1,10 @@
+import { useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { toast } from "sonner";
 import { useTrainingStore } from "@/features/training/store/trainingStore";
+import { useWorkoutCompletions } from "@/hooks/useWorkoutCompletions";
+import { useAuthStore } from "@/features/auth/store/authStore";
+import { supabase } from "@/lib/supabase";
 import { cn } from "@/lib/utils";
 
 const RPE_LABELS: Record<number, string> = {
@@ -27,14 +32,121 @@ const rpeColor = (rpe: number | null, value: number) => {
 
 export default function WorkoutComplete() {
   const navigate = useNavigate();
-  const { currentDay, seriesLog, rpe, setRpe, resetTraining } =
-    useTrainingStore();
+  const {
+    currentDay,
+    seriesLog,
+    rpe,
+    mood,
+    moodComment,
+    setRpe,
+    setMood,
+    setMoodComment,
+    resetTraining,
+    assignmentId,
+    currentDayNumber,
+  } = useTrainingStore();
+  const { saveCompletion, completions } = useWorkoutCompletions();
+  const professor = useAuthStore((s) => s.professor);
+  const [isSaving, setIsSaving] = useState(false);
 
   const totalSets =
     currentDay?.exercises.reduce((acc, ex) => acc + ex.sets.length, 0) ?? 18;
   const doneSets = Object.values(seriesLog).filter((s) => s.done).length;
 
-  const handleGoHome = () => {
+  // Calculate this week's completions
+  const getThisWeekCompletions = () => {
+    const now = new Date();
+    // Get Monday of current week
+    const startOfWeek = new Date(now);
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // If Sunday, go back 6 days
+    startOfWeek.setDate(now.getDate() + diff);
+    startOfWeek.setHours(0, 0, 0, 0);
+
+    // Get Sunday end
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
+
+    // Filter completions in this week
+    return completions.filter((c) => {
+      const completedDate = new Date(c.completedAt);
+      return completedDate >= startOfWeek && completedDate <= endOfWeek;
+    });
+  };
+
+  const thisWeekCompletions = getThisWeekCompletions();
+
+  // Map completions to days of week (0 = Monday, 6 = Sunday)
+  const completedDaysOfWeek = new Set(
+    thisWeekCompletions.map((c) => {
+      const date = new Date(c.completedAt);
+      const day = date.getDay(); // 0 = Sunday, 1 = Monday, ...
+      return day === 0 ? 6 : day - 1; // Convert to Monday-first: 0 = Mon, 6 = Sun
+    }),
+  );
+
+  const today = new Date();
+  const todayDayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // 0 = Mon, 6 = Sun
+
+  const handleGoHome = async () => {
+    if (assignmentId) {
+      setIsSaving(true);
+      const result = await saveCompletion({
+        assignmentId,
+        dayNumber: currentDayNumber,
+        rpe,
+        mood: mood ?? null,
+        moodComment: moodComment || undefined,
+        totalSetsDone: doneSets,
+        seriesLog,
+      });
+      if (result.success) {
+        toast.success("¡Entrenamiento guardado! 💪");
+      } else {
+        toast.error("No se pudo guardar. Intenta de nuevo.");
+      }
+
+      // 2. Guardar exercise_weight_logs para ejercicios con writeWeight = true
+      const exercisesToLog =
+        currentDay?.exercises.filter((ex) => ex.writeWeight) ?? [];
+
+      if (exercisesToLog.length > 0 && professor?.id) {
+        const logsToInsert = exercisesToLog.map((ex) => {
+          const setsDetail = ex.sets.map((set, setIndex) => {
+            const key = `${ex.id}-${setIndex}`;
+            const log = seriesLog[key];
+            return {
+              set_number: set.setNumber,
+              target_reps: set.targetReps,
+              actual_reps: log?.reps ?? null,
+              kg: log?.kg ? parseFloat(log.kg) : null,
+            };
+          });
+
+          return {
+            student_id: professor.id,
+            assignment_id: assignmentId,
+            exercise_id: String(ex.id),
+            exercise_name: ex.name,
+            plan_day_number: currentDayNumber,
+            plan_day_name: currentDay?.name ?? "",
+            series: ex.sets.length,
+            sets_detail: setsDetail,
+          };
+        });
+
+        const { error: logsError } = await supabase
+          .from("exercise_weight_logs")
+          .insert(logsToInsert);
+
+        if (logsError) {
+          console.error("Error saving exercise weight logs:", logsError);
+        }
+      }
+
+      setIsSaving(false);
+    }
     resetTraining();
     navigate("/entrenamiento", { replace: true });
   };
@@ -48,9 +160,6 @@ export default function WorkoutComplete() {
       return "¡Gran trabajo! Ese es el esfuerzo que construye músculo. 💪";
     return "¡Bestia! Diste todo hoy. Descansa bien esta noche. 🔥";
   };
-
-  const today = new Date();
-  const todayNum = today.getDay() === 0 ? 7 : today.getDay(); // 1=Mon, 7=Sun
 
   return (
     <div className="flex flex-col min-h-full bg-[#f7f9fc] dark:bg-slate-950 px-4 pt-8 pb-6 items-center max-w-lg mx-auto w-full">
@@ -149,6 +258,47 @@ export default function WorkoutComplete() {
         )}
       </div>
 
+      {/* ── ¿Cómo te sentiste? ──────────────────────────────────── */}
+      <div className="w-full mt-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 shadow-sm">
+        <p className="text-sm font-bold text-slate-900 dark:text-white mb-4">
+          ¿Cómo te sentiste?
+        </p>
+
+        <div className="grid grid-cols-4 gap-2">
+          {(
+            [
+              { value: "excelente" as const, emoji: "🔥", label: "Excelente" },
+              { value: "normal" as const, emoji: "😊", label: "Normal" },
+              { value: "fatigado" as const, emoji: "😓", label: "Fatigado" },
+              { value: "molestia" as const, emoji: "🤕", label: "Molestia" },
+            ] as const
+          ).map(({ value, emoji, label }) => (
+            <button
+              key={value}
+              onClick={() => setMood(value)}
+              className={cn(
+                "flex flex-col items-center gap-1.5 py-3 px-2 rounded-xl border-2 font-medium text-xs transition-all active:scale-95 min-h-[64px]",
+                mood === value
+                  ? "border-primary bg-primary/10 text-primary"
+                  : "border-slate-200 dark:border-slate-700 text-slate-500 dark:text-slate-400 hover:border-primary/40",
+              )}
+            >
+              <span className="text-2xl">{emoji}</span>
+              <span className="text-xs leading-tight">{label}</span>
+            </button>
+          ))}
+        </div>
+
+        {/* Comentario libre */}
+        <textarea
+          value={moodComment}
+          onChange={(e) => setMoodComment(e.target.value)}
+          placeholder="Comentario opcional... (dolor, molestia, observación)"
+          rows={2}
+          className="mt-4 w-full text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800 px-3 py-2.5 text-slate-900 dark:text-white placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-primary resize-none"
+        />
+      </div>
+
       {/* ── Week strip ───────────────────────────────────────────── */}
       <div className="w-full mt-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm">
         <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 mb-3 uppercase tracking-wide">
@@ -156,9 +306,8 @@ export default function WorkoutComplete() {
         </p>
         <div className="flex gap-1.5">
           {["L", "M", "X", "J", "V", "S", "D"].map((day, i) => {
-            const dayNum = i + 1; // 1=Mon
-            const isToday = dayNum === todayNum;
-            const isPast = [true, true, false, true, false, false, false][i];
+            const isToday = i === todayDayOfWeek;
+            const isCompleted = completedDaysOfWeek.has(i);
 
             return (
               <div
@@ -170,7 +319,7 @@ export default function WorkoutComplete() {
                     "w-full h-8 rounded-lg transition-all",
                     isToday
                       ? "bg-emerald-500 shadow-sm shadow-emerald-300 dark:shadow-emerald-900/40"
-                      : isPast
+                      : isCompleted
                         ? "bg-primary/80"
                         : "bg-slate-100 dark:bg-slate-800",
                   )}
@@ -180,7 +329,7 @@ export default function WorkoutComplete() {
                     "text-[10px] font-semibold",
                     isToday
                       ? "text-emerald-600 dark:text-emerald-400"
-                      : isPast
+                      : isCompleted
                         ? "text-primary"
                         : "text-slate-300 dark:text-slate-600",
                   )}
@@ -197,12 +346,19 @@ export default function WorkoutComplete() {
       <div className="w-full mt-6">
         <button
           onClick={handleGoHome}
-          className="w-full flex items-center justify-center gap-2 bg-primary text-white font-bold text-sm py-4 rounded-2xl shadow-lg shadow-primary/30 hover:bg-primary-hover active:scale-[0.98] transition-all min-h-[52px]"
+          disabled={isSaving}
+          className="w-full flex items-center justify-center gap-2 bg-primary text-white font-bold text-sm py-4 rounded-2xl shadow-lg shadow-primary/30 hover:bg-primary-hover active:scale-[0.98] transition-all min-h-[52px] disabled:opacity-70 disabled:cursor-not-allowed disabled:active:scale-100"
         >
-          <span className="material-symbols-outlined text-[18px] filled">
-            home
-          </span>
-          Volver al Inicio
+          {isSaving ? (
+            <span className="material-symbols-outlined animate-spin text-[18px]">
+              progress_activity
+            </span>
+          ) : (
+            <span className="material-symbols-outlined text-[18px] filled">
+              save
+            </span>
+          )}
+          {isSaving ? "Guardando..." : "Guardar y Volver al Inicio"}
         </button>
       </div>
     </div>

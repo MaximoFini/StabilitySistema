@@ -175,6 +175,7 @@ export interface Database {
           notes: string | null;
           coach_instructions: string | null;
           display_order: number;
+          write_weight: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -192,6 +193,7 @@ export interface Database {
           notes?: string | null;
           coach_instructions?: string | null;
           display_order?: number;
+          write_weight?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -209,6 +211,7 @@ export interface Database {
           notes?: string | null;
           coach_instructions?: string | null;
           display_order?: number;
+          write_weight?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -258,6 +261,106 @@ export interface Database {
           personalization_notes?: string | null;
           created_at?: string;
           updated_at?: string;
+        };
+      };
+      workout_completions: {
+        Row: {
+          id: string;
+          student_id: string;
+          assignment_id: string;
+          day_number: number;
+          completed_at: string;
+          rpe: number | null;
+          mood: string | null;
+          mood_comment: string | null;
+          total_sets_done: number | null;
+          series_log: Record<string, unknown> | null;
+          notes: string | null;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          assignment_id: string;
+          day_number: number;
+          completed_at?: string;
+          rpe?: number | null;
+          mood?: string | null;
+          mood_comment?: string | null;
+          total_sets_done?: number | null;
+          series_log?: Record<string, unknown> | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          assignment_id?: string;
+          day_number?: number;
+          completed_at?: string;
+          rpe?: number | null;
+          mood?: string | null;
+          mood_comment?: string | null;
+          total_sets_done?: number | null;
+          series_log?: Record<string, unknown> | null;
+          notes?: string | null;
+          created_at?: string;
+        };
+      };
+      exercise_weight_logs: {
+        Row: {
+          id: string;
+          student_id: string;
+          assignment_id: string;
+          exercise_id: string;
+          exercise_name: string;
+          plan_day_number: number;
+          plan_day_name: string;
+          series: number;
+          sets_detail: Array<{
+            set_number: number;
+            target_reps: string;
+            actual_reps: string | null;
+            kg: number | null;
+          }>;
+          logged_at: string;
+          created_at: string;
+        };
+        Insert: {
+          id?: string;
+          student_id: string;
+          assignment_id: string;
+          exercise_id: string;
+          exercise_name: string;
+          plan_day_number: number;
+          plan_day_name: string;
+          series: number;
+          sets_detail: Array<{
+            set_number: number;
+            target_reps: string;
+            actual_reps: string | null;
+            kg: number | null;
+          }>;
+          logged_at?: string;
+          created_at?: string;
+        };
+        Update: {
+          id?: string;
+          student_id?: string;
+          assignment_id?: string;
+          exercise_id?: string;
+          exercise_name?: string;
+          plan_day_number?: number;
+          plan_day_name?: string;
+          series?: number;
+          sets_detail?: Array<{
+            set_number: number;
+            target_reps: string;
+            actual_reps: string | null;
+            kg: number | null;
+          }>;
+          logged_at?: string;
+          created_at?: string;
         };
       };
     };

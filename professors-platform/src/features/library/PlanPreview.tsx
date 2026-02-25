@@ -30,6 +30,7 @@ interface TrainingPlanExercise {
   notes: string | null;
   coach_instructions: string | null;
   display_order: number;
+  write_weight?: boolean;
 }
 
 export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
@@ -170,6 +171,9 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
                     <th className="text-center py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       Pausa
                     </th>
+                    <th className="text-center py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
+                      Peso requerido
+                    </th>
                     <th className="text-left py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       Notas
                     </th>
@@ -221,6 +225,19 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
                       </td>
                       <td className="py-3 px-4 text-center text-sm text-slate-700 dark:text-slate-300">
                         {exercise.pause}
+                      </td>
+                      <td className="py-3 px-4 text-center">
+                        {exercise.write_weight ? (
+                          <span className="inline-flex items-center justify-center w-6 h-6 rounded-full bg-emerald-100 dark:bg-emerald-900/30">
+                            <span className="material-symbols-outlined text-[14px] text-emerald-600 dark:text-emerald-400 filled">
+                              check
+                            </span>
+                          </span>
+                        ) : (
+                          <span className="text-slate-300 dark:text-slate-600 text-sm">
+                            —
+                          </span>
+                        )}
                       </td>
                       <td className="py-3 px-4 text-sm text-slate-600 dark:text-slate-400">
                         {exercise.notes || "—"}

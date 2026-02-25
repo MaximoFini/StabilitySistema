@@ -80,16 +80,25 @@ export const MOCK_PLAN: WorkoutDay = {
 
 // ─── Store ────────────────────────────────────────────────────────────────
 
+export type WorkoutMood = "excelente" | "normal" | "fatigado" | "molestia";
+
 interface TrainingState {
   currentDay: WorkoutDay | null;
   currentExerciseIndex: number;
   seriesLog: SeriesLog;
   restSecondsLeft: number | null;
   rpe: number | null;
+  mood: WorkoutMood | null;
+  moodComment: string;
+  pendingDayId: string | null; // dayId waiting after mood selection
   isWorkoutComplete: boolean;
+  assignmentId: string | null;
+  currentDayNumber: number;
 
   // Actions
   startWorkout: (day?: WorkoutDay) => void;
+  setAssignmentContext: (assignmentId: string, dayNumber: number) => void;
+  setPendingDayId: (dayId: string) => void;
   goToExercise: (index: number) => void;
   nextExercise: () => void;
   updateSeriesLog: (key: string, field: "kg" | "reps", value: string) => void;
@@ -98,6 +107,8 @@ interface TrainingState {
   tickTimer: () => void;
   cancelTimer: () => void;
   setRpe: (value: number) => void;
+  setMood: (value: WorkoutMood) => void;
+  setMoodComment: (value: string) => void;
   completeWorkout: () => void;
   resetTraining: () => void;
 }
@@ -108,7 +119,12 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
   seriesLog: {},
   restSecondsLeft: null,
   rpe: null,
+  mood: null,
+  moodComment: "",
+  pendingDayId: null,
   isWorkoutComplete: false,
+  assignmentId: null,
+  currentDayNumber: 1,
 
   startWorkout: (day = MOCK_PLAN) => {
     set({
@@ -117,8 +133,18 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
       seriesLog: {},
       restSecondsLeft: null,
       rpe: null,
+      mood: null,
+      moodComment: "",
       isWorkoutComplete: false,
     });
+  },
+
+  setAssignmentContext: (assignmentId, dayNumber) => {
+    set({ assignmentId, currentDayNumber: dayNumber });
+  },
+
+  setPendingDayId: (dayId) => {
+    set({ pendingDayId: dayId });
   },
 
   goToExercise: (index) => {
@@ -185,6 +211,10 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
 
   setRpe: (value) => set({ rpe: value }),
 
+  setMood: (value) => set({ mood: value }),
+
+  setMoodComment: (value) => set({ moodComment: value }),
+
   completeWorkout: () => set({ isWorkoutComplete: true }),
 
   resetTraining: () => {
@@ -194,7 +224,12 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
       seriesLog: {},
       restSecondsLeft: null,
       rpe: null,
+      mood: null,
+      moodComment: "",
+      pendingDayId: null,
       isWorkoutComplete: false,
+      assignmentId: null,
+      currentDayNumber: 1,
     });
   },
 }));

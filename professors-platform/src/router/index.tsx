@@ -1,5 +1,5 @@
 import { lazy, Suspense } from "react";
-import { createBrowserRouter } from "react-router-dom";
+import { createBrowserRouter, Navigate } from "react-router-dom";
 import { RequireAuth } from "@/components/layout/RequireAuth";
 import { RequireRole } from "@/components/layout/RequireRole";
 
@@ -23,20 +23,19 @@ const NewPlan = lazy(() => import("@/features/plans/NewPlan"));
 const StudentProfile = lazy(() => import("@/features/students/StudentProfile"));
 const TrainingLayout = lazy(() => import("@/features/training/TrainingLayout"));
 const TrainingHome = lazy(() => import("@/features/training/TrainingHome"));
+const MoodCheckScreen = lazy(
+  () => import("@/features/training/MoodCheckScreen"),
+);
 const ExerciseList = lazy(() => import("@/features/training/ExerciseList"));
 const ExerciseDetail = lazy(() => import("@/features/training/ExerciseDetail"));
 const WorkoutComplete = lazy(
   () => import("@/features/training/WorkoutComplete"),
 );
-const TrainingProgress = lazy(() =>
-  import("@/features/training/TrainingProgress").then((m) => ({
-    default: m.TrainingProgress,
-  })),
+const TrainingProgress = lazy(
+  () => import("@/features/training/TrainingProgress"),
 );
-const TrainingProfile = lazy(() =>
-  import("@/features/training/TrainingProfile").then((m) => ({
-    default: m.TrainingProfile,
-  })),
+const TrainingProfile = lazy(
+  () => import("@/features/training/TrainingProfile"),
 );
 
 // ── Suspense helpers ───────────────────────────────────────────────────────
@@ -117,6 +116,11 @@ export const router = createBrowserRouter([
       { path: "perfil", element: withSuspense(TrainingProfile) },
     ],
   },
+  // Mood check before workout
+  {
+    path: "/entrenamiento/mood/:dayId",
+    element: <RequireAuth>{withSuspense(MoodCheckScreen)}</RequireAuth>,
+  },
   // Workout flow — full-screen, no bottom nav
   {
     path: "/entrenamiento/dia/:dayId",
@@ -147,5 +151,10 @@ export const router = createBrowserRouter([
   {
     path: "/register/complete-profile",
     element: <RequireAuth>{withSuspense(StudentProfileSetup)}</RequireAuth>,
+  },
+  // ── Catch-all route (redirige a login) ─────────────────────────────────
+  {
+    path: "*",
+    element: <Navigate to="/login" replace />,
   },
 ]);

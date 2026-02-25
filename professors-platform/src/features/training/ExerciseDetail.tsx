@@ -347,37 +347,51 @@ export default function ExerciseDetail() {
                       </p>
                     </div>
 
-                    {/* KG input */}
-                    <input
-                      type="number"
-                      inputMode="decimal"
-                      placeholder={
-                        set.targetWeight ? String(set.targetWeight) : "—"
-                      }
-                      value={log?.kg ?? ""}
-                      onChange={(e) =>
-                        updateSeriesLog(key, "kg", e.target.value)
-                      }
-                      className={cn(
-                        "w-full text-center text-sm font-bold rounded-xl border px-2 py-2 min-h-[40px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all",
-                        isDone && "border-emerald-200 dark:border-emerald-800",
-                      )}
-                    />
+                    {/* KG input — solo si el coach lo indica */}
+                    {exercise.writeWeight ? (
+                      <input
+                        type="number"
+                        inputMode="decimal"
+                        placeholder={
+                          set.targetWeight ? String(set.targetWeight) : "kg"
+                        }
+                        value={log?.kg ?? ""}
+                        onChange={(e) =>
+                          updateSeriesLog(key, "kg", e.target.value)
+                        }
+                        className={cn(
+                          "w-full text-center text-sm font-bold rounded-xl border px-2 py-2 min-h-[40px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all",
+                          isDone &&
+                            "border-emerald-200 dark:border-emerald-800",
+                        )}
+                      />
+                    ) : (
+                      <div className="w-full text-center text-sm font-bold text-slate-400 dark:text-slate-500 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 px-2 py-2 min-h-[40px] flex items-center justify-center">
+                        —
+                      </div>
+                    )}
 
-                    {/* Reps input */}
-                    <input
-                      type="number"
-                      inputMode="numeric"
-                      placeholder={set.targetReps}
-                      value={log?.reps ?? ""}
-                      onChange={(e) =>
-                        updateSeriesLog(key, "reps", e.target.value)
-                      }
-                      className={cn(
-                        "w-full text-center text-sm font-bold rounded-xl border px-2 py-2 min-h-[40px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all",
-                        isDone && "border-emerald-200 dark:border-emerald-800",
-                      )}
-                    />
+                    {/* Reps input — solo si el coach lo indica */}
+                    {exercise.writeWeight ? (
+                      <input
+                        type="number"
+                        inputMode="numeric"
+                        placeholder={set.targetReps}
+                        value={log?.reps ?? ""}
+                        onChange={(e) =>
+                          updateSeriesLog(key, "reps", e.target.value)
+                        }
+                        className={cn(
+                          "w-full text-center text-sm font-bold rounded-xl border px-2 py-2 min-h-[40px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all",
+                          isDone &&
+                            "border-emerald-200 dark:border-emerald-800",
+                        )}
+                      />
+                    ) : (
+                      <div className="w-full text-center text-sm font-bold text-slate-400 dark:text-slate-500 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 px-2 py-2 min-h-[40px] flex items-center justify-center">
+                        {set.targetReps}
+                      </div>
+                    )}
                   </div>
 
                   {/* Rest button / timer — shown between sets (not after last) */}
