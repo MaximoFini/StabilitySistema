@@ -20,6 +20,7 @@ export interface Student {
   phone?: string;
   instagram?: string;
   activeAssignments?: ActiveAssignment[];
+  rpeAlert?: "high" | "low" | null;
 }
 
 // Alias for components that need the extended type

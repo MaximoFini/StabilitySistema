@@ -118,8 +118,17 @@ export function useTrainingPlans() {
         ) + 1;
       const calculatedWeeks = Math.ceil(totalDaysInPeriod / 7);
       const totalWeeks = planData.durationWeeks ?? calculatedWeeks;
-      const daysPerWeek = planData.daysPerWeek ?? Math.ceil(totalDays / totalWeeks);
-      console.log('[savePlan] duration_weeks:', totalWeeks, 'days_per_week:', daysPerWeek, '(user provided:', !!planData.durationWeeks, ')');
+      const daysPerWeek =
+        planData.daysPerWeek ?? Math.ceil(totalDays / totalWeeks);
+      console.log(
+        "[savePlan] duration_weeks:",
+        totalWeeks,
+        "days_per_week:",
+        daysPerWeek,
+        "(user provided:",
+        !!planData.durationWeeks,
+        ")",
+      );
 
       // 1. Insert the main training plan
       const { data: insertedPlan, error: planError } = await supabase
@@ -191,6 +200,7 @@ export function useTrainingPlans() {
             notes: ex.notes || null,
             coach_instructions: null,
             display_order: index,
+            write_weight: ex.write_weight ?? false,
           };
         })
         .filter((ex) => ex !== null);
@@ -232,8 +242,17 @@ export function useTrainingPlans() {
         ) + 1;
       const calculatedWeeks = Math.ceil(totalDaysInPeriod / 7);
       const totalWeeks = planData.durationWeeks ?? calculatedWeeks;
-      const daysPerWeek = planData.daysPerWeek ?? Math.ceil(totalDays / totalWeeks);
-      console.log('[updatePlan] duration_weeks:', totalWeeks, 'days_per_week:', daysPerWeek, '(user provided:', !!planData.durationWeeks, ')');
+      const daysPerWeek =
+        planData.daysPerWeek ?? Math.ceil(totalDays / totalWeeks);
+      console.log(
+        "[updatePlan] duration_weeks:",
+        totalWeeks,
+        "days_per_week:",
+        daysPerWeek,
+        "(user provided:",
+        !!planData.durationWeeks,
+        ")",
+      );
 
       // 1. Update the main training plan record
       const { error: planError } = await supabase
@@ -372,6 +391,7 @@ export function useTrainingPlans() {
               pause: ex.pause,
               notes: ex.notes || null,
               display_order: dayExercises.indexOf(ex),
+              write_weight: ex.write_weight ?? false,
             })
             .eq("id", ex.id);
           if (updateExError) throw updateExError;
@@ -395,6 +415,7 @@ export function useTrainingPlans() {
                 notes: ex.notes || null,
                 coach_instructions: null,
                 display_order: dayExercises.indexOf(ex),
+                write_weight: ex.write_weight ?? false,
               })),
             );
           if (insertExError) throw insertExError;
@@ -425,6 +446,7 @@ export function useTrainingPlans() {
                 notes: ex.notes || null,
                 coach_instructions: null,
                 display_order: idx,
+                write_weight: ex.write_weight ?? false,
               })),
             );
           if (insertExError) throw insertExError;
@@ -506,48 +528,68 @@ export function useTrainingPlans() {
   };
 
   const getAssignedStudents = async (planIdToFetch: string) => {
-    console.log('[getAssignedStudents] fetching for planId:', planIdToFetch);
+    console.log("[getAssignedStudents] fetching for planId:", planIdToFetch);
     try {
       // Step 1: fetch assignments only (no JOIN, avoids FK name issues)
       const { data: assignments, error: assignError } = await supabase
-        .from('training_plan_assignments')
-        .select('id, student_id, start_date, end_date, status, current_day_number, completed_days, created_at')
-        .eq('plan_id', planIdToFetch);
+        .from("training_plan_assignments")
+        .select(
+          "id, student_id, start_date, end_date, status, current_day_number, completed_days, created_at",
+        )
+        .eq("plan_id", planIdToFetch);
 
-      console.log('[getAssignedStudents] assignments:', assignments, 'error:', assignError);
+      console.log(
+        "[getAssignedStudents] assignments:",
+        assignments,
+        "error:",
+        assignError,
+      );
 
       if (assignError) {
-        console.error('[getAssignedStudents] DB error:', assignError.message, assignError.details, assignError.hint);
+        console.error(
+          "[getAssignedStudents] DB error:",
+          assignError.message,
+          assignError.details,
+          assignError.hint,
+        );
         throw new Error(`Error al leer asignaciones: ${assignError.message}`);
       }
 
       if (!assignments || assignments.length === 0) {
-        console.log('[getAssignedStudents] no assignments found');
+        console.log("[getAssignedStudents] no assignments found");
         return { success: true, students: [] };
       }
 
       // Step 2: fetch plan total_days
       const { data: planRow } = await supabase
-        .from('training_plans')
-        .select('total_days')
-        .eq('id', planIdToFetch)
+        .from("training_plans")
+        .select("total_days")
+        .eq("id", planIdToFetch)
         .single();
       const totalDays = planRow?.total_days || 0;
 
       // Step 3: fetch profiles separately (avoids FK constraints)
       const studentIds = assignments.map((a) => a.student_id);
-      console.log('[getAssignedStudents] fetching profiles for:', studentIds);
+      console.log("[getAssignedStudents] fetching profiles for:", studentIds);
 
       const { data: profiles, error: profilesError } = await supabase
-        .from('profiles')
-        .select('id, full_name, email, avatar_url')
-        .in('id', studentIds);
+        .from("profiles")
+        .select("id, full_name, email, avatar_url")
+        .in("id", studentIds);
 
-      console.log('[getAssignedStudents] profiles:', profiles, 'error:', profilesError);
+      console.log(
+        "[getAssignedStudents] profiles:",
+        profiles,
+        "error:",
+        profilesError,
+      );
 
       if (profilesError) {
         // Non-fatal: show students without profile data
-        console.warn('[getAssignedStudents] profiles error (non-fatal):', profilesError.message);
+        console.warn(
+          "[getAssignedStudents] profiles error (non-fatal):",
+          profilesError.message,
+        );
       }
 
       const profileMap = new Map((profiles || []).map((p) => [p.id, p]));
@@ -559,12 +601,12 @@ export function useTrainingPlans() {
           return {
             assignmentId: row.id,
             studentId: row.student_id,
-            fullName: profile?.full_name || 'Sin nombre',
-            email: profile?.email || 'Sin email',
+            fullName: profile?.full_name || "Sin nombre",
+            email: profile?.email || "Sin email",
             avatarUrl: profile?.avatar_url || null,
             startDate: row.start_date,
             endDate: row.end_date,
-            status: row.status || 'active',
+            status: row.status || "active",
             currentDay: row.current_day_number || 1,
             completedDays: row.completed_days || 0,
             totalDays,
@@ -574,7 +616,7 @@ export function useTrainingPlans() {
       };
     } catch (err) {
       const msg = err instanceof Error ? err.message : String(err);
-      console.error('[getAssignedStudents] caught error:', msg);
+      console.error("[getAssignedStudents] caught error:", msg);
       return {
         success: false,
         students: [],
@@ -586,19 +628,19 @@ export function useTrainingPlans() {
   const unassignStudent = async (assignmentId: string) => {
     try {
       const { error: deleteError } = await supabase
-        .from('training_plan_assignments')
+        .from("training_plan_assignments")
         .delete()
-        .eq('id', assignmentId);
+        .eq("id", assignmentId);
 
       if (deleteError) throw deleteError;
 
       await loadPlans(); // Refresh counts
       return { success: true };
     } catch (err) {
-      console.error('Error unassigning student:', err);
+      console.error("Error unassigning student:", err);
       return {
         success: false,
-        error: err instanceof Error ? err.message : 'Error desconocido',
+        error: err instanceof Error ? err.message : "Error desconocido",
       };
     }
   };
