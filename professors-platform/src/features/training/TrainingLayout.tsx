@@ -19,7 +19,7 @@ export default function TrainingLayout() {
   })
 
   return (
-    <div className="flex flex-col h-screen overflow-hidden bg-[#f7f9fc] dark:bg-slate-950">
+    <div className="flex flex-col h-[100dvh] overflow-hidden bg-[#f7f9fc] dark:bg-slate-950">
       {/* Scrollable content */}
       <main className="flex-1 overflow-y-auto overscroll-contain">
         <Outlet />
