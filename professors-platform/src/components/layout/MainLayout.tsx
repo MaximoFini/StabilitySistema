@@ -34,9 +34,11 @@ export default function MainLayout() {
           >
             <Menu size={20} />
           </button>
-          <span className="text-lg font-bold tracking-tight text-primary">
-            Stability
-          </span>
+          <img
+            src="/logo-stability.png"
+            alt="Stability Logo"
+            className="h-8 w-auto object-contain"
+          />
 
           {/* Avatar shortcut on mobile */}
           <div className="ml-auto w-8 h-8 rounded-full bg-slate-200 dark:bg-slate-700 overflow-hidden flex items-center justify-center shrink-0">

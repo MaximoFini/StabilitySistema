@@ -4,10 +4,8 @@ import { useTrainingStore } from "@/features/training/store/trainingStore";
 import { useActiveAssignment } from "@/hooks/useActiveAssignment";
 import { useActiveDayExercises } from "@/hooks/useActiveDayExercises";
 import { useWorkoutCompletions } from "@/hooks/useWorkoutCompletions";
-import { useAvailableDays } from "@/hooks/useAvailableDays";
 import { cn } from "@/lib/utils";
-import { useState, useEffect } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
 
 // Decorative gradient overlay for the hero image
 const gradientOverlay =
@@ -18,8 +16,8 @@ export default function TrainingHome() {
   const { professor } = useAuthStore();
   const setAssignmentContext = useTrainingStore((s) => s.setAssignmentContext);
 
+  // ── Data hooks (assignment + completions fire in parallel) ──
   const { assignment, loading: assignmentLoading } = useActiveAssignment();
-  const { days: availableDays } = useAvailableDays(assignment?.planId ?? null);
   const { completions } = useWorkoutCompletions();
 
   // Selected day state (null = use the suggested next day)
@@ -31,33 +29,16 @@ export default function TrainingHome() {
   const { workoutDay, loading: dayLoading } =
     useActiveDayExercises(dayIdToLoad);
 
+  // Available days come from the assignment (no separate hook!)
+  const availableDays = assignment?.availableDays ?? [];
+  const daysPerWeek = assignment?.daysPerWeek ?? 0;
+
   // Build a Set of completed day numbers for this assignment
   const completedDayNumbers = new Set(
     completions
       .filter((c) => c.assignmentId === assignment?.assignmentId)
       .map((c) => c.dayNumber),
   );
-
-  const [daysPerWeek, setDaysPerWeek] = useState<number>(0);
-
-  // Fetch days_per_week from the plan
-  useEffect(() => {
-    if (!assignment?.planId) return;
-
-    const fetchPlanDetails = async () => {
-      const { data } = await supabase
-        .from("training_plans")
-        .select("days_per_week")
-        .eq("id", assignment.planId)
-        .single();
-
-      if (data) {
-        setDaysPerWeek(data.days_per_week);
-      }
-    };
-
-    fetchPlanDetails();
-  }, [assignment?.planId]);
 
   // Calculate this week's completions
   const getThisWeekCompletions = () => {
@@ -146,9 +127,6 @@ export default function TrainingHome() {
           <h1 className="mt-0.5 text-2xl font-bold tracking-tight text-slate-900 dark:text-white">
             Hola, {firstName} 💪
           </h1>
-          <p className="mt-0.5 text-sm text-slate-500 dark:text-slate-400">
-            Tienes un entrenamiento pendiente.
-          </p>
         </div>
 
         {/* Avatar */}
@@ -198,11 +176,7 @@ export default function TrainingHome() {
               ', url("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80") center/cover no-repeat',
           }}
         >
-          {/* Badge "En curso" */}
-          <span className="absolute top-4 left-4 flex items-center gap-1.5 bg-white/20 backdrop-blur-sm text-white text-[11px] font-bold uppercase tracking-wider px-3 py-1.5 rounded-full border border-white/30">
-            <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
-            En curso
-          </span>
+
 
           {/* Content */}
           <div className="relative p-5 pt-12 text-white space-y-3">
@@ -211,7 +185,7 @@ export default function TrainingHome() {
                 Tu Entrenamiento de Hoy
               </p>
               <h2 className="text-xl font-bold leading-tight">
-                Día {assignment.currentDayNumber} — {assignment.currentDayName}
+                Día {workoutDay?.id ?? assignment.currentDayNumber}
               </h2>
               <p className="text-xs text-blue-200/80 mt-0.5 font-medium">
                 {assignment.planTitle}
@@ -221,12 +195,8 @@ export default function TrainingHome() {
               <div className="flex flex-wrap gap-2 mt-2">
                 {[
                   {
-                    icon: "schedule",
-                    text: `${assignment.estimatedMinutes} min`,
-                  },
-                  {
                     icon: "exercise",
-                    text: `${assignment.exerciseCount} ejercicios`,
+                    text: `${workoutDay?.exercises.length ?? assignment.exerciseCount} ejercicios`,
                   },
                 ].map((m) => (
                   <span

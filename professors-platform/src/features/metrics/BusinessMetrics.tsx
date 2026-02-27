@@ -60,7 +60,7 @@ function DonutChart({
 
   return (
     <div className="flex flex-col items-center">
-      <div className="relative w-48 h-48 mb-6">
+      <div className="relative w-full aspect-square max-w-[300px] mb-8">
         <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
           {/* background track */}
           <circle cx="50" cy="50" fill="none" r="40" stroke="#f3f4f6" strokeWidth="10" />
@@ -122,20 +122,13 @@ export default function BusinessMetrics() {
 
   return (
     <div className="flex flex-col h-full bg-background-light dark:bg-background-dark relative">
-      <header className="h-16 bg-white dark:bg-surface-light border-b border-gray-200 dark:border-border-light flex items-center justify-between px-8 flex-shrink-0 z-10">
-        <div>
-          <h1 className="text-2xl font-bold text-gray-900">Métricas del Negocio</h1>
-          <p className="text-xs text-gray-500 mt-0.5">Visión general del rendimiento de tu gimnasio</p>
+      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex-none">
+        <div className="px-8 pt-8 pb-8">
+          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Métricas del Negocio</h1>
         </div>
-        {!isLoading && (
-          <span className="text-xs text-gray-400 flex items-center gap-1">
-            <span className="material-symbols-outlined text-[14px]">fiber_manual_record</span>
-            Datos en tiempo real
-          </span>
-        )}
       </header>
 
-      <main className="flex-1 overflow-y-auto p-8">
+      <main className="flex-1 overflow-y-auto p-4 lg:p-8">
         {error ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <span className="material-symbols-outlined text-red-400 text-5xl mb-3">error_outline</span>
@@ -143,7 +136,7 @@ export default function BusinessMetrics() {
             <p className="text-sm text-gray-400 mt-1">{error}</p>
           </div>
         ) : (
-          <div className="max-w-7xl mx-auto flex flex-col gap-8">
+          <div className="w-full flex flex-col gap-8 pb-8">
 
             {/* Top metric cards */}
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
@@ -203,7 +196,7 @@ export default function BusinessMetrics() {
             <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
 
               {/* Goals bar chart */}
-              <div className="lg:col-span-8 bg-white dark:bg-surface-light rounded-xl shadow-card border border-gray-200 dark:border-border-light p-6 flex flex-col">
+              <div className="lg:col-span-8 bg-white dark:bg-surface-light rounded-xl shadow-card border border-gray-200 dark:border-border-light p-6 md:p-8 flex flex-col">
                 <div className="flex items-center justify-between mb-8">
                   <div>
                     <h2 className="text-lg font-bold text-gray-900">Objetivos de Alumnos</h2>
@@ -259,7 +252,7 @@ export default function BusinessMetrics() {
               <div className="lg:col-span-4 flex flex-col gap-6">
 
                 {/* Gender donut */}
-                <div className="bg-white dark:bg-surface-light rounded-xl shadow-card border border-gray-200 dark:border-border-light p-6">
+                <div className="bg-white dark:bg-surface-light rounded-xl shadow-card border border-gray-200 dark:border-border-light p-6 md:p-8 flex flex-col">
                   <h2 className="text-lg font-bold text-gray-900 mb-6">Distribución por Género</h2>
                   {isLoading ? (
                     <div className="flex flex-col items-center animate-pulse">
@@ -277,24 +270,76 @@ export default function BusinessMetrics() {
                   )}
                 </div>
 
-                {/* Retention card — "Próximamente" */}
-                <div className="bg-white dark:bg-surface-light rounded-xl shadow-card border border-gray-200 dark:border-border-light p-6 flex flex-col justify-center">
-                  <div className="flex items-center justify-between mb-4">
-                    <h3 className="text-base font-bold text-gray-900">Retención de Clientes</h3>
+                {/* Retention card */}
+                <div className="bg-white dark:bg-surface-light rounded-xl shadow-card border border-gray-200 dark:border-border-light p-6 md:p-8 flex flex-col justify-between relative group hover:border-blue-200 transition-all">
+                  {/* Background Decoration Container (Clipped) */}
+                  <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
+                    <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-primary/5 rounded-full group-hover:scale-110 transition-transform" />
+                  </div>
+
+                  <div className="flex items-center justify-between mb-4 relative z-20">
+                    <h3 className="text-sm font-medium text-gray-500 uppercase tracking-wide">Retención de Clientes</h3>
                     <div className="relative group/tooltip">
-                      <span className="material-symbols-outlined text-gray-400 cursor-pointer">info</span>
-                      <div className="absolute right-0 top-6 z-30 hidden group-hover/tooltip:block w-56 bg-gray-800 text-white text-xs rounded-lg p-3 shadow-xl leading-relaxed">
-                        El Churn Rate indica qué porcentaje de alumnos se dan de baja en un mes. Estará disponible cuando se implemente el campo de estado de alumnos.
+                      <span className="material-symbols-outlined text-gray-400 cursor-pointer text-[20px] hover:text-primary transition-colors">info</span>
+                      <div className="absolute right-0 top-full mt-2 z-50 hidden group-hover/tooltip:block w-64 bg-gray-800 text-white text-[11px] rounded-xl p-4 shadow-2xl leading-relaxed animate-in fade-in zoom-in duration-200 origin-top-right border border-white/10">
+                        <div className="flex items-center gap-2 mb-3 border-b border-white/10 pb-2">
+                          <span className="material-symbols-outlined text-primary text-[14px]">calculate</span>
+                          <p className="font-bold text-gray-100">Cálculo de Retención</p>
+                        </div>
+                        <div className="font-mono bg-white/5 p-2 rounded-lg mb-4 text-center text-primary-light border border-white/5">
+                          ((E - N) / S) × 100
+                        </div>
+                        <ul className="space-y-2 text-gray-300">
+                          <li className="flex gap-2">
+                            <strong className="text-white w-4">S</strong>
+                            <span><span className="text-gray-500">(Start)</span> Alumnos al inicio del mes.</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <strong className="text-white w-4">N</strong>
+                            <span><span className="text-gray-500">(New)</span> Alumnos nuevos este mes.</span>
+                          </li>
+                          <li className="flex gap-2">
+                            <strong className="text-white w-4">E</strong>
+                            <span><span className="text-gray-500">(End)</span> Alumnos totales activos hoy.</span>
+                          </li>
+                        </ul>
                       </div>
                     </div>
                   </div>
-                  <div className="flex flex-col items-center justify-center py-4 gap-2 text-center">
-                    <span className="material-symbols-outlined text-gray-300 text-3xl">schedule</span>
-                    <p className="text-sm font-semibold text-gray-400">Próximamente</p>
-                    <p className="text-xs text-gray-400 leading-relaxed">
-                      Esta métrica estará disponible cuando se agregue el seguimiento de estado de alumnos.
-                    </p>
-                  </div>
+
+                  {isLoading ? (
+                    <div className="py-2 animate-pulse">
+                      <div className="h-8 bg-gray-200 rounded w-20 mb-2" />
+                      <div className="h-2 bg-gray-100 rounded w-full" />
+                    </div>
+                  ) : (
+                    <div className="relative z-10 flex flex-col gap-3">
+                      <div className="flex items-baseline gap-2">
+                        <span className="text-3xl font-bold text-gray-900">
+                          {metrics?.retentionPercent != null ? `${metrics.retentionPercent}%` : "—"}
+                        </span>
+                        {metrics?.retentionPercent != null && (
+                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${metrics.retentionPercent >= 90 ? 'text-green-700 bg-green-50' : 'text-blue-700 bg-blue-50'
+                            }`}>
+                            {metrics.retentionPercent >= 90 ? 'Excelente' : 'Estable'}
+                          </span>
+                        )}
+                      </div>
+
+                      <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">
+                        <div
+                          className="h-full bg-primary rounded-full transition-all duration-1000"
+                          style={{ width: `${metrics?.retentionPercent ?? 0}%` }}
+                        />
+                      </div>
+
+                      <p className="text-[11px] text-gray-400">
+                        {metrics?.retentionPercent != null
+                          ? "Métrica basada en el flujo de alumnos del presente mes."
+                          : "Datos insuficientes para calcular la retención."}
+                      </p>
+                    </div>
+                  )}
                 </div>
 
               </div>

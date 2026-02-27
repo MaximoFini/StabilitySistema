@@ -4,7 +4,6 @@ import type {
   WorkoutDay,
   Exercise,
   ExerciseSet,
-  ExerciseCategory,
 } from "@/features/training/types";
 
 interface UseActiveDayExercisesReturn {
@@ -26,14 +25,6 @@ function parsePauseToSeconds(pause: string | null | undefined): number {
   return 60;
 }
 
-/** Infer exercise category from stage_name. */
-function inferCategory(stageName: string | null | undefined): ExerciseCategory {
-  if (!stageName) return "Aislamiento";
-  const lower = stageName.toLowerCase();
-  if (lower.includes("compuesto") || lower.includes("principal"))
-    return "Compuesto";
-  return "Aislamiento";
-}
 
 export function useActiveDayExercises(
   dayId: string | null,
@@ -54,10 +45,12 @@ export function useActiveDayExercises(
 
     async function load() {
       try {
-        // Query 1 — day metadata
+        // Single query with join — day metadata + exercises in one round-trip
         const { data: dayData, error: dayErr } = await supabase
           .from("training_plan_days")
-          .select("id, day_number, day_name")
+          .select(
+            "id, day_number, day_name"
+          )
           .eq("id", dayId!)
           .single();
 
@@ -66,7 +59,6 @@ export function useActiveDayExercises(
           return;
         }
 
-        // Query 2 — exercises ordered by display_order
         const { data: exercises, error: exErr } = await supabase
           .from("training_plan_exercises")
           .select(
@@ -82,22 +74,19 @@ export function useActiveDayExercises(
 
         // Transform exercises to the WorkoutDay format
         const mappedExercises: Exercise[] = (exercises ?? []).map(
-          (
-            ex: {
-              id: string;
-              exercise_name: string;
-              series: number;
-              reps: string;
-              pause: string;
-              stage_name: string | null;
-              notes: string | null;
-              coach_instructions: string | null;
-              video_url: string | null;
-              display_order: number;
-              write_weight?: boolean;
-            },
-            index,
-          ) => {
+          (ex: {
+            id: string;
+            exercise_name: string;
+            series: number;
+            reps: string;
+            pause: string;
+            stage_name: string | null;
+            notes: string | null;
+            coach_instructions: string | null;
+            video_url: string | null;
+            display_order: number;
+            write_weight?: boolean;
+          }) => {
             const sets: ExerciseSet[] = Array.from(
               { length: ex.series ?? 1 },
               (_, i) => ({
@@ -113,9 +102,9 @@ export function useActiveDayExercises(
               instructionParts.push(ex.coach_instructions);
 
             return {
-              id: index + 1,
+              id: ex.id,
               name: ex.exercise_name,
-              category: inferCategory(ex.stage_name),
+              category: ex.stage_name ?? "",
               sets,
               restSeconds: parsePauseToSeconds(ex.pause),
               videoUrl: ex.video_url ?? undefined,

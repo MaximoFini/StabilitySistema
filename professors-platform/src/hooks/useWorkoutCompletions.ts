@@ -16,8 +16,9 @@ export interface SaveCompletionParams {
   assignmentId: string;
   dayNumber: number;
   rpe: number | null;
-  mood: string | null;
-  moodComment?: string;
+  initialMood: string | null;   // happy/neutral/sad — antes de entrenar
+  mood: string | null;          // excellent/normal/tired/pain — al finalizar
+  moodComment?: string | null;
   totalSetsDone: number;
   seriesLog: SeriesLog;
 }
@@ -90,22 +91,59 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
       if (!professor?.id)
         return { success: false, error: "No hay usuario autenticado" };
 
+      // Validación de datos
+      if (!params.assignmentId) {
+        console.error("❌ assignmentId está vacío");
+        return { success: false, error: "Assignment ID requerido" };
+      }
+
+      if (!params.dayNumber || params.dayNumber < 1) {
+        console.error("❌ dayNumber inválido:", params.dayNumber);
+        return { success: false, error: "Day number inválido" };
+      }
+
       try {
+        // Mapear mood a valores válidos del constraint de BD
+        // Los valores válidos son probablemente: 'excellent', 'good', 'tired', 'pain' o similares
+        let moodValue: string | null = null;
+        if (params.mood) {
+          const moodMap: Record<string, string> = {
+            excelente: "excellent",
+            normal: "normal",
+            fatigado: "tired",
+            molestia: "pain",
+          };
+          moodValue = moodMap[params.mood] || null;
+        }
+
         // Step 1 — insert completion record
+        const insertData = {
+          student_id: professor.id,
+          assignment_id: params.assignmentId,
+          day_number: params.dayNumber,
+          rpe: params.rpe,
+          initial_mood: params.initialMood || null,
+          mood: moodValue,
+          mood_comment: params.moodComment || null,
+          total_sets_done: params.totalSetsDone,
+          series_log: params.seriesLog as Record<string, unknown>,
+        };
+
+        console.log(
+          "✅ Datos a insertar:",
+          JSON.stringify(insertData, null, 2),
+        );
+
         const { error: insertErr } = await supabase
           .from("workout_completions")
-          .insert({
-            student_id: professor.id,
-            assignment_id: params.assignmentId,
-            day_number: params.dayNumber,
-            rpe: params.rpe,
-            mood: params.mood,
-            mood_comment: params.moodComment,
-            total_sets_done: params.totalSetsDone,
-            series_log: params.seriesLog as Record<string, unknown>,
-          });
+          .insert(insertData);
 
-        if (insertErr) return { success: false, error: insertErr.message };
+        if (insertErr) {
+          console.error("❌ Error insertando workout_completion:", insertErr);
+          return { success: false, error: insertErr.message };
+        }
+
+        console.log("✅ Workout completion guardado exitosamente");
 
         // Step 2 — read current assignment to get completed_days
         const { data: assignmentData, error: readErr } = await supabase

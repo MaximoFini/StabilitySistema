@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -11,7 +11,6 @@ import { toast } from "sonner";
 const loginSchema = z.object({
   email: z.string().email("Email inválido"),
   password: z.string().min(6, "Mínimo 6 caracteres"),
-  rememberMe: z.boolean().optional(),
 });
 
 type LoginFormData = z.infer<typeof loginSchema>;
@@ -19,7 +18,11 @@ type LoginFormData = z.infer<typeof loginSchema>;
 export default function Login() {
   const [showPassword, setShowPassword] = useState(false);
   const navigate = useNavigate();
-  const { login, isLoading, error: authError } = useAuthStore();
+  const { login, isLoading, error: authError, clearError } = useAuthStore();
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   const {
     register,
@@ -28,13 +31,12 @@ export default function Login() {
   } = useForm<LoginFormData>({
     resolver: zodResolver(loginSchema),
     defaultValues: {
-      rememberMe: false,
     },
   });
 
   const onSubmit = async (data: LoginFormData) => {
     try {
-      await login(data.email, data.password, data.rememberMe);
+      await login(data.email, data.password);
       toast.success("¡Bienvenido de nuevo!");
 
       const currentProfessor = useAuthStore.getState().professor;
@@ -67,35 +69,60 @@ export default function Login() {
   return (
     <div className="h-screen w-full flex overflow-hidden bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark transition-colors duration-300">
       {/* Left Panel - Only visible on large screens */}
-      <div className="hidden lg:flex w-1/2 relative bg-primary items-center justify-center overflow-hidden">
-        <div className="absolute inset-0 z-0">
-          <img
-            alt="Gym weights background"
-            className="w-full h-full object-cover opacity-40 mix-blend-multiply"
-            src="https://lh3.googleusercontent.com/aida-public/AB6AXuCInrZDpmQgQD_lEDYX12gML5JldSHxVLiCV9gYhWlVWdJUOq1CDCJoxVJptMj5MR8Btgnc3T1MPzNq2VLQfpQXZlwQ6-LgsfF40KxiGezmniir2kvBFPg7o2N7_3GEhT0TN0qf8ZZBCcsEfZzb57DQew68Yuqi4yAX2x4Rcphemkm4irvU-k2J7_aB7Be-4NvD-XOyW8H8PDB-9k_UwTKcjFMNoNTAqXA78heOVzQqrY3fOqZdfLW9XL53tafKbdRhl9x4tmpnFps"
-          />
-          <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/60 to-primary/40"></div>
-        </div>
-        <div className="relative z-10 flex flex-col items-center justify-center text-white">
-          <div className="relative">
-            <h1 className="font-serif text-7xl tracking-widest font-bold relative z-10">
-              STABILIT
-              <span className="relative inline-block">
-                Y
-                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-2xl text-white/90">
-                  <span
-                    className="material-symbols-outlined animate-spin"
-                    style={{ animationDuration: "3s" }}
-                  >
-                    settings
-                  </span>
-                </span>
-              </span>
-            </h1>
+      <div className="hidden lg:flex w-1/2 relative items-center justify-center overflow-hidden bg-[#0b1d3a]">
+        {/* Gym background photo */}
+        <img
+          alt="Gym background"
+          className="absolute inset-0 w-full h-full object-cover object-center opacity-30"
+          src="https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=1200&q=80"
+        />
+        {/* Blue overlay gradient */}
+        <div className="absolute inset-0 bg-gradient-to-br from-[#0d2654]/95 via-[#1240a0]/80 to-[#0d2654]/90" />
+        {/* Subtle radial glow in center */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_60%_50%_at_50%_50%,rgba(37,99,235,0.25),transparent)]" />
+
+        {/* STABILITY branding — pure CSS, no screenshot */}
+        <div className="relative z-10 flex flex-col items-center justify-center select-none" style={{ fontFamily: "'Georgia', 'Times New Roman', serif" }}>
+          {/* Gear icon */}
+          <div className="mb-6">
+            <svg width="34" height="34" viewBox="0 0 24 24" fill="none" className="text-white/80" stroke="currentColor" strokeWidth="1.2">
+              <path d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z" />
+              <path d="M19.622 10.395l-1.097-2.65L20 6l-2-2-1.735 1.483-2.707-1.113L12.935 2h-1.954l-.632 2.401-2.645 1.115L6 4 4 6l1.453 1.789-1.08 2.657L2 11v2l2.348.655L5.4 16.3 4 18l2 2 1.791-1.46 2.606 1.072L11 22h2l.604-2.387 2.651-1.098C16.697 18.831 18 20 18 20l2-2-1.462-1.787 1.085-2.642L22 13v-2l-2.378-.605Z" />
+            </svg>
           </div>
-          <div className="w-full h-px bg-white/50 my-4 max-w-[80%]"></div>
-          <p className="text-sm uppercase tracking-[0.3em] font-light">
-            Entrenamiento y salud
+
+          {/* STABILITY wordmark */}
+          <h1
+            className="text-white tracking-[0.18em] font-normal"
+            style={{
+              fontSize: "clamp(2.8rem, 5vw, 4rem)",
+              letterSpacing: "0.18em",
+              fontFamily: "'Palatino Linotype', 'Palatino', 'Book Antiqua', Georgia, serif",
+              textShadow: "0 2px 24px rgba(0,0,0,0.4)",
+              fontWeight: 400,
+            }}
+          >
+            STABILITY
+          </h1>
+
+          {/* Decorative divider */}
+          <div className="flex items-center gap-3 my-4">
+            <div className="h-px bg-white/40" style={{ width: "60px" }} />
+            <div className="w-1.5 h-1.5 rounded-full bg-white/50" />
+            <div className="h-px bg-white/40" style={{ width: "60px" }} />
+          </div>
+
+          {/* Subtitle */}
+          <p
+            className="text-white/70 uppercase"
+            style={{
+              letterSpacing: "0.35em",
+              fontSize: "0.7rem",
+              fontFamily: "'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif",
+              fontWeight: 400,
+            }}
+          >
+            Entrenamiento y Salud
           </p>
         </div>
       </div>
@@ -104,12 +131,13 @@ export default function Login() {
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 overflow-y-auto relative">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex justify-center mb-8">
-            <div className="bg-primary text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
-              <span className="font-bold text-xl tracking-wide">STABILITY</span>
-              <span className="material-symbols-outlined text-sm">
-                settings
-              </span>
+          <div className="lg:hidden flex justify-center mb-6">
+            <div className="bg-white/95 dark:bg-white p-4 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.05)] w-full max-w-[160px] flex items-center justify-center border border-slate-50">
+              <img
+                src="/logo-stability.png"
+                alt="Stability Logo"
+                className="w-full h-auto object-contain drop-shadow-sm"
+              />
             </div>
           </div>
 
@@ -218,30 +246,6 @@ export default function Login() {
                 )}
               </div>
 
-              <div className="flex items-center justify-between">
-                <div className="flex items-center">
-                  <input
-                    id="rememberMe"
-                    type="checkbox"
-                    {...register("rememberMe")}
-                    className="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded dark:bg-gray-700 dark:border-gray-600"
-                  />
-                  <label
-                    htmlFor="rememberMe"
-                    className="ml-2 block text-sm text-gray-600 dark:text-gray-400"
-                  >
-                    Recordarme
-                  </label>
-                </div>
-                <div className="text-sm">
-                  <a
-                    href="#"
-                    className="font-medium text-primary hover:text-blue-700 dark:hover:text-blue-400"
-                  >
-                    ¿Olvidaste tu contraseña?
-                  </a>
-                </div>
-              </div>
 
               <div>
                 <Button
@@ -267,47 +271,6 @@ export default function Login() {
                 </Button>
               </div>
             </form>
-
-            {/* Divider */}
-            <div className="relative mt-8 mb-6">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-gray-200 dark:border-gray-700"></div>
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="px-2 bg-card-light dark:bg-card-dark text-muted-light dark:text-muted-dark">
-                  o continúa con
-                </span>
-              </div>
-            </div>
-
-            {/* Google OAuth Placeholder */}
-            <div>
-              <button
-                type="button"
-                disabled
-                className="w-full flex justify-center items-center px-4 py-2.5 border border-dashed border-gray-300 dark:border-gray-600 rounded-lg shadow-sm bg-white dark:bg-transparent text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              >
-                <svg className="h-5 w-5 mr-2" viewBox="0 0 24 24">
-                  <path
-                    fill="#4285F4"
-                    d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                  />
-                  <path
-                    fill="#34A853"
-                    d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                  />
-                  <path
-                    fill="#FBBC05"
-                    d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"
-                  />
-                  <path
-                    fill="#EA4335"
-                    d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-                  />
-                </svg>
-                Continuar con Google
-              </button>
-            </div>
           </div>
 
           {/* Register Link */}

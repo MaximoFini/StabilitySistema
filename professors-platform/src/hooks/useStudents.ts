@@ -8,6 +8,7 @@ interface ActiveAssignment {
   start_date: string;
   end_date: string;
   status: string;
+  days_per_week: number;
 }
 
 export interface Student {
@@ -21,6 +22,7 @@ export interface Student {
   instagram?: string;
   activeAssignments?: ActiveAssignment[];
   rpeAlert?: "high" | "low" | null;
+  isArchived: boolean;
 }
 
 // Alias for components that need the extended type
@@ -44,6 +46,7 @@ interface StudentDetailRow {
   activity_level: string;
   phone: string | null;
   instagram: string | null;
+  is_archived: boolean;
 }
 
 interface AssignmentRow {
@@ -52,7 +55,7 @@ interface AssignmentRow {
   start_date: string;
   end_date: string;
   status: string;
-  training_plans: { title: string } | null;
+  training_plans: { title: string; days_per_week: number } | null;
 }
 
 export function useStudents() {
@@ -94,7 +97,7 @@ export function useStudents() {
         supabase
           .from("student_profiles")
           .select(
-            "id, profile_image_url, training_experience, primary_goal, activity_level, phone, instagram",
+            "id, profile_image_url, training_experience, primary_goal, activity_level, phone, instagram, is_archived",
           )
           .in("id", studentIds),
         supabase
@@ -106,7 +109,7 @@ export function useStudents() {
             start_date,
             end_date,
             status,
-            training_plans ( title )
+            training_plans ( title, days_per_week )
           `,
           )
           .in("student_id", studentIds)
@@ -130,6 +133,7 @@ export function useStudents() {
             start_date: row.start_date,
             end_date: row.end_date,
             status: row.status,
+            days_per_week: row.training_plans?.days_per_week ?? 3,
           });
           assignmentsMap.set(row.student_id, existing);
         }
@@ -157,6 +161,7 @@ export function useStudents() {
             phone: details?.phone || undefined,
             instagram: details?.instagram || undefined,
             activeAssignments: assignmentsMap.get(profile.id) || [],
+            isArchived: details?.is_archived || false,
           };
         });
 

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
@@ -72,9 +72,16 @@ export default function RegisterPage() {
   const [personalData, setPersonalData] = useState<PersonalDataForm | null>(
     null,
   );
-  const [showSuccessModal, setShowSuccessModal] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [registered, setRegistered] = useState(false);
+  const [registeredEmail, setRegisteredEmail] = useState("");
   const navigate = useNavigate();
-  const { register: registerUser, isLoading } = useAuthStore();
+  const { register: registerUser, isLoading, clearError } = useAuthStore();
+
+  useEffect(() => {
+    clearError();
+  }, [clearError]);
 
   // Step 1 Form
   const step1Form = useForm<PersonalDataForm>({
@@ -109,16 +116,12 @@ export default function RegisterPage() {
         acceptPrivacy: data.acceptPrivacy,
       });
 
-      // Show success modal
-      setShowSuccessModal(true);
-
-      // Auto-redirect after 2 seconds
-      setTimeout(() => {
-        setShowSuccessModal(false);
-        navigate("/register/complete-profile", { replace: true });
-      }, 2000);
-    } catch {
-      toast.error("Error al crear la cuenta");
+      // Show email verification screen
+      setRegisteredEmail(personalData.email);
+      setRegistered(true);
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Error al crear la cuenta. Intentá de nuevo.";
+      toast.error(errorMessage);
     }
   };
 
@@ -146,27 +149,14 @@ export default function RegisterPage() {
           />
           <div className="absolute inset-0 bg-gradient-to-t from-primary/90 via-primary/60 to-primary/40"></div>
         </div>
-        <div className="relative z-10 flex flex-col items-center justify-center text-white">
-          <div className="relative">
-            <h1 className="font-serif text-7xl tracking-widest font-bold relative z-10">
-              STABILIT
-              <span className="relative inline-block">
-                Y
-                <span className="absolute -top-6 left-1/2 -translate-x-1/2 text-2xl text-white/90">
-                  <span
-                    className="material-symbols-outlined animate-spin"
-                    style={{ animationDuration: "3s" }}
-                  >
-                    settings
-                  </span>
-                </span>
-              </span>
-            </h1>
+        <div className="relative z-10 flex flex-col items-center justify-center">
+          <div className="bg-white/95 dark:bg-white p-6 rounded-2xl shadow-[0_0_40px_rgba(0,0,0,0.1)] flex items-center justify-center transform transition-transform duration-500 hover:scale-[1.02]">
+            <img
+              src="/logo-stability.png"
+              alt="Stability Logo"
+              className="w-48 sm:w-56 h-auto object-contain drop-shadow-sm"
+            />
           </div>
-          <div className="w-full h-px bg-white/50 my-4 max-w-[80%]"></div>
-          <p className="text-sm uppercase tracking-[0.3em] font-light">
-            Entrenamiento y salud
-          </p>
         </div>
       </div>
 
@@ -174,12 +164,13 @@ export default function RegisterPage() {
       <div className="w-full lg:w-1/2 flex flex-col justify-center items-center p-6 lg:p-12 overflow-y-auto relative">
         <div className="w-full max-w-md">
           {/* Mobile Logo */}
-          <div className="lg:hidden flex justify-center mb-8">
-            <div className="bg-primary text-white px-4 py-2 rounded-lg shadow-lg flex items-center gap-2">
-              <span className="font-bold text-xl tracking-wide">STABILITY</span>
-              <span className="material-symbols-outlined text-sm">
-                settings
-              </span>
+          <div className="lg:hidden flex justify-center mb-6">
+            <div className="bg-white/95 dark:bg-white p-4 rounded-2xl shadow-[0_0_20px_rgba(0,0,0,0.05)] w-full max-w-[160px] flex items-center justify-center border border-slate-50">
+              <img
+                src="/logo-stability.png"
+                alt="Stability Logo"
+                className="w-full h-auto object-contain drop-shadow-sm"
+              />
             </div>
           </div>
 
@@ -280,11 +271,19 @@ export default function RegisterPage() {
                         </span>
                       </div>
                       <input
-                        type="password"
+                        type={showPassword ? "text" : "password"}
                         placeholder="Mínimo 8 caracteres"
                         {...step1Form.register("password")}
-                        className="block w-full pl-10 pr-3 py-2.5 border border-border-light dark:border-border-dark rounded-md bg-input-light dark:bg-input-dark text-text-light dark:text-text-dark placeholder-gray-400 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
+                        className="block w-full pl-10 pr-10 py-2.5 border border-border-light dark:border-border-dark rounded-md bg-input-light dark:bg-input-dark text-text-light dark:text-text-dark placeholder-gray-400 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
                       />
+                      <div
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                        onClick={() => setShowPassword(!showPassword)}
+                      >
+                        <span className="material-symbols-outlined text-gray-400 text-lg hover:text-gray-600 dark:hover:text-gray-200">
+                          {showPassword ? "visibility_off" : "visibility"}
+                        </span>
+                      </div>
                     </div>
                     {password && (
                       <div className="flex items-center gap-2 mt-1">
@@ -295,13 +294,12 @@ export default function RegisterPage() {
                           />
                         </div>
                         <span
-                          className={`text-xs font-medium ${
-                            passwordStrength.level === "weak"
-                              ? "text-red-500"
-                              : passwordStrength.level === "medium"
-                                ? "text-yellow-600"
-                                : "text-green-500"
-                          }`}
+                          className={`text-xs font-medium ${passwordStrength.level === "weak"
+                            ? "text-red-500"
+                            : passwordStrength.level === "medium"
+                              ? "text-yellow-600"
+                              : "text-green-500"
+                            }`}
                         >
                           {strengthLabels[passwordStrength.level]}
                         </span>
@@ -325,11 +323,19 @@ export default function RegisterPage() {
                         </span>
                       </div>
                       <input
-                        type="password"
+                        type={showConfirmPassword ? "text" : "password"}
                         placeholder="Repite tu contraseña"
                         {...step1Form.register("confirmPassword")}
-                        className="block w-full pl-10 pr-3 py-2.5 border border-border-light dark:border-border-dark rounded-md bg-input-light dark:bg-input-dark text-text-light dark:text-text-dark placeholder-gray-400 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
+                        className="block w-full pl-10 pr-10 py-2.5 border border-border-light dark:border-border-dark rounded-md bg-input-light dark:bg-input-dark text-text-light dark:text-text-dark placeholder-gray-400 focus:ring-primary focus:border-primary sm:text-sm transition-colors"
                       />
+                      <div
+                        className="absolute inset-y-0 right-0 pr-3 flex items-center cursor-pointer"
+                        onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                      >
+                        <span className="material-symbols-outlined text-gray-400 text-lg hover:text-gray-600 dark:hover:text-gray-200">
+                          {showConfirmPassword ? "visibility_off" : "visibility"}
+                        </span>
+                      </div>
                     </div>
                     {step1Form.formState.errors.confirmPassword && (
                       <p className="text-xs text-destructive mt-1">
@@ -466,34 +472,60 @@ export default function RegisterPage() {
         </div>
       </div>
 
-      {/* Success Modal */}
-      {showSuccessModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
-          <div className="bg-white dark:bg-card-dark rounded-xl shadow-2xl p-8 max-w-md w-full animate-in fade-in zoom-in duration-300">
-            <div className="flex flex-col items-center text-center space-y-4">
-              {/* Success Icon */}
-              <div className="w-16 h-16 bg-green-100 dark:bg-green-900/30 rounded-full flex items-center justify-center">
-                <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-4xl">
-                  check_circle
-                </span>
-              </div>
+      {/* Email Verification Screen - shown after successful registration */}
+      {registered && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-background-light dark:bg-background-dark">
+          <div className="w-full max-w-md">
+            <div className="bg-card-light dark:bg-card-dark rounded-xl shadow-xl dark:shadow-none dark:border dark:border-border-dark p-8">
+              <div className="flex flex-col items-center text-center space-y-5">
+                {/* Icon */}
+                <div className="w-20 h-20 bg-blue-50 dark:bg-blue-900/30 rounded-full flex items-center justify-center">
+                  <span className="material-symbols-outlined text-primary text-5xl">
+                    mark_email_unread
+                  </span>
+                </div>
 
-              {/* Title */}
-              <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
-                ¡Cuenta creada exitosamente!
-              </h3>
+                {/* Title */}
+                <div>
+                  <h3 className="text-2xl font-bold text-gray-900 dark:text-white">
+                    ¡Revisá tu email!
+                  </h3>
+                  <p className="text-muted-light dark:text-muted-dark text-sm mt-2">
+                    Enviamos un link de confirmación a:
+                  </p>
+                  <p className="text-primary font-semibold mt-1 text-sm break-all">
+                    {registeredEmail}
+                  </p>
+                </div>
 
-              {/* Message */}
-              <p className="text-muted-light dark:text-muted-dark text-sm">
-                Hemos enviado un correo de confirmación a tu email.
-              </p>
+                {/* Steps */}
+                <div className="w-full space-y-3 text-left bg-slate-50 dark:bg-slate-800/50 rounded-lg p-4">
+                  {[
+                    { icon: "inbox", text: "Abrí tu bandeja de entrada" },
+                    { icon: "ads_click", text: "Hacé click en el link de confirmación" },
+                    { icon: "login", text: "Luego ingresá con tu email y contraseña" },
+                  ].map((item) => (
+                    <div key={item.text} className="flex items-center gap-3">
+                      <span className="material-symbols-outlined text-primary text-[20px] shrink-0">
+                        {item.icon}
+                      </span>
+                      <p className="text-sm text-gray-700 dark:text-gray-300">{item.text}</p>
+                    </div>
+                  ))}
+                </div>
 
-              {/* Loading indicator */}
-              <div className="flex items-center gap-2 text-primary text-sm font-medium">
-                <span className="material-symbols-outlined animate-spin text-[20px]">
-                  progress_activity
-                </span>
-                <span>Iniciando sesión...</span>
+                <p className="text-xs text-gray-400 dark:text-gray-500">
+                  ¿No lo ves? Revisá tu carpeta de Spam.
+                </p>
+
+                {/* Go to login */}
+                <button
+                  onClick={() => navigate("/login", { replace: true })}
+                  className="w-full flex justify-center items-center gap-2 py-2.5 px-4 border border-transparent rounded-md shadow-sm text-sm font-medium text-white bg-primary hover:bg-blue-700 transition-colors"
+                >
+                  <span className="material-symbols-outlined text-[20px]">login</span>
+                  Ir al inicio de sesión
+                </button>
               </div>
             </div>
           </div>
