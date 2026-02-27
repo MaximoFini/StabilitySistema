@@ -5,9 +5,7 @@ import { RequireRole } from "@/components/layout/RequireRole";
 
 // ── Lazy page imports (code splitting) ────────────────────────────────────
 const MainLayout = lazy(() => import("@/components/layout/MainLayout"));
-const RoleBasedDashboard = lazy(
-  () => import("@/features/dashboard/RoleBasedDashboard"),
-);
+
 const Login = lazy(() => import("@/features/auth/Login"));
 const RegisterPage = lazy(() => import("@/features/auth/RegisterPage"));
 const StudentRegister = lazy(() => import("@/features/auth/StudentRegister"));
@@ -72,8 +70,8 @@ export const router = createBrowserRouter([
     ),
     children: [
       {
-        path: "/",
-        element: withSuspense(RoleBasedDashboard),
+        index: true,
+        element: <Navigate to="/inicio" replace />,
       },
       {
         path: "inicio",
