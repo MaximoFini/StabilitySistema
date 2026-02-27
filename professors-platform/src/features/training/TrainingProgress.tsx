@@ -142,10 +142,6 @@ function ExerciseCard({ group }: { group: ExerciseGroup }) {
             </div>
             <div className="divide-y divide-slate-50 dark:divide-slate-800/60 font-normal">
               {[...sortedLogs].reverse().map((log) => {
-                const maxWeight = Math.max(
-                  ...log.sets_detail.map((s) => s.kg ?? 0).filter((k) => k > 0),
-                  0
-                );
                 const rm = log.calculated_rm ?? log.rm_kg;
                 return (
                   <div key={log.id} className="flex items-center gap-3 px-4 py-3">

@@ -718,46 +718,6 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
 // ── Fuerza Tab – LogRow component ─────────────────────────────────────────
 
 function LogRow({ log }: { log: ExerciseWeightLog }) {
-  const [rmValue, setRmValue] = useState<string>(
-    log.rm_kg != null ? String(log.rm_kg) : "",
-  );
-  const [saving, setSaving] = useState(false);
-
-  const handleRmSave = async () => {
-    const parsed = parseFloat(rmValue);
-    if (isNaN(parsed) && rmValue !== "") return;
-
-    setSaving(true);
-    try {
-      const user = (await supabase.auth.getUser()).data.user;
-      if (!user) {
-        setSaving(false);
-        return;
-      }
-
-      if (log.rm_note_id) {
-        // Actualizar existente
-        await supabase
-          .from("exercise_rm_notes")
-          .update({
-            rm_kg: isNaN(parsed) ? null : parsed,
-            updated_at: new Date().toISOString(),
-          })
-          .eq("id", log.rm_note_id);
-      } else if (!isNaN(parsed)) {
-        // Crear nuevo
-        await supabase.from("exercise_rm_notes").insert({
-          weight_log_id: log.id,
-          coach_id: user.id,
-          rm_kg: parsed,
-        });
-      }
-    } catch (error) {
-      console.error("Error saving RM:", error);
-    } finally {
-      setSaving(false);
-    }
-  };
 
   // Usar el RM calculado automáticamente si existe, sino el manual
   const displayRm =
