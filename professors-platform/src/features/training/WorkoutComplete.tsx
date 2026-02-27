@@ -173,7 +173,7 @@ export default function WorkoutComplete() {
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-[#f7f9fc] dark:bg-slate-950 px-4 pt-8 pb-6 items-center max-w-lg mx-auto w-full">
+    <div className="flex flex-col bg-[#f7f9fc] dark:bg-slate-950 px-4 pt-8 pb-6 items-center max-w-lg mx-auto w-full">
       {/* ── Logo Icon ──────────────────────────────────────────── */}
       <div className="mt-8 mb-6 relative group">
         <div className="w-20 h-20 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center relative z-10 transition-transform duration-500 group-hover:scale-105">

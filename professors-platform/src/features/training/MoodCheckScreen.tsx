@@ -53,7 +53,7 @@ export default function MoodCheckScreen() {
   };
 
   return (
-    <div className="flex flex-col min-h-screen bg-white dark:bg-slate-950 items-center w-full transition-colors duration-300">
+    <div className="flex flex-col bg-white dark:bg-slate-950 items-center w-full transition-colors duration-300">
       <div className="flex flex-col items-center max-w-lg w-full px-6 pt-16 pb-12">
         {/* ── Logo ────────────────────────────────────────────── */}
         <div className="bg-white/95 dark:bg-white p-4 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100/50 flex items-center justify-center mb-10 transform hover:scale-105 transition-all duration-500">

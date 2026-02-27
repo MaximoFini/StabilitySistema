@@ -130,7 +130,7 @@ export default function ExerciseDetail() {
 
   if (!exercise) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-slate-400">
           <span className="material-symbols-outlined text-[40px]">
             fitness_center
@@ -168,7 +168,7 @@ export default function ExerciseDetail() {
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-[#f7f9fc] dark:bg-slate-950">
+    <div className="flex flex-col bg-[#f7f9fc] dark:bg-slate-950">
       {/* ── Header ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 pt-12 pb-4 safe-area-pt">
         <div className="flex items-center gap-3">
@@ -220,7 +220,7 @@ export default function ExerciseDetail() {
       </div>
 
       {/* ── Content ───────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 max-w-lg mx-auto w-full pb-28">
+      <div className="px-4 py-4 space-y-4 max-w-lg mx-auto w-full pb-28">
         {/* Exercise title */}
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white leading-tight">
