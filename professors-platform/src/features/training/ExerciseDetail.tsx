@@ -85,7 +85,7 @@ function RestTimer({
 
 export default function ExerciseDetail() {
   const navigate = useNavigate();
-  const { exerciseNum } = useParams<{ exerciseNum: string }>();
+  const { dayId, exerciseNum } = useParams<{ dayId: string; exerciseNum: string }>();
   const [instructionsOpen, setInstructionsOpen] = useState(false);
   const [restingAfterSet, setRestingAfterSet] = useState<number | null>(null);
 
@@ -150,7 +150,7 @@ export default function ExerciseDetail() {
     nextExercise();
     const nextIndex = paramIndex + 1;
     if (nextIndex < totalExercises) {
-      navigate(`/entrenamiento/dia/1/ejercicio/${nextIndex + 1}`, {
+      navigate(`/entrenamiento/dia/${dayId}/ejercicio/${nextIndex + 1}`, {
         replace: true,
       });
     }
@@ -173,7 +173,7 @@ export default function ExerciseDetail() {
       <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 pt-12 pb-4 safe-area-pt">
         <div className="flex items-center gap-3">
           <button
-            onClick={() => navigate("/entrenamiento/dia/1")}
+            onClick={() => navigate(`/entrenamiento/dia/${dayId}`)}
             className="w-10 h-10 flex items-center justify-center rounded-xl bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300"
           >
             <span className="material-symbols-outlined text-[20px]">
@@ -183,7 +183,7 @@ export default function ExerciseDetail() {
 
           <div className="flex-1 min-w-0">
             <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-0.5">
-              Día 1: {currentDay?.name}
+              DÍA {currentDay?.id}
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400">
               Ejercicio {paramIndex + 1} de {totalExercises}
@@ -362,7 +362,7 @@ export default function ExerciseDetail() {
                         className={cn(
                           "w-full text-center text-sm font-bold rounded-xl border px-2 py-2 min-h-[40px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all",
                           isDone &&
-                            "border-emerald-200 dark:border-emerald-800",
+                          "border-emerald-200 dark:border-emerald-800",
                         )}
                       />
                     ) : (
@@ -384,7 +384,7 @@ export default function ExerciseDetail() {
                         className={cn(
                           "w-full text-center text-sm font-bold rounded-xl border px-2 py-2 min-h-[40px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all",
                           isDone &&
-                            "border-emerald-200 dark:border-emerald-800",
+                          "border-emerald-200 dark:border-emerald-800",
                         )}
                       />
                     ) : (
@@ -439,8 +439,7 @@ export default function ExerciseDetail() {
               <span className="material-symbols-outlined text-[18px]">
                 arrow_forward
               </span>
-              Siguiente Ejercicio ({paramIndex + 1}/{totalExercises - 1}{" "}
-              restantes)
+              Siguiente Ejercicio
             </>
           ) : (
             <>

@@ -145,19 +145,13 @@ export default function StudentProfileSetup() {
 
       <main className="relative z-10 w-full max-w-[520px] flex flex-col gap-6">
         {/* Header */}
-        <header className="flex flex-col items-center justify-center text-center space-y-2">
-          <div className="flex items-center gap-2 mb-1">
-            <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center shadow-lg shadow-primary/20">
-              <span
-                className="material-symbols-outlined text-white"
-                style={{ fontSize: "24px" }}
-              >
-                fitness_center
-              </span>
-            </div>
-            <h1 className="text-3xl font-bold tracking-tight text-[#101418] dark:text-white">
-              STABILITY
-            </h1>
+        <header className="flex flex-col items-center justify-center text-center space-y-4">
+          <div className="bg-white/95 dark:bg-white p-3 rounded-2xl shadow-[0_4px_20px_rgba(0,0,0,0.05)] w-full max-w-[140px] flex items-center justify-center border border-slate-50">
+            <img
+              src="/logo-stability.png"
+              alt="Stability Logo"
+              className="w-full h-auto object-contain drop-shadow-sm"
+            />
           </div>
           <p className="text-[#5e758d] dark:text-slate-400 font-medium text-sm sm:text-base">
             Completa tu Perfil de Alumno

@@ -208,53 +208,54 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
     return (
         <div className="relative">
             {/* Filters Row */}
-            <div className="flex gap-2 mb-6 overflow-x-auto pb-2">
-                <button
-                    onClick={() => setFilter("Todos")}
-                    className={cn(
-                        "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap",
-                        filter === "Todos"
-                            ? "bg-primary text-white border-primary"
-                            : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50"
-                    )}
-                >
-                    Todos
-                </button>
-                {categories.map(cat => (
+            <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4 mb-6">
+                <div className="flex flex-wrap gap-2 flex-1">
                     <button
-                        key={cat.id}
-                        onClick={() => setFilter(cat.id)}
+                        onClick={() => setFilter("Todos")}
                         className={cn(
-                            "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors whitespace-nowrap flex items-center gap-1.5",
-                            filter === cat.id
+                            "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors",
+                            filter === "Todos"
                                 ? "bg-primary text-white border-primary"
                                 : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50"
                         )}
                     >
-                        <div
-                            className="w-2 h-2 rounded-full"
-                            style={{ backgroundColor: cat.color }}
-                        />
-                        {cat.name}
+                        Todos
                     </button>
-                ))}
+                    {categories.map(cat => (
+                        <button
+                            key={cat.id}
+                            onClick={() => setFilter(cat.id)}
+                            className={cn(
+                                "px-3 py-1.5 rounded-full text-xs font-medium border transition-colors flex items-center gap-1.5",
+                                filter === cat.id
+                                    ? "bg-primary text-white border-primary"
+                                    : "bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 border-slate-200 dark:border-slate-700 hover:bg-slate-50"
+                            )}
+                        >
+                            <div
+                                className="w-2 h-2 rounded-full"
+                                style={{ backgroundColor: cat.color }}
+                            />
+                            {cat.name}
+                        </button>
+                    ))}
+                </div>
 
-                <div className="ml-auto flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-none">
                     <button
                         onClick={() => setIsCategoryModalOpen(true)}
-                        className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary flex items-center gap-1"
+                        className="h-8 px-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-primary dark:hover:text-primary hover:border-primary/30 transition-all flex items-center gap-1.5 shadow-sm"
                     >
-                        <span className="material-symbols-outlined text-[18px]">add</span>
+                        <span className="material-symbols-outlined text-[18px]">add_circle</span>
                         Categoría
                     </button>
-                    <div className="w-px h-4 bg-slate-300 dark:bg-slate-600"></div>
                     <button
                         onClick={() => {
                             setEditingExercise(null)
                             setFormData({ name: '', category_id: categories[0]?.id || '', video_url: '', notes: '' })
                             setIsModalOpen(true)
                         }}
-                        className="text-sm font-medium text-primary hover:text-primary-dark flex items-center gap-1"
+                        className="h-8 px-3 bg-primary hover:bg-primary-dark text-white rounded-lg shadow-sm hover:shadow transition-all flex items-center gap-1.5 text-sm font-medium whitespace-nowrap"
                     >
                         <span className="material-symbols-outlined text-[18px]">add</span>
                         Nuevo Ejercicio

@@ -81,6 +81,7 @@ export const MOCK_PLAN: WorkoutDay = {
 // ─── Store ────────────────────────────────────────────────────────────────
 
 export type WorkoutMood = "excelente" | "normal" | "fatigado" | "molestia";
+export type MoodValue = "happy" | "neutral" | "sad";
 
 interface TrainingState {
   currentDay: WorkoutDay | null;
@@ -88,7 +89,8 @@ interface TrainingState {
   seriesLog: SeriesLog;
   restSecondsLeft: number | null;
   rpe: number | null;
-  mood: WorkoutMood | null;
+  initialMood: MoodValue | null;   // mood ANTES de entrenar (happy/neutral/sad)
+  mood: WorkoutMood | null;        // mood FINAL post-entrenamiento
   moodComment: string;
   pendingDayId: string | null; // dayId waiting after mood selection
   isWorkoutComplete: boolean;
@@ -107,6 +109,7 @@ interface TrainingState {
   tickTimer: () => void;
   cancelTimer: () => void;
   setRpe: (value: number) => void;
+  setInitialMood: (value: MoodValue) => void;
   setMood: (value: WorkoutMood) => void;
   setMoodComment: (value: string) => void;
   completeWorkout: () => void;
@@ -119,6 +122,7 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
   seriesLog: {},
   restSecondsLeft: null,
   rpe: null,
+  initialMood: null,
   mood: null,
   moodComment: "",
   pendingDayId: null,
@@ -127,6 +131,8 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
   currentDayNumber: 1,
 
   startWorkout: (day = MOCK_PLAN) => {
+    // NOTE: initialMood is intentionally NOT reset here — it was set before
+    // navigating here from MoodCheckScreen and must persist until saveCompletion.
     set({
       currentDay: day,
       currentExerciseIndex: 0,
@@ -211,6 +217,8 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
 
   setRpe: (value) => set({ rpe: value }),
 
+  setInitialMood: (value) => set({ initialMood: value }),
+
   setMood: (value) => set({ mood: value }),
 
   setMoodComment: (value) => set({ moodComment: value }),
@@ -224,6 +232,7 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
       seriesLog: {},
       restSecondsLeft: null,
       rpe: null,
+      initialMood: null,
       mood: null,
       moodComment: "",
       pendingDayId: null,

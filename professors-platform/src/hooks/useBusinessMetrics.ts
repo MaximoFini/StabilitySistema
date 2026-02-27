@@ -26,6 +26,7 @@ export interface BusinessMetrics {
   newThisMonth: number;
   growthPercent: number | null; // null = no data for previous month comparison
   averageAge: number | null; // null = not enough birth_date data
+  retentionPercent: number | null; // % of students retained from start of month
   // Goal distribution
   goalDistribution: GoalEntry[];
   maxGoalCount: number;
@@ -113,8 +114,7 @@ export function useBusinessMetrics() {
     setError(null);
 
     try {
-      // INNER JOIN via !inner: only students who completed profile setup are counted
-      // Students in profiles(role=student) but missing from student_profiles are excluded
+      // Fetch ALL students (including archived) to calculate retention
       const { data: students, error: fetchError } = await supabase
         .from("profiles")
         .select(`
@@ -125,7 +125,8 @@ export function useBusinessMetrics() {
           student_profiles!inner (
             birth_date, 
             gender, 
-            primary_goal
+            primary_goal,
+            is_archived
           )
         `)
         .eq("role", "student");
@@ -134,56 +135,81 @@ export function useBusinessMetrics() {
 
       const rawData = students ?? [];
 
-      // ---- Process metrics ----
-      const activeStudentsCount = rawData.length;
-
-      // Current date: 2026-02-23
-      const now = new Date(); 
+      // Dates for logic
+      const now = new Date();
       const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
       const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
 
-      let newThisMonth = 0;
+      // Variables to calculate
+      let activeStudentsCount = 0;
+      let newActiveThisMonth = 0;
       let newLastMonth = 0;
+      let studentsAtStartOfThisMonth = 0; // S in retention formula
+
       const ages: number[] = [];
       const goalCounts: Record<string, number> = {};
       const genderCounts: Record<string, number> = {};
 
       rawData.forEach((p) => {
-        // Dates
         const createdAt = new Date(p.created_at);
-        if (createdAt >= thisMonthStart) newThisMonth++;
-        if (createdAt >= lastMonthStart && createdAt <= lastMonthEnd) newLastMonth++;
 
-        // Related data from student_profiles (always present due to !inner)
-        type SpRow = { birth_date: string | null; gender: string | null; primary_goal: string | null };
+        type SpRow = { birth_date: string | null; gender: string | null; primary_goal: string | null; is_archived: boolean };
         const sp: SpRow | null = Array.isArray(p.student_profiles)
           ? (p.student_profiles[0] as SpRow ?? null)
           : (p.student_profiles as SpRow | null);
 
-        if (sp) {
-          // Age
-          if (sp.birth_date) {
-            ages.push(getAge(sp.birth_date));
+        const isArchived = sp?.is_archived ?? false;
+
+        // Metrics for ACTIVE students
+        if (!isArchived) {
+          activeStudentsCount++;
+
+          if (createdAt >= thisMonthStart) newActiveThisMonth++;
+          if (createdAt >= lastMonthStart && createdAt <= lastMonthEnd) newLastMonth++;
+
+          if (sp) {
+            if (sp.birth_date) ages.push(getAge(sp.birth_date));
+            const goal = sp.primary_goal || "unknown";
+            goalCounts[goal] = (goalCounts[goal] ?? 0) + 1;
+            const gender = sp.gender || "other";
+            genderCounts[gender] = (genderCounts[gender] ?? 0) + 1;
           }
-          // Goal
-          const goal = sp.primary_goal || "unknown";
-          goalCounts[goal] = (goalCounts[goal] ?? 0) + 1;
-          // Gender
-          const gender = sp.gender || "other";
-          genderCounts[gender] = (genderCounts[gender] ?? 0) + 1;
         }
-        // Note: with !inner join, all rows will have student_profiles — no else branch needed
+
+        // Retention S (Start) estimation:
+        // Anyone created before this month is assumed to have been active at start 
+        // if they were not archived before start. Since we don't have archived_at, 
+        // we take all students (active+archived) created before MonthStart as a proxy for S.
+        if (createdAt < thisMonthStart) {
+          studentsAtStartOfThisMonth++;
+        }
       });
 
       // ---- Growth Percent ----
       let growthPercent: number | null = null;
       if (newLastMonth > 0) {
-        growthPercent = Math.round(((newThisMonth - newLastMonth) / newLastMonth) * 1000) / 10;
-      } else if (newThisMonth > 0) {
+        growthPercent = Math.round(((newActiveThisMonth - newLastMonth) / newLastMonth) * 1000) / 10;
+      } else if (newActiveThisMonth > 0) {
         growthPercent = null;
       } else {
         growthPercent = 0;
+      }
+
+      // ---- Retention (Monthly) ----
+      // Formula: ((E - N) / S) * 100
+      // E = activeStudentsCount
+      // N = newActiveThisMonth
+      // S = studentsAtStartOfThisMonth
+      const E = activeStudentsCount;
+      const N = newActiveThisMonth;
+      const S = studentsAtStartOfThisMonth;
+
+      let retentionPercent: number | null = null;
+      if (S > 0) {
+        retentionPercent = Math.max(0, Math.min(100, Math.round(((E - N) / S) * 100)));
+      } else if (E > 0) {
+        retentionPercent = 100; // If no students at start but some now, retention is technically 100% of start (which was 0)
       }
 
       // ---- Average Age ----
@@ -203,30 +229,15 @@ export function useBusinessMetrics() {
       const maxGoalCount = goalDistribution.reduce((max, g) => Math.max(max, g.count), 1);
 
       // ---- Gender distribution ----
-      const totalStudentsForGender = activeStudentsCount; // All students counted
+      const totalStudentsForGender = activeStudentsCount;
       const genderDistributionResult = buildGenderDistribution(genderCounts, totalStudentsForGender);
-
-      // ---- Console Logs for Debugging ----
-      console.log('--- DEBUGGING METRICS ---');
-      console.log('Total alumnos (profiles role=student):', activeStudentsCount);
-      console.log('Alumnos por objetivo:', goalDistribution);
-      const totalFromGoals = goalDistribution.reduce((sum, g) => sum + g.count, 0);
-      console.log('Suma de objetivos:', totalFromGoals);
-      
-      if (totalFromGoals !== activeStudentsCount) {
-        console.error('⚠️ INCONSISTENCIA DETECTADA:');
-        console.error(`Total en card: ${activeStudentsCount}`);
-        console.error(`Total en gráfico: ${totalFromGoals}`);
-        console.error(`Diferencia: ${activeStudentsCount - totalFromGoals} alumno(s) faltante(s)`);
-      } else {
-        console.log('✅ Coincidencia total en los datos.');
-      }
 
       setMetrics({
         activeStudents: activeStudentsCount,
-        newThisMonth,
+        newThisMonth: newActiveThisMonth,
         growthPercent,
         averageAge,
+        retentionPercent,
         goalDistribution,
         maxGoalCount,
         genderDistribution: genderDistributionResult,

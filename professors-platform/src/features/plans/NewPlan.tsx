@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from "react";
-import { useSearchParams } from "react-router-dom";
+import { useSearchParams, useNavigate } from "react-router-dom";
 import { useExerciseStages } from "../../hooks/useExerciseStages";
 import {
   useTrainingPlans,
@@ -51,6 +51,7 @@ export default function NewPlan() {
   const { stages, loading: stagesLoading, addStage } = useExerciseStages();
   const { savePlan, updatePlan, assignPlanToStudents } = useTrainingPlans();
   const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
 
   // Detect edit mode from URL params
   const planId = searchParams.get("planId");
@@ -591,11 +592,10 @@ export default function NewPlan() {
               )}
               <button
                 onClick={handleOpenSaveModal}
-                className={`flex items-center justify-center rounded-lg h-9 px-5 font-bold transition-colors text-sm shadow-sm ${
-                  isEditMode
-                    ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center justify-center rounded-lg h-9 px-5 font-bold transition-colors text-sm shadow-sm ${isEditMode
+                  ? "bg-primary text-white hover:bg-primary/90"
+                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <span className="material-symbols-outlined text-lg mr-2">
                   {isEditMode ? "sync" : "save"}
@@ -627,11 +627,10 @@ export default function NewPlan() {
           </div>
           {isEditMode && (
             <div
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium mb-2 ${
-                editAssignedCount > 0
-                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                  : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-              }`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium mb-2 ${editAssignedCount > 0
+                ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                }`}
             >
               <span className="material-symbols-outlined text-[16px]">
                 {editAssignedCount > 0 ? "warning" : "edit_note"}
@@ -663,18 +662,7 @@ export default function NewPlan() {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-6 text-sm text-[#5e758d] bg-gray-50 dark:bg-gray-800 px-4 py-1.5 rounded-full">
-              <div className="flex items-center gap-2">
-                <span className="material-symbols-outlined text-lg">
-                  fitness_center
-                </span>
-                <span className="font-medium">
-                  Total Series:{" "}
-                  <b className="text-[#101418] dark:text-white">
-                    {exercises.reduce((sum, ex) => sum + ex.series, 0)}
-                  </b>
-                </span>
-              </div>
+            <div className="flex items-center gap-6">
             </div>
           </div>
           <div className="flex items-end gap-1 mt-2 overflow-x-auto">
@@ -682,11 +670,10 @@ export default function NewPlan() {
               <div key={day.id} className="relative group">
                 <button
                   onClick={() => setActiveDay(day.id)}
-                  className={`px-6 py-2.5 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                    activeDay === day.id
-                      ? "border-primary text-primary bg-white dark:bg-[#1a202c] font-bold"
-                      : "border-transparent text-[#5e758d] hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  }`}
+                  className={`px-6 py-2.5 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeDay === day.id
+                    ? "border-primary text-primary bg-white dark:bg-[#1a202c] font-bold"
+                    : "border-transparent text-[#5e758d] hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    }`}
                 >
                   {day.name}
                 </button>
@@ -774,11 +761,10 @@ export default function NewPlan() {
                           onChange={(e) =>
                             handleStageChange(exercise.id, e.target.value)
                           }
-                          className={`w-full text-[10px] font-bold uppercase tracking-wide bg-white border rounded py-1.5 pl-2 pr-6 focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer appearance-none shadow-sm ${
-                            exercise.stage_id
-                              ? "text-primary border-blue-200 dark:border-blue-900"
-                              : "text-gray-400 border-gray-200 dark:border-gray-600"
-                          }`}
+                          className={`w-full text-[10px] font-bold uppercase tracking-wide bg-white border rounded py-1.5 pl-2 pr-6 focus:ring-1 focus:ring-primary focus:border-primary cursor-pointer appearance-none shadow-sm ${exercise.stage_id
+                            ? "text-primary border-blue-200 dark:border-blue-900"
+                            : "text-gray-400 border-gray-200 dark:border-gray-600"
+                            }`}
                           disabled={stagesLoading}
                         >
                           {!exercise.stage_id && (
@@ -914,11 +900,10 @@ export default function NewPlan() {
                           )
                         }
                         title="Indicar que el alumno debe escribir el peso"
-                        className={`w-7 h-7 rounded-md border-2 flex items-center justify-center transition-all ${
-                          exercise.write_weight
-                            ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
-                            : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-emerald-400"
-                        }`}
+                        className={`w-7 h-7 rounded-md border-2 flex items-center justify-center transition-all ${exercise.write_weight
+                          ? "bg-emerald-500 border-emerald-500 text-white shadow-sm"
+                          : "border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-800 hover:border-emerald-400"
+                          }`}
                       >
                         {exercise.write_weight && (
                           <span className="material-symbols-outlined text-[16px] filled">

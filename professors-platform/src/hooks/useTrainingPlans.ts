@@ -488,6 +488,128 @@ export function useTrainingPlans() {
     }
   };
 
+  const duplicatePlan = async (planId: string) => {
+    if (!professor) {
+      return { success: false, error: "No hay usuario autenticado" };
+    }
+
+    try {
+      // 1. Fetch the complete plan with all days and exercises
+      const { data: originalPlan, error: fetchError } = await supabase
+        .from("training_plans")
+        .select(
+          `
+          *,
+          training_plan_days (
+            *,
+            training_plan_exercises (*)
+          )
+        `,
+        )
+        .eq("id", planId)
+        .eq("coach_id", professor.id)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!originalPlan) throw new Error("Plan no encontrado");
+
+      // 2. Create new plan with "Copia de " prefix
+      const { data: newPlan, error: planError } = await supabase
+        .from("training_plans")
+        .insert([
+          {
+            coach_id: professor.id,
+            title: `Copia de ${originalPlan.title}`,
+            description: originalPlan.description,
+            start_date: originalPlan.start_date,
+            end_date: originalPlan.end_date,
+            total_days: originalPlan.total_days,
+            days_per_week: originalPlan.days_per_week,
+            total_weeks: originalPlan.total_weeks,
+            plan_type: originalPlan.plan_type,
+            difficulty_level: originalPlan.difficulty_level,
+            is_template: originalPlan.is_template,
+            is_archived: false,
+          },
+        ])
+        .select()
+        .single();
+
+      if (planError) throw planError;
+      if (!newPlan) throw new Error("No se pudo crear el plan duplicado");
+
+      // 3. Duplicate days
+      const days = originalPlan.training_plan_days || [];
+      const daysToInsert = days.map((day: any, index: number) => ({
+        plan_id: newPlan.id,
+        day_number: day.day_number,
+        day_name: day.day_name,
+        display_order: index,
+      }));
+
+      const { data: newDays, error: daysError } = await supabase
+        .from("training_plan_days")
+        .insert(daysToInsert)
+        .select();
+
+      if (daysError) throw daysError;
+      if (!newDays) throw new Error("No se pudieron duplicar los días");
+
+      // 4. Create mapping from old day IDs to new day IDs
+      const dayIdMap = new Map<string, string>();
+      days.forEach((originalDay: any, index: number) => {
+        dayIdMap.set(originalDay.id, newDays[index].id);
+      });
+
+      // 5. Duplicate exercises
+      const allExercises: any[] = [];
+      days.forEach((day: any) => {
+        const exercises = day.training_plan_exercises || [];
+        exercises.forEach((ex: any) => {
+          allExercises.push({ ...ex, originalDayId: day.id });
+        });
+      });
+
+      if (allExercises.length > 0) {
+        const exercisesToInsert = allExercises.map((ex) => {
+          const newDayId = dayIdMap.get(ex.originalDayId);
+          return {
+            day_id: newDayId,
+            stage_id: ex.stage_id,
+            stage_name: ex.stage_name,
+            exercise_name: ex.exercise_name,
+            video_url: ex.video_url,
+            series: ex.series,
+            reps: ex.reps,
+            intensity: ex.intensity,
+            pause: ex.pause,
+            notes: ex.notes,
+            coach_instructions: ex.coach_instructions,
+            display_order: ex.display_order,
+            write_weight: ex.write_weight ?? false,
+          };
+        });
+
+        const { error: exercisesError } = await supabase
+          .from("training_plan_exercises")
+          .insert(exercisesToInsert);
+
+        if (exercisesError) throw exercisesError;
+      }
+
+      // 6. Reload plans to show the duplicate
+      await loadPlans();
+
+      return { success: true, planId: newPlan.id };
+    } catch (err) {
+      console.error("Error duplicating training plan:", err);
+      return {
+        success: false,
+        error: err instanceof Error ? err.message : "Error desconocido",
+      };
+    }
+  };
+
   const assignPlanToStudents = async (
     planId: string,
     studentIds: string[],
@@ -652,6 +774,7 @@ export function useTrainingPlans() {
     savePlan,
     updatePlan,
     deletePlan,
+    duplicatePlan,
     assignPlanToStudents,
     getAssignedStudents,
     unassignStudent,

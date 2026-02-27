@@ -21,13 +21,13 @@ export interface StudentProfile {
   gender: string | null;
   heightCm: number | null;
   weightKg: number | null;
-  bmi: number | null;
   activityLevel: string | null;
   primaryGoal: string | null;
   trainingExperience: string | null;
   sports: string | null;
   previousInjuries: string | null;
   medicalConditions: string | null;
+  isArchived: boolean;
 }
 
 export interface AssignedPlan {
@@ -129,15 +129,15 @@ export function useStudentProfile(studentId: string | undefined) {
             gender,
             height_cm,
             weight_kg,
-            bmi,
             activity_level,
             primary_goal,
             training_experience,
             sports,
             previous_injuries,
-            medical_conditions
+            medical_conditions,
+            is_archived
           )
-        `
+        `,
         )
         .eq("id", studentId)
         .single();
@@ -165,13 +165,13 @@ export function useStudentProfile(studentId: string | undefined) {
         gender: (sp?.gender as string) ?? null,
         heightCm: (sp?.height_cm as number) ?? null,
         weightKg: (sp?.weight_kg as number) ?? null,
-        bmi: (sp?.bmi as number) ?? null,
         activityLevel: (sp?.activity_level as string) ?? null,
         primaryGoal: (sp?.primary_goal as string) ?? null,
         trainingExperience: (sp?.training_experience as string) ?? null,
         sports: (sp?.sports as string) ?? null,
         previousInjuries: (sp?.previous_injuries as string) ?? null,
         medicalConditions: (sp?.medical_conditions as string) ?? null,
+        isArchived: (sp?.is_archived as boolean) ?? false,
       };
 
       setStudent(studentProfile);
@@ -197,7 +197,7 @@ export function useStudentProfile(studentId: string | undefined) {
             days_per_week,
             total_weeks
           )
-        `
+        `,
         )
         .eq("student_id", studentId)
         .order("assigned_at", { ascending: false });
@@ -205,25 +205,27 @@ export function useStudentProfile(studentId: string | undefined) {
       if (assignError) {
         console.warn("Could not load plans:", assignError);
       } else if (assignmentsData) {
-        const mapped: AssignedPlan[] = assignmentsData.map((a: Record<string, unknown>) => {
-          const tp = a.training_plans as Record<string, unknown> | null;
-          return {
-            id: a.id as string,
-            planId: a.plan_id as string,
-            planTitle: (tp?.title as string) || "Plan sin nombre",
-            planType: (tp?.plan_type as string) ?? null,
-            difficultyLevel: (tp?.difficulty_level as string) ?? null,
-            totalDays: (tp?.total_days as number) ?? 0,
-            daysPerWeek: (tp?.days_per_week as number) ?? 0,
-            totalWeeks: (tp?.total_weeks as number) ?? 0,
-            startDate: a.start_date as string,
-            endDate: a.end_date as string,
-            status: (a.status as string) ?? "active",
-            currentDayNumber: (a.current_day_number as number) ?? 1,
-            completedDays: (a.completed_days as number) ?? 0,
-            assignedAt: a.assigned_at as string,
-          };
-        });
+        const mapped: AssignedPlan[] = assignmentsData.map(
+          (a: Record<string, unknown>) => {
+            const tp = a.training_plans as Record<string, unknown> | null;
+            return {
+              id: a.id as string,
+              planId: a.plan_id as string,
+              planTitle: (tp?.title as string) || "Plan sin nombre",
+              planType: (tp?.plan_type as string) ?? null,
+              difficultyLevel: (tp?.difficulty_level as string) ?? null,
+              totalDays: (tp?.total_days as number) ?? 0,
+              daysPerWeek: (tp?.days_per_week as number) ?? 0,
+              totalWeeks: (tp?.total_weeks as number) ?? 0,
+              startDate: a.start_date as string,
+              endDate: a.end_date as string,
+              status: (a.status as string) ?? "active",
+              currentDayNumber: (a.current_day_number as number) ?? 1,
+              completedDays: (a.completed_days as number) ?? 0,
+              assignedAt: a.assigned_at as string,
+            };
+          },
+        );
         setPlans(mapped);
       }
     } catch (err) {

@@ -17,6 +17,8 @@ import {
   useStudentConstancia,
   MOOD_LABELS,
   MOOD_EMOJIS,
+  INITIAL_MOOD_LABELS,
+  INITIAL_MOOD_EMOJIS,
 } from "@/hooks/useStudentConstancia";
 import {
   useExerciseWeightLogs,
@@ -34,6 +36,7 @@ import {
 } from "recharts";
 import { supabase } from "@/lib/supabase";
 import { detectRpeAlert } from "@/lib/rpeHelpers";
+import PlanPreview from "@/features/library/PlanPreview";
 
 // ── Skeleton ───────────────────────────────────────────────────────────────
 
@@ -77,7 +80,7 @@ function ProfileSkeleton() {
 
 // ── Tab type ───────────────────────────────────────────────────────────────
 
-type TabKey = "general" | "historial" | "constancia" | "progreso" | "fuerza";
+type TabKey = "general" | "historial" | "constancia" | "progreso";
 
 const TABS: { key: TabKey; label: string; icon: string }[] = [
   {
@@ -88,7 +91,6 @@ const TABS: { key: TabKey; label: string; icon: string }[] = [
   { key: "historial", label: "Historial", icon: "history" },
   { key: "constancia", label: "Constancia", icon: "calendar_month" },
   { key: "progreso", label: "Progreso", icon: "monitoring" },
-  { key: "fuerza", label: "Entrenamiento y Fuerza", icon: "fitness_center" },
 ];
 
 // ── Helpers ────────────────────────────────────────────────────────────────
@@ -138,23 +140,29 @@ function InfoRow({
   icon,
   label,
   value,
+  colorClass = "text-sky-500", // Default to sky blue
+  bgClass = "bg-sky-50 dark:bg-sky-950/30"
 }: {
   icon: string;
   label: string;
   value: string | null | undefined;
+  colorClass?: string;
+  bgClass?: string;
 }) {
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
-      <span className="material-symbols-outlined text-gray-400 text-[20px] mt-0.5">
-        {icon}
-      </span>
+    <div className="flex items-start gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-sm">
+      <div className={`w-10 h-10 rounded-xl ${bgClass} flex items-center justify-center shrink-0`}>
+        <span className={`material-symbols-outlined ${colorClass} text-[20px] filled`}>
+          {icon}
+        </span>
+      </div>
       <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
           {label}
         </p>
-        <p className="text-sm font-semibold text-gray-900 dark:text-white mt-0.5 break-words">
+        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
           {value || (
-            <span className="text-gray-400 font-normal italic">
+            <span className="text-slate-300 font-normal italic">
               Sin especificar
             </span>
           )}
@@ -165,72 +173,27 @@ function InfoRow({
 }
 
 function PhoneRow({ phone }: { phone: string | null }) {
-  if (!phone) return <InfoRow icon="phone" label="Teléfono" value={null} />;
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-gray-100 dark:border-gray-800">
-      <span className="material-symbols-outlined text-gray-400 text-[20px] mt-0.5">
-        phone
-      </span>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          Teléfono
-        </p>
-        <div className="flex flex-wrap items-center gap-3 mt-0.5">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">
-            {phone}
-          </p>
-          <button
-            onClick={() =>
-              window.open(
-                `https://wa.me/${formatPhoneForWhatsApp(phone)}?text=Hola!`,
-                "_blank",
-              )
-            }
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all duration-200 hover:-translate-y-0.5"
-            style={{ background: "#25D366" }}
-            onMouseEnter={(e) => (e.currentTarget.style.background = "#20BA5A")}
-            onMouseLeave={(e) => (e.currentTarget.style.background = "#25D366")}
-          >
-            <WhatsAppIcon />
-            WhatsApp
-          </button>
-        </div>
-      </div>
-    </div>
+    <InfoRow
+      icon="phone"
+      label="Teléfono"
+      value={phone}
+      colorClass="text-sky-500"
+      bgClass="bg-sky-50 dark:bg-sky-950/30"
+    />
   );
 }
 
 function InstagramRow({ instagram }: { instagram: string | null }) {
-  if (!instagram) return <InfoRow icon="link" label="Instagram" value={null} />;
-  const username = formatInstagramUsername(instagram);
+  const username = instagram ? formatInstagramUsername(instagram) : null;
   return (
-    <div className="flex items-start gap-3 py-3 border-b border-gray-100 dark:border-gray-800 last:border-0">
-      <span className="material-symbols-outlined text-gray-400 text-[20px] mt-0.5">
-        link
-      </span>
-      <div className="flex-1 min-w-0">
-        <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
-          Instagram
-        </p>
-        <div className="flex flex-wrap items-center gap-3 mt-0.5">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">
-            @{username}
-          </p>
-          <button
-            onClick={() =>
-              window.open(`https://instagram.com/${username}`, "_blank")
-            }
-            className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-xs font-semibold text-white transition-all duration-200 hover:-translate-y-0.5"
-            style={{
-              background: "linear-gradient(135deg, #E1306C 0%, #F56040 100%)",
-            }}
-          >
-            <InstagramIcon />
-            Instagram
-          </button>
-        </div>
-      </div>
-    </div>
+    <InfoRow
+      icon="alternate_email"
+      label="Instagram"
+      value={username ? `@${username}` : null}
+      colorClass="text-sky-500"
+      bgClass="bg-sky-50 dark:bg-sky-950/30"
+    />
   );
 }
 
@@ -241,32 +204,38 @@ function StatCard({
   label,
   value,
   unit,
+  colorClass = "text-sky-500",
+  bgClass = "bg-sky-50 dark:bg-sky-950/30"
 }: {
   icon: string;
   label: string;
   value: string | number | null;
   unit?: string;
+  colorClass?: string;
+  bgClass?: string;
 }) {
   return (
-    <div className="bg-white dark:bg-card-dark rounded-xl p-4 shadow-card border border-gray-200 dark:border-gray-700 text-center">
-      <span className="material-symbols-outlined text-primary text-[22px] mb-1 block">
-        {icon}
-      </span>
-      <p className="text-xs font-medium text-gray-500 uppercase tracking-wide">
+    <div className="bg-white dark:bg-card-dark rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center">
+      <div className={`w-10 h-10 rounded-xl ${bgClass} flex items-center justify-center mb-3`}>
+        <span className={`material-symbols-outlined ${colorClass} text-[20px] filled`}>
+          {icon}
+        </span>
+      </div>
+      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
         {label}
       </p>
-      <p className="text-xl font-bold text-gray-900 dark:text-white mt-1">
+      <p className="text-base font-bold text-slate-900 dark:text-white">
         {value != null ? (
           <>
             {value}
             {unit && (
-              <span className="text-sm font-medium text-gray-500 ml-1">
+              <span className="text-xs font-medium text-slate-400 ml-0.5">
                 {unit}
               </span>
             )}
           </>
         ) : (
-          <span className="text-gray-300">—</span>
+          <span className="text-slate-200 font-normal italic">—</span>
         )}
       </p>
     </div>
@@ -278,89 +247,97 @@ function StatCard({
 function GeneralTab({ student }: { student: StudentProfileType }) {
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
-        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">
-            fitness_center
-          </span>
-          Entrenamiento
-        </h3>
-        <InfoRow
-          icon="flag"
-          label="Objetivo Principal"
-          value={student.primaryGoal ? GOAL_LABELS[student.primaryGoal] : null}
-        />
-        <InfoRow
-          icon="trending_up"
-          label="Nivel de Experiencia"
-          value={
-            student.trainingExperience
-              ? EXPERIENCE_LABELS[student.trainingExperience]
-              : null
-          }
-        />
-        <InfoRow
-          icon="directions_run"
-          label="Nivel de Actividad"
-          value={
-            student.activityLevel
-              ? ACTIVITY_LABELS[student.activityLevel]
-              : null
-          }
-        />
-      </div>
-
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
-        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">
-            medical_information
-          </span>
-          Información Médica
-        </h3>
-        <InfoRow
-          icon="healing"
-          label="Lesiones Previas"
-          value={student.previousInjuries}
-        />
-        <InfoRow
-          icon="medication"
-          label="Condiciones Médicas"
-          value={student.medicalConditions}
-        />
-      </div>
-
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
-        <h3 className="text-base font-bold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
-          <span className="material-symbols-outlined text-primary text-[20px]">
-            person
-          </span>
+      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-slate-200 dark:border-slate-800">
+        <h3 className="text-base font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+            <span className="material-symbols-outlined text-[20px] filled">person</span>
+          </div>
           Información Personal
         </h3>
-        <InfoRow
-          icon="wc"
-          label="Género"
-          value={student.gender ? GENDER_LABELS[student.gender] : null}
-        />
-        <InfoRow
-          icon="cake"
-          label="Fecha de Nacimiento"
-          value={
-            student.birthDate
-              ? `${new Date(student.birthDate).toLocaleDateString("es-AR")} (${calculateAge(student.birthDate)} años)`
-              : null
-          }
-        />
-        <InfoRow
-          icon="calendar_today"
-          label="Miembro desde"
-          value={new Date(student.createdAt).toLocaleDateString("es-AR", {
-            year: "numeric",
-            month: "long",
-            day: "numeric",
-          })}
-        />
-        <PhoneRow phone={student.phone} />
-        <InstagramRow instagram={student.instagram} />
+
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            icon="event"
+            label="Nacimiento"
+            value={student.birthDate ? new Date(student.birthDate).toLocaleDateString() : null}
+            colorClass="text-sky-500"
+            bgClass="bg-sky-50 dark:bg-sky-950/30"
+          />
+          <StatCard
+            icon="wc"
+            label="Género"
+            value={student.gender ? GENDER_LABELS[student.gender] : null}
+            colorClass="text-sky-500"
+            bgClass="bg-sky-50 dark:bg-sky-950/30"
+          />
+          <PhoneRow phone={student.phone || null} />
+          <InstagramRow instagram={student.instagram || null} />
+        </div>
+      </div>
+      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-slate-200 dark:border-slate-800">
+        <h3 className="text-base font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <span className="material-symbols-outlined text-[20px] filled">fitness_center</span>
+          </div>
+          Entrenamiento y Objetivos
+        </h3>
+
+        <div className="grid grid-cols-2 gap-3">
+          <StatCard
+            icon="target"
+            label="Objetivo"
+            value={student.primaryGoal ? GOAL_LABELS[student.primaryGoal] : null}
+            colorClass="text-emerald-500"
+            bgClass="bg-emerald-50 dark:bg-emerald-950/30"
+          />
+          <StatCard
+            icon="military_tech"
+            label="Nivel"
+            value={student.trainingExperience ? EXPERIENCE_LABELS[student.trainingExperience] : null}
+            colorClass="text-emerald-500"
+            bgClass="bg-emerald-50 dark:bg-emerald-950/30"
+          />
+          <StatCard
+            icon="bolt"
+            label="Actividad"
+            value={student.activityLevel ? ACTIVITY_LABELS[student.activityLevel] : null}
+            colorClass="text-emerald-500"
+            bgClass="bg-emerald-50 dark:bg-emerald-950/30"
+          />
+          <StatCard
+            icon="sports_basketball"
+            label="Deporte"
+            value={student.sports || null}
+            colorClass="text-emerald-500"
+            bgClass="bg-emerald-50 dark:bg-emerald-950/30"
+          />
+        </div>
+      </div>
+
+      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-slate-200 dark:border-slate-800">
+        <h3 className="text-base font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
+          <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
+            <span className="material-symbols-outlined text-[20px] filled">medical_information</span>
+          </div>
+          Información Médica
+        </h3>
+
+        <div className="grid grid-cols-1 gap-3">
+          <InfoRow
+            icon="warning"
+            label="Lesiones Previas"
+            value={student.previousInjuries}
+            colorClass="text-rose-500"
+            bgClass="bg-rose-50 dark:bg-rose-950/30"
+          />
+          <InfoRow
+            icon="health_and_safety"
+            label="Condiciones Médicas"
+            value={student.medicalConditions}
+            colorClass="text-rose-500"
+            bgClass="bg-rose-50 dark:bg-rose-950/30"
+          />
+        </div>
       </div>
     </div>
   );
@@ -369,6 +346,8 @@ function GeneralTab({ student }: { student: StudentProfileType }) {
 // ── Historial tab ──────────────────────────────────────────────────────────
 
 function HistorialTab({ plans }: { plans: AssignedPlan[] }) {
+  const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+
   if (plans.length === 0) {
     return (
       <div className="bg-white dark:bg-card-dark rounded-2xl p-12 shadow-card border border-gray-200 dark:border-gray-700 text-center">
@@ -386,80 +365,95 @@ function HistorialTab({ plans }: { plans: AssignedPlan[] }) {
   }
 
   return (
-    <div className="space-y-4">
-      <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
-        <span className="material-symbols-outlined text-primary text-[20px]">
-          toc
-        </span>
-        Historial de Planificaciones
-      </h3>
-      {plans.map((plan) => {
-        const statusColor =
-          plan.status === "active"
-            ? "bg-green-50 text-green-700 border-green-200"
-            : plan.status === "completed"
-              ? "bg-blue-50 text-blue-700 border-blue-200"
-              : plan.status === "paused"
-                ? "bg-yellow-50 text-yellow-700 border-yellow-200"
-                : "bg-gray-50 text-gray-700 border-gray-200";
-        const progress =
-          plan.totalDays > 0
-            ? Math.round((plan.completedDays / plan.totalDays) * 100)
-            : 0;
+    <>
+      <div className="space-y-4">
+        <h3 className="text-base font-bold text-gray-900 dark:text-white flex items-center gap-2">
+          <span className="material-symbols-outlined text-primary text-[20px]">
+            toc
+          </span>
+          Historial de Planificaciones
+        </h3>
+        {plans.map((plan) => {
+          const statusColor =
+            plan.status === "active"
+              ? "bg-green-50 text-green-700 border-green-200"
+              : plan.status === "completed"
+                ? "bg-blue-50 text-blue-700 border-blue-200"
+                : plan.status === "paused"
+                  ? "bg-yellow-50 text-yellow-700 border-yellow-200"
+                  : "bg-gray-50 text-gray-700 border-gray-200";
+          const progress =
+            plan.totalDays > 0
+              ? Math.round((plan.completedDays / plan.totalDays) * 100)
+              : 0;
 
-        return (
-          <div
-            key={plan.id}
-            className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-card border border-gray-200 dark:border-gray-700 hover:border-blue-200 dark:hover:border-blue-800 transition-colors"
-          >
-            <div className="flex items-start justify-between mb-3">
-              <div>
-                <h4 className="text-base font-bold text-gray-900 dark:text-white">
-                  {plan.planTitle}
-                </h4>
-                <p className="text-xs text-gray-500 mt-0.5">
-                  {plan.daysPerWeek} días/semana • {plan.totalWeeks} semanas
-                </p>
+          return (
+            <div
+              key={plan.id}
+              onClick={() => setSelectedPlanId(plan.planId)}
+              className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-card border border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 hover:shadow-md transition-all cursor-pointer group"
+            >
+              <div className="flex items-start justify-between mb-3">
+                <div>
+                  <h4 className="text-base font-bold text-gray-900 dark:text-white group-hover:text-primary transition-colors">
+                    {plan.planTitle}
+                  </h4>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    {plan.daysPerWeek} días/semana • {plan.totalWeeks} semanas
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <span
+                    className={`text-xs font-bold px-2.5 py-1 rounded-full border ${statusColor}`}
+                  >
+                    {PLAN_STATUS_LABELS[plan.status] || plan.status}
+                  </span>
+                  <span className="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors text-[20px]">
+                    open_in_new
+                  </span>
+                </div>
               </div>
-              <span
-                className={`text-xs font-bold px-2.5 py-1 rounded-full border ${statusColor}`}
-              >
-                {PLAN_STATUS_LABELS[plan.status] || plan.status}
-              </span>
-            </div>
-            <div className="mb-3">
-              <div className="flex justify-between text-xs text-gray-500 mb-1">
-                <span>
-                  Día {plan.currentDayNumber} de {plan.totalDays}
-                </span>
-                <span>{progress}%</span>
+              <div className="mb-3">
+                <div className="flex justify-between text-xs text-gray-500 mb-1">
+                  <span>
+                    Día {plan.currentDayNumber} de {plan.totalDays}
+                  </span>
+                  <span>{progress}%</span>
+                </div>
+                <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
+                  <div
+                    className="h-full bg-primary rounded-full transition-all duration-500"
+                    style={{ width: `${progress}%` }}
+                  />
+                </div>
               </div>
-              <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                <div
-                  className="h-full bg-primary rounded-full transition-all duration-500"
-                  style={{ width: `${progress}%` }}
-                />
+              <div className="flex items-center gap-4 text-xs text-gray-500">
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">
+                    calendar_today
+                  </span>
+                  {new Date(plan.startDate).toLocaleDateString("es-AR")}
+                </span>
+                <span>→</span>
+                <span className="flex items-center gap-1">
+                  <span className="material-symbols-outlined text-[14px]">
+                    event
+                  </span>
+                  {new Date(plan.endDate).toLocaleDateString("es-AR")}
+                </span>
               </div>
             </div>
-            <div className="flex items-center gap-4 text-xs text-gray-500">
-              <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]">
-                  calendar_today
-                </span>
-                {new Date(plan.startDate).toLocaleDateString("es-AR")}
-              </span>
-              <span>→</span>
-              <span className="flex items-center gap-1">
-                <span className="material-symbols-outlined text-[14px]">
-                  event
-                </span>
-                {new Date(plan.endDate).toLocaleDateString("es-AR")}
-              </span>
-            </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+
+      {selectedPlanId && (
+        <PlanPreview
+          planId={selectedPlanId}
+          onClose={() => setSelectedPlanId(null)}
+        />
+      )}
+    </>
   );
 }
 
@@ -468,6 +462,7 @@ function HistorialTab({ plans }: { plans: AssignedPlan[] }) {
 function ConstanciaTab({ studentId }: { studentId: string }) {
   const { plans, isLoading } = useStudentConstancia(studentId);
   const [openPlan, setOpenPlan] = useState<string | null>(null);
+  const [hasInitialized, setHasInitialized] = useState(false);
   const [rpeAlert, setRpeAlert] = useState<"high" | "low" | null>(null);
 
   useEffect(() => {
@@ -491,6 +486,17 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
     }
   }, [studentId]);
 
+  // Set initial open plan when data loads (only once)
+  useEffect(() => {
+    if (!isLoading && !hasInitialized && plans.length > 0) {
+      const firstWithSessions = plans.find((p) => p.sessions.length > 0);
+      if (firstWithSessions) {
+        setOpenPlan(firstWithSessions.assignmentId);
+      }
+      setHasInitialized(true);
+    }
+  }, [isLoading, plans, hasInitialized]);
+
   if (isLoading) {
     return (
       <div className="space-y-3 animate-pulse">
@@ -503,10 +509,6 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
       </div>
     );
   }
-
-  const firstWithSessions = plans.find((p) => p.sessions.length > 0);
-  const effectiveOpen =
-    openPlan !== null ? openPlan : (firstWithSessions?.assignmentId ?? null);
 
   if (plans.length === 0 || plans.every((p) => p.sessions.length === 0)) {
     return (
@@ -535,26 +537,23 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
       {/* RPE Alert */}
       {rpeAlert && (
         <div
-          className={`flex items-start gap-3 p-4 rounded-xl border ${
-            rpeAlert === "high"
-              ? "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"
-              : "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800"
-          }`}
+          className={`flex items-start gap-3 p-4 rounded-xl border ${rpeAlert === "high"
+            ? "bg-red-50 dark:bg-red-900/10 border-red-200 dark:border-red-800"
+            : "bg-amber-50 dark:bg-amber-900/10 border-amber-200 dark:border-amber-800"
+            }`}
         >
           <span
-            className={`material-symbols-outlined text-[22px] mt-0.5 ${
-              rpeAlert === "high" ? "text-red-500" : "text-amber-500"
-            }`}
+            className={`material-symbols-outlined text-[22px] mt-0.5 ${rpeAlert === "high" ? "text-red-500" : "text-amber-500"
+              }`}
           >
             {rpeAlert === "high" ? "warning" : "info"}
           </span>
           <div>
             <p
-              className={`font-bold text-sm ${
-                rpeAlert === "high"
-                  ? "text-red-700 dark:text-red-400"
-                  : "text-amber-700 dark:text-amber-400"
-              }`}
+              className={`font-bold text-sm ${rpeAlert === "high"
+                ? "text-red-700 dark:text-red-400"
+                : "text-amber-700 dark:text-amber-400"
+                }`}
             >
               {rpeAlert === "high"
                 ? "⚠️ 3 sesiones consecutivas con RPE muy alto (≥8)"
@@ -577,7 +576,7 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
       </h3>
 
       {plans.map((plan) => {
-        const isOpen = effectiveOpen === plan.assignmentId;
+        const isOpen = openPlan === plan.assignmentId;
         const statusColor =
           plan.status === "active"
             ? "bg-green-50 text-green-700 border-green-200"
@@ -616,9 +615,8 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
                 </p>
               </div>
               <span
-                className={`material-symbols-outlined text-gray-400 text-[20px] ml-4 transition-transform duration-200 ${
-                  isOpen ? "rotate-180" : ""
-                }`}
+                className={`material-symbols-outlined text-gray-400 text-[20px] ml-4 transition-transform duration-200 ${isOpen ? "rotate-180" : ""
+                  }`}
               >
                 expand_more
               </span>
@@ -633,74 +631,77 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
                   </p>
                 ) : (
                   <div className="divide-y divide-gray-100 dark:divide-gray-800">
-                    <div className="grid grid-cols-3 px-5 py-2 bg-gray-50 dark:bg-gray-800/50">
-                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">
-                        Fecha
-                      </span>
-                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide text-center">
-                        Estado Inicial
-                      </span>
-                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide text-right">
-                        RPE Final
-                      </span>
+                    {/* Header */}
+                    <div className="grid grid-cols-[1fr_72px_72px_1fr] gap-2 px-5 py-2 bg-gray-50 dark:bg-gray-800/50">
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide">Fecha</span>
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide text-center">Inicio</span>
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide text-center">RPE</span>
+                      <span className="text-[11px] font-semibold text-gray-400 uppercase tracking-wide text-center">Al finalizar</span>
                     </div>
+
                     {plan.sessions.map((session) => (
-                      <div
-                        key={session.id}
-                        className="grid grid-cols-3 items-center px-5 py-3.5 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors"
-                      >
-                        <div>
-                          <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                            {new Date(session.completedAt).toLocaleDateString(
-                              "es-AR",
-                              {
-                                day: "2-digit",
-                                month: "short",
-                              },
+                      <div key={session.id} className="flex flex-col">
+                        {/* Fila principal */}
+                        <div className="grid grid-cols-[1fr_72px_72px_1fr] gap-2 items-center px-5 py-3 hover:bg-gray-50 dark:hover:bg-gray-800/30 transition-colors">
+                          {/* Fecha + día */}
+                          <div>
+                            <p className="text-sm font-semibold text-gray-900 dark:text-white">
+                              {new Date(session.completedAt).toLocaleDateString("es-AR", { day: "2-digit", month: "short" })}
+                            </p>
+                            <p className="text-xs text-gray-400">
+                              Día {session.dayNumber} •{" "}
+                              {new Date(session.completedAt).toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" })}
+                            </p>
+                          </div>
+
+                          {/* Estado Inicial */}
+                          <div className="flex flex-col items-center justify-center gap-0.5">
+                            {session.initialMood ? (
+                              <>
+                                <span className="text-xl leading-none">{INITIAL_MOOD_EMOJIS[session.initialMood] ?? "❓"}</span>
+                                <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 text-center">
+                                  {INITIAL_MOOD_LABELS[session.initialMood] ?? session.initialMood}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-300 italic">—</span>
                             )}
-                          </p>
-                          <p className="text-xs text-gray-400">
-                            Día {session.dayNumber} •{" "}
-                            {new Date(session.completedAt).toLocaleTimeString(
-                              "es-AR",
-                              {
-                                hour: "2-digit",
-                                minute: "2-digit",
-                              },
+                          </div>
+
+                          {/* RPE */}
+                          <div className="flex items-center justify-center">
+                            {session.rpe != null ? (
+                              <span className={`text-xs font-bold px-2.5 py-1 rounded-full ${rpeColor(session.rpe)}`}>
+                                {session.rpe}
+                              </span>
+                            ) : (
+                              <span className="text-xs text-gray-300 italic">—</span>
                             )}
-                          </p>
+                          </div>
+
+                          {/* Mood Final */}
+                          <div className="flex flex-col items-center justify-center gap-0.5">
+                            {session.mood ? (
+                              <>
+                                <span className="text-xl leading-none">{MOOD_EMOJIS[session.mood] ?? "❓"}</span>
+                                <span className="text-[10px] font-medium text-gray-500 dark:text-gray-400 text-center">
+                                  {MOOD_LABELS[session.mood] ?? session.mood}
+                                </span>
+                              </>
+                            ) : (
+                              <span className="text-xs text-gray-300 italic">—</span>
+                            )}
+                          </div>
                         </div>
 
-                        <div className="flex items-center justify-center gap-1.5">
-                          {session.mood ? (
-                            <>
-                              <span className="text-xl leading-none">
-                                {MOOD_EMOJIS[session.mood]}
-                              </span>
-                              <span className="text-xs font-medium text-gray-600 dark:text-gray-400 hidden sm:inline">
-                                {MOOD_LABELS[session.mood]}
-                              </span>
-                            </>
-                          ) : (
-                            <span className="text-xs text-gray-300 italic">
-                              —
-                            </span>
-                          )}
-                        </div>
-
-                        <div className="flex justify-end">
-                          {session.rpe != null ? (
-                            <span
-                              className={`text-xs font-bold px-2.5 py-1 rounded-full ${rpeColor(session.rpe)}`}
-                            >
-                              RPE {session.rpe}
-                            </span>
-                          ) : (
-                            <span className="text-xs text-gray-300 italic">
-                              —
-                            </span>
-                          )}
-                        </div>
+                        {/* Comentario (si existe) */}
+                        {session.moodComment && (
+                          <div className="px-5 pb-3 -mt-1">
+                            <p className="text-xs text-gray-500 dark:text-gray-400 bg-gray-50 dark:bg-gray-800/60 rounded-lg px-3 py-2 italic border-l-2 border-gray-200 dark:border-gray-700">
+                              💬 {session.moodComment}
+                            </p>
+                          </div>
+                        )}
                       </div>
                     ))}
                   </div>
@@ -758,6 +759,14 @@ function LogRow({ log }: { log: ExerciseWeightLog }) {
     }
   };
 
+  // Usar el RM calculado automáticamente si existe, sino el manual
+  const displayRm =
+    log.calculated_rm != null
+      ? log.calculated_rm.toFixed(2)
+      : log.rm_kg != null
+        ? log.rm_kg.toFixed(2)
+        : "-";
+
   return (
     <tr>
       <td className="py-2 pr-4 text-gray-700 dark:text-gray-300 text-sm font-medium">
@@ -783,21 +792,28 @@ function LogRow({ log }: { log: ExerciseWeightLog }) {
         </div>
       </td>
       <td className="py-2">
-        <div className="flex items-center gap-2">
-          <input
+        <div className="flex flex-col gap-1">
+          {/* RM Calculado Automáticamente */}
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-bold text-primary">
+              {displayRm} kg
+            </span>
+            {log.calculated_rm != null && (
+              <span className="text-[10px] bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400 px-1.5 py-0.5 rounded font-medium">
+                Auto
+              </span>
+            )}
+          </div>
+          {/* Campo manual opcional (oculto por defecto, se puede descomentar si se necesita override manual) */}
+          {/* <input
             type="number"
             step="0.5"
             value={rmValue}
             onChange={(e) => setRmValue(e.target.value)}
             onBlur={handleRmSave}
-            placeholder="— kg"
-            className="w-20 text-center text-sm rounded-lg border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-2 focus:ring-primary"
-          />
-          {saving && (
-            <span className="material-symbols-outlined text-[14px] animate-spin text-primary">
-              progress_activity
-            </span>
-          )}
+            placeholder="Manual"
+            className="w-20 text-center text-xs rounded border border-gray-200 dark:border-gray-700 bg-white dark:bg-gray-900 px-2 py-1 text-gray-900 dark:text-white placeholder-gray-400 focus:outline-none focus:ring-1 focus:ring-primary"
+          /> */}
         </div>
       </td>
     </tr>
@@ -840,15 +856,15 @@ function FuerzaTab({ studentId }: { studentId: string | undefined }) {
       {groups.map((group) => {
         const isOpen = openGroup === group.exercise_name;
 
-        // Datos para el gráfico: fecha vs RM
+        // Datos para el gráfico: fecha vs RM (usar calculado si existe, sino manual)
         const chartData = group.logs
-          .filter((l) => l.rm_kg != null)
+          .filter((l) => l.calculated_rm != null || l.rm_kg != null)
           .map((l) => ({
             date: new Date(l.logged_at).toLocaleDateString("es-AR", {
               day: "2-digit",
               month: "short",
             }),
-            rm: l.rm_kg,
+            rm: l.calculated_rm ?? l.rm_kg,
           }));
 
         return (
@@ -874,9 +890,8 @@ function FuerzaTab({ studentId }: { studentId: string | undefined }) {
                 </span>
               </div>
               <span
-                className={`material-symbols-outlined text-gray-400 transition-transform ${
-                  isOpen ? "rotate-180" : ""
-                }`}
+                className={`material-symbols-outlined text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""
+                  }`}
               >
                 expand_more
               </span>
@@ -949,10 +964,10 @@ function FuerzaTab({ studentId }: { studentId: string | undefined }) {
 
 // ── Progreso tab ───────────────────────────────────────────────────────────
 
-function ProgresoTab() {
+function ProgresoTab({ studentId }: { studentId: string | undefined }) {
   return (
     <div className="space-y-6">
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-8 shadow-card border border-gray-200 dark:border-gray-700">
+      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
         <h3 className="text-base font-bold text-gray-900 dark:text-white mb-2 flex items-center gap-2">
           <span className="material-symbols-outlined text-primary text-[20px]">
             fitness_center
@@ -962,18 +977,8 @@ function ProgresoTab() {
         <p className="text-sm text-gray-500 mb-6">
           Progreso de Marcas Personales (PR)
         </p>
-        <div className="flex flex-col items-center justify-center py-12 text-center">
-          <span className="material-symbols-outlined text-6xl text-gray-300 dark:text-gray-600 mb-4">
-            emoji_events
-          </span>
-          <h4 className="text-base font-bold text-gray-600 dark:text-gray-400 mb-1">
-            Próximamente
-          </h4>
-          <p className="text-sm text-gray-400">
-            Las marcas personales estarán disponibles cuando se registren
-            entrenamientos completados.
-          </p>
-        </div>
+
+        <FuerzaTab studentId={studentId} />
       </div>
     </div>
   );
@@ -986,6 +991,97 @@ export default function StudentProfile() {
   const navigate = useNavigate();
   const { student, plans, isLoading, error } = useStudentProfile(studentId);
   const [activeTab, setActiveTab] = useState<TabKey>("general");
+  const [showArchiveModal, setShowArchiveModal] = useState(false);
+  const [showUnarchiveModal, setShowUnarchiveModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [actionLoading, setActionLoading] = useState(false);
+
+  const handleArchive = async () => {
+    if (!studentId) return;
+
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from("student_profiles")
+        .update({ is_archived: true })
+        .eq("id", studentId);
+
+      if (error) throw error;
+
+      setShowArchiveModal(false);
+      // Recargar la página para mostrar el nuevo estado
+      window.location.reload();
+    } catch (err) {
+      console.error("Error archiving student:", err);
+      alert("Error al archivar el alumno. Intenta de nuevo.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleUnarchive = async () => {
+    if (!studentId) return;
+
+    setActionLoading(true);
+    try {
+      const { error } = await supabase
+        .from("student_profiles")
+        .update({ is_archived: false })
+        .eq("id", studentId);
+
+      if (error) throw error;
+
+      setShowUnarchiveModal(false);
+      // Recargar la página para mostrar el nuevo estado
+      window.location.reload();
+    } catch (err) {
+      console.error("Error unarchiving student:", err);
+      alert("Error al desarchivar el alumno. Intenta de nuevo.");
+    } finally {
+      setActionLoading(false);
+    }
+  };
+
+  const handleDelete = async () => {
+    if (!studentId) return;
+
+    setActionLoading(true);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("No hay sesión activa");
+
+      const res = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-student`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
+          },
+          body: JSON.stringify({ studentId }),
+        }
+      );
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error || "Error al eliminar el alumno");
+      }
+
+      setShowDeleteModal(false);
+      navigate("/inicio");
+    } catch (err) {
+      console.error("Error deleting student:", err);
+      alert(
+        err instanceof Error
+          ? err.message
+          : "Error al eliminar el alumno. Intenta de nuevo."
+      );
+    } finally {
+      setActionLoading(false);
+    }
+  };
 
   if (isLoading) return <ProfileSkeleton />;
 
@@ -1043,9 +1139,9 @@ export default function StudentProfile() {
         <div className="w-40" />
       </header>
 
-      <main className="flex-1 overflow-y-auto p-6 lg:p-10">
-        <div className="max-w-7xl mx-auto">
-          <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
+      <main className="flex-1 overflow-y-auto p-4 lg:p-6">
+        <div className="w-full">
+          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
             {/* Left Column - Student Info */}
             <div className="flex flex-col gap-6">
               {/* Profile Card */}
@@ -1058,8 +1154,8 @@ export default function StudentProfile() {
                         backgroundImage: avatarUrl
                           ? `url('${avatarUrl}')`
                           : "url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23e5e7eb%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22system-ui%22 font-size=%2236%22 fill=%22%239ca3af%22%3E" +
-                            (student.firstName?.[0]?.toUpperCase() || "?") +
-                            "%3C/text%3E%3C/svg%3E')",
+                          (student.firstName?.[0]?.toUpperCase() || "?") +
+                          "%3C/text%3E%3C/svg%3E')",
                       }}
                     />
                   </div>
@@ -1072,20 +1168,59 @@ export default function StudentProfile() {
                       : "Edad no especificada"}
                   </p>
 
-                  {/* Contact Info */}
-                  <div className="w-full space-y-3 mb-4">
-                    <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="material-symbols-outlined text-[18px]">
+                  <div className="w-full space-y-3 mb-6">
+                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                      <span className="material-symbols-outlined text-[20px] text-primary/60">
                         email
                       </span>
                       <span className="truncate">{student.email}</span>
                     </div>
                     {student.phone && (
-                      <div className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-                        <span className="material-symbols-outlined text-[18px]">
-                          phone
-                        </span>
-                        <span>{student.phone}</span>
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                          <span className="material-symbols-outlined text-[20px] text-primary/60">
+                            phone
+                          </span>
+                          <span>{student.phone}</span>
+                        </div>
+                        <button
+                          onClick={() =>
+                            window.open(
+                              `https://wa.me/${formatPhoneForWhatsApp(student.phone!)}?text=Hola!`,
+                              "_blank"
+                            )
+                          }
+                          className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+                          style={{ background: "#25D366" }}
+                        >
+                          <WhatsAppIcon />
+                          Contactar por WhatsApp
+                        </button>
+                      </div>
+                    )}
+                    {student.instagram && (
+                      <div className="flex flex-col gap-2 pt-1">
+                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                          <span className="material-symbols-outlined text-[20px] text-primary/60">
+                            link
+                          </span>
+                          <span className="truncate">@{formatInstagramUsername(student.instagram)}</span>
+                        </div>
+                        <button
+                          onClick={() =>
+                            window.open(
+                              `https://instagram.com/${formatInstagramUsername(student.instagram!)}`,
+                              "_blank"
+                            )
+                          }
+                          className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+                          style={{
+                            background: "linear-gradient(135deg, #E1306C 0%, #F56040 100%)",
+                          }}
+                        >
+                          <InstagramIcon />
+                          Ver Perfil de Instagram
+                        </button>
                       </div>
                     )}
                   </div>
@@ -1153,6 +1288,50 @@ export default function StudentProfile() {
                   </div>
                 </div>
               </div>
+
+              {/* Action Buttons */}
+              <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
+                <div className="flex items-center gap-2 mb-4">
+                  <span className="material-symbols-outlined text-primary text-[20px]">
+                    settings
+                  </span>
+                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                    Acciones
+                  </h3>
+                </div>
+                <div className="space-y-3">
+                  {student.isArchived ? (
+                    <button
+                      onClick={() => setShowUnarchiveModal(true)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 font-medium rounded-xl transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">
+                        unarchive
+                      </span>
+                      Desarchivar Alumno
+                    </button>
+                  ) : (
+                    <button
+                      onClick={() => setShowArchiveModal(true)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">
+                        archive
+                      </span>
+                      Archivar Alumno
+                    </button>
+                  )}
+                  <button
+                    onClick={() => setShowDeleteModal(true)}
+                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-medium rounded-xl transition-colors"
+                  >
+                    <span className="material-symbols-outlined text-[20px]">
+                      delete
+                    </span>
+                    Eliminar Alumno
+                  </button>
+                </div>
+              </div>
             </div>
 
             {/* Right Column - Tabs */}
@@ -1162,11 +1341,10 @@ export default function StudentProfile() {
                   <button
                     key={tab.key}
                     onClick={() => setActiveTab(tab.key)}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-all border-b-2 ${
-                      activeTab === tab.key
-                        ? "text-primary border-primary bg-blue-50/50 dark:bg-blue-900/10"
-                        : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                    }`}
+                    className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-all border-b-2 ${activeTab === tab.key
+                      ? "text-primary border-primary bg-blue-50/50 dark:bg-blue-900/10"
+                      : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                      }`}
                   >
                     <span className="material-symbols-outlined text-[18px]">
                       {tab.icon}
@@ -1182,13 +1360,168 @@ export default function StudentProfile() {
                 {activeTab === "constancia" && studentId && (
                   <ConstanciaTab studentId={studentId} />
                 )}
-                {activeTab === "progreso" && <ProgresoTab />}
-                {activeTab === "fuerza" && <FuerzaTab studentId={studentId} />}
+                {activeTab === "progreso" && <ProgresoTab studentId={studentId} />}
               </div>
             </div>
           </div>
         </div>
       </main>
+
+      {/* Archive Modal */}
+      {showArchiveModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => !actionLoading && setShowArchiveModal(false)}
+          />
+          <div className="relative bg-white dark:bg-card-dark rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-gray-100 dark:bg-gray-800 rounded-full">
+                <span className="material-symbols-outlined text-gray-600 dark:text-gray-400 text-[24px]">
+                  archive
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Archivar Alumno
+              </h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              ¿Estás seguro que deseas archivar a <span className="font-semibold text-gray-900 dark:text-white">{student?.fullName}</span>?
+              El alumno se moverá al final de la lista en /inicio y aparecerá en gris. Podrás seguir viendo su perfil y desarchivarlo más tarde.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowArchiveModal(false)}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleArchive}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2.5 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {actionLoading ? (
+                  <>
+                    <span className="animate-spin material-symbols-outlined text-[18px]">
+                      progress_activity
+                    </span>
+                    Archivando...
+                  </>
+                ) : (
+                  "Archivar"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Unarchive Modal */}
+      {showUnarchiveModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => !actionLoading && setShowUnarchiveModal(false)}
+          />
+          <div className="relative bg-white dark:bg-card-dark rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-green-100 dark:bg-green-900/30 rounded-full">
+                <span className="material-symbols-outlined text-green-600 dark:text-green-400 text-[24px]">
+                  unarchive
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Desarchivar Alumno
+              </h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-6">
+              ¿Deseas reactivar a <span className="font-semibold text-gray-900 dark:text-white">{student?.fullName}</span>?
+              El alumno volverá a aparecer en la lista principal de /inicio con los demás alumnos activos.
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowUnarchiveModal(false)}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleUnarchive}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2.5 bg-green-600 hover:bg-green-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {actionLoading ? (
+                  <>
+                    <span className="animate-spin material-symbols-outlined text-[18px]">
+                      progress_activity
+                    </span>
+                    Desarchivando...
+                  </>
+                ) : (
+                  "Desarchivar"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 flex items-center justify-center z-50 p-4">
+          <div
+            className="absolute inset-0 bg-black/50"
+            onClick={() => !actionLoading && setShowDeleteModal(false)}
+          />
+          <div className="relative bg-white dark:bg-card-dark rounded-2xl p-6 max-w-md w-full shadow-xl">
+            <div className="flex items-center gap-3 mb-4">
+              <div className="p-3 bg-red-100 dark:bg-red-900/30 rounded-full">
+                <span className="material-symbols-outlined text-red-600 dark:text-red-400 text-[24px]">
+                  delete_forever
+                </span>
+              </div>
+              <h3 className="text-lg font-bold text-gray-900 dark:text-white">
+                Eliminar Alumno
+              </h3>
+            </div>
+            <p className="text-gray-600 dark:text-gray-400 mb-2">
+              ¿Estás seguro que deseas eliminar a <span className="font-semibold text-gray-900 dark:text-white">{student?.fullName}</span>?
+            </p>
+            <p className="text-sm text-red-600 dark:text-red-400 bg-red-50 dark:bg-red-900/20 rounded-lg p-3 mb-6 flex items-start gap-2">
+              <span className="material-symbols-outlined text-[18px] mt-0.5 shrink-0">warning</span>
+              <span>Esta acción es <strong>permanente</strong> y no se puede deshacer. Se eliminarán todos los datos del alumno: perfil, historial de entrenamientos, registros de fuerza y su cuenta de acceso.</span>
+            </p>
+            <div className="flex gap-3">
+              <button
+                onClick={() => setShowDeleteModal(false)}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors disabled:opacity-50"
+              >
+                Cancelar
+              </button>
+              <button
+                onClick={handleDelete}
+                disabled={actionLoading}
+                className="flex-1 px-4 py-2.5 bg-red-600 hover:bg-red-700 text-white font-medium rounded-xl transition-colors disabled:opacity-50 flex items-center justify-center gap-2"
+              >
+                {actionLoading ? (
+                  <>
+                    <span className="animate-spin material-symbols-outlined text-[18px]">
+                      progress_activity
+                    </span>
+                    Eliminando...
+                  </>
+                ) : (
+                  "Eliminar"
+                )}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

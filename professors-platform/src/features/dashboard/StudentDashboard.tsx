@@ -94,9 +94,6 @@ export default function StudentDashboard() {
           <h1 className="mt-0.5 text-2xl sm:text-3xl font-bold tracking-tight text-slate-900 dark:text-white">
             Hola, {firstName} 👋
           </h1>
-          <p className="mt-1 text-sm text-slate-500 dark:text-slate-400">
-            Tienes un entrenamiento pendiente para hoy.
-          </p>
         </div>
         <div className="hidden sm:flex items-center gap-2 shrink-0 mt-1">
           <span className="flex items-center gap-1.5 bg-amber-50 dark:bg-amber-900/20 text-amber-600 dark:text-amber-400 px-3 py-1.5 rounded-full text-xs font-semibold">

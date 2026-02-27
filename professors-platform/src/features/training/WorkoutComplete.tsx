@@ -37,6 +37,7 @@ export default function WorkoutComplete() {
     seriesLog,
     rpe,
     mood,
+    initialMood,
     moodComment,
     setRpe,
     setMood,
@@ -49,8 +50,7 @@ export default function WorkoutComplete() {
   const professor = useAuthStore((s) => s.professor);
   const [isSaving, setIsSaving] = useState(false);
 
-  const totalSets =
-    currentDay?.exercises.reduce((acc, ex) => acc + ex.sets.length, 0) ?? 18;
+
   const doneSets = Object.values(seriesLog).filter((s) => s.done).length;
 
   // Calculate this week's completions
@@ -92,18 +92,29 @@ export default function WorkoutComplete() {
   const handleGoHome = async () => {
     if (assignmentId) {
       setIsSaving(true);
+
+      console.log("=== Iniciando guardado de entrenamiento ===");
+      console.log("assignmentId:", assignmentId);
+      console.log("currentDayNumber:", currentDayNumber);
+      console.log("rpe:", rpe);
+      console.log("mood:", mood);
+      console.log("moodComment:", moodComment);
+      console.log("doneSets:", doneSets);
+
       const result = await saveCompletion({
         assignmentId,
         dayNumber: currentDayNumber,
         rpe,
+        initialMood: initialMood ?? null,
         mood: mood ?? null,
-        moodComment: moodComment || undefined,
+        moodComment: moodComment || null,
         totalSetsDone: doneSets,
         seriesLog,
       });
       if (result.success) {
         toast.success("¡Entrenamiento guardado! 💪");
       } else {
+        console.error("Error al guardar:", result.error);
         toast.error("No se pudo guardar. Intenta de nuevo.");
       }
 
@@ -163,16 +174,17 @@ export default function WorkoutComplete() {
 
   return (
     <div className="flex flex-col min-h-full bg-[#f7f9fc] dark:bg-slate-950 px-4 pt-8 pb-6 items-center max-w-lg mx-auto w-full">
-      {/* ── Check icon ──────────────────────────────────────────── */}
-      <div className="mt-6 mb-5 relative">
-        <div className="w-28 h-28 rounded-full bg-gradient-to-br from-emerald-400 to-emerald-600 flex items-center justify-center shadow-2xl shadow-emerald-400/40 dark:shadow-emerald-600/30">
-          <span className="material-symbols-outlined text-white text-[56px] filled">
-            check_circle
-          </span>
+      {/* ── Logo Icon ──────────────────────────────────────────── */}
+      <div className="mt-8 mb-6 relative group">
+        <div className="w-20 h-20 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center relative z-10 transition-transform duration-500 group-hover:scale-105">
+          <img
+            src="/logo-stability.png"
+            alt="Stability Logo"
+            className="w-16 h-auto object-contain"
+          />
         </div>
-        {/* Decorative rings */}
-        <div className="absolute inset-0 rounded-full border-4 border-emerald-300/30 dark:border-emerald-700/30 scale-110" />
-        <div className="absolute inset-0 rounded-full border-4 border-emerald-200/20 dark:border-emerald-800/20 scale-125" />
+        {/* Glow effect */}
+        <div className="absolute inset-0 bg-primary/20 rounded-3xl blur-2xl opacity-40 group-hover:opacity-60 transition-opacity" />
       </div>
 
       {/* ── Title ────────────────────────────────────────────────── */}
@@ -183,32 +195,6 @@ export default function WorkoutComplete() {
         {getMessage()}
       </p>
 
-      {/* ── Stats ────────────────────────────────────────────────── */}
-      <div className="w-full mt-6 grid grid-cols-2 gap-3">
-        <div className="flex flex-col items-center gap-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm">
-          <span className="material-symbols-outlined text-[26px] text-primary filled">
-            stacked_line_chart
-          </span>
-          <span className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">
-            {doneSets > 0 ? doneSets : totalSets}
-          </span>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium text-center leading-tight">
-            Series completadas
-          </span>
-        </div>
-
-        <div className="flex flex-col items-center gap-1 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm">
-          <span className="material-symbols-outlined text-[26px] text-amber-500 filled">
-            exercise
-          </span>
-          <span className="text-2xl font-bold text-slate-900 dark:text-white tabular-nums">
-            {currentDay?.exercises.length ?? 5}
-          </span>
-          <span className="text-[11px] text-slate-500 dark:text-slate-400 font-medium text-center leading-tight">
-            Ejercicios realizados
-          </span>
-        </div>
-      </div>
 
       {/* ── RPE selector ─────────────────────────────────────────── */}
       <div className="w-full mt-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 shadow-sm">

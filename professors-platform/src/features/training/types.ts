@@ -1,6 +1,7 @@
 // ─── Training domain types ────────────────────────────────────────────────
 
-export type ExerciseCategory = "Compuesto" | "Aislamiento";
+// Acepta cualquier nombre de etapa que venga de la base de datos (Compuesto, Aislamiento, Activación, etc.)
+export type ExerciseCategory = string;
 
 export interface ExerciseSet {
   setNumber: number;
@@ -9,7 +10,7 @@ export interface ExerciseSet {
 }
 
 export interface Exercise {
-  id: number;
+  id: string | number;
   name: string;
   category: ExerciseCategory;
   sets: ExerciseSet[];
@@ -20,7 +21,7 @@ export interface Exercise {
 }
 
 export interface WorkoutDay {
-  id: number;
+  id: string | number;
   name: string; // e.g. "Piernas e Hipertrofia"
   durationMinutes: number;
   exercises: Exercise[];

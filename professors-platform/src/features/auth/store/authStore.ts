@@ -46,7 +46,6 @@ interface AuthState {
   isAuthenticated: boolean;
   isLoading: boolean;
   error: string | null;
-  rememberMe: boolean;
   lastActivity: number | null;
   tokenExpiry: number | null;
 
@@ -54,7 +53,6 @@ interface AuthState {
   login: (
     email: string,
     password: string,
-    rememberMe?: boolean,
   ) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
@@ -77,30 +75,66 @@ let inactivityTimer: ReturnType<typeof setTimeout> | null = null;
 // Helper function to convert Supabase user to Professor
 const userToProfessor = async (user: User): Promise<Professor | null> => {
   try {
-    // Query 1: siempre necesaria
     const profilePromise = supabase
       .from("profiles")
       .select("*")
       .eq("id", user.id)
       .single();
 
-    // Query 2: lanzarla en paralelo desde ya (no esperamos el resultado de profiles)
     const studentProfilePromise = supabase
       .from("student_profiles")
-      .select("id")
+      .select("id, profile_image_url")
       .eq("id", user.id)
       .single();
 
-    // Esperar ambas en paralelo
     const [{ data: profile, error }, { data: studentProfile }] =
       await Promise.all([profilePromise, studentProfilePromise]);
 
-    if (error || !profile) {
+    // If profile doesn't exist yet (first login after email confirmation), create it
+    if (!profile) {
+      const meta = user.user_metadata || {};
+      const { error: upsertError } = await supabase.from("profiles").upsert({
+        id: user.id,
+        email: user.email ?? "",
+        first_name: meta.first_name ?? "",
+        last_name: meta.last_name ?? "",
+        role: meta.role ?? "student",
+      });
+
+      if (upsertError) {
+        console.error("Error creating profile on first login:", upsertError);
+        return null;
+      }
+
+      // Fetch it again after creation
+      const { data: newProfile, error: fetchError } = await supabase
+        .from("profiles")
+        .select("*")
+        .eq("id", user.id)
+        .single();
+
+      if (fetchError || !newProfile) {
+        console.error("Error fetching newly created profile:", fetchError);
+        return null;
+      }
+
+      return {
+        id: newProfile.id,
+        email: newProfile.email,
+        firstName: newProfile.first_name,
+        lastName: newProfile.last_name,
+        role: newProfile.role as "student" | "coach",
+        createdAt: newProfile.created_at,
+        profileImage: undefined,
+        hasCompletedProfile: newProfile.role === "coach" ? true : false,
+      };
+    }
+
+    if (error) {
       console.error("Error fetching profile:", error);
       return null;
     }
 
-    // Para coaches, ignorar el resultado de student_profiles
     const hasCompletedProfile =
       profile.role === "coach" ? true : !!studentProfile;
 
@@ -111,7 +145,10 @@ const userToProfessor = async (user: User): Promise<Professor | null> => {
       lastName: profile.last_name,
       role: profile.role as "student" | "coach",
       createdAt: profile.created_at,
-      profileImage: profile.profile_image || undefined,
+      profileImage:
+        studentProfile?.profile_image_url ||
+        profile.profile_image ||
+        undefined,
       hasCompletedProfile,
     };
   } catch (error) {
@@ -149,7 +186,6 @@ export const useAuthStore = create<AuthState>()(
         isAuthenticated: false,
         isLoading: false,
         error: null,
-        rememberMe: false,
         lastActivity: null,
         tokenExpiry: null,
 
@@ -205,7 +241,6 @@ export const useAuthStore = create<AuthState>()(
                   professor: null,
                   isAuthenticated: false,
                   error: null,
-                  rememberMe: false,
                   lastActivity: null,
                   tokenExpiry: null,
                 });
@@ -249,7 +284,7 @@ export const useAuthStore = create<AuthState>()(
           }
         },
 
-        login: async (email, password, rememberMe = true) => {
+        login: async (email, password) => {
           set({ isLoading: true, error: null });
 
           try {
@@ -285,10 +320,11 @@ export const useAuthStore = create<AuthState>()(
                 errorMessage =
                   "Este email no está registrado en nuestro sistema";
               } else if (
-                error.message.toLowerCase().includes("email not confirmed")
+                error.message.toLowerCase().includes("email not confirmed") ||
+                error.message.toLowerCase().includes("email_not_confirmed")
               ) {
                 errorMessage =
-                  "Debes confirmar tu email antes de iniciar sesión";
+                  "Debes confirmar tu email antes de iniciar sesión. Revisá tu bandeja de entrada.";
               } else if (
                 error.message.toLowerCase().includes("too many login attempts")
               ) {
@@ -311,7 +347,6 @@ export const useAuthStore = create<AuthState>()(
                 professor,
                 isAuthenticated: true,
                 isLoading: false,
-                rememberMe: true, // Always persist session until manual logout
                 lastActivity: now,
                 tokenExpiry: now + TOKEN_EXPIRY_TIME,
               });
@@ -334,13 +369,12 @@ export const useAuthStore = create<AuthState>()(
           set({ isLoading: true, error: null });
 
           try {
-            // 1. Create auth user
+            // 1. Create auth user in Supabase (email confirmation required)
             const { data: authData, error: authError } =
               await supabase.auth.signUp({
                 email: data.email,
                 password: data.password,
                 options: {
-                  emailRedirectTo: undefined, // Don't send confirmation email
                   data: {
                     first_name: data.firstName,
                     last_name: data.lastName,
@@ -358,52 +392,27 @@ export const useAuthStore = create<AuthState>()(
               throw new Error("No se pudo crear el usuario");
             }
 
-            console.log("User created:", authData.user.id);
-
-            // 2. Try to get the profile (trigger should have created it)
-            let professor = await userToProfessor(authData.user);
-
-            // 4. If profile doesn't exist, create it manually
-            if (!professor) {
-              console.log("Profile not found, creating manually...");
-
-              const { error: profileError } = await supabase
-                .from("profiles")
-                .insert({
-                  id: authData.user.id,
-                  email: data.email,
-                  first_name: data.firstName,
-                  last_name: data.lastName,
-                  role: data.role,
-                });
-
-              if (profileError) {
-                console.error("Profile creation error:", profileError);
-                throw new Error("No se pudo crear el perfil");
-              }
-
-              // Try to get professor again
-              professor = await userToProfessor(authData.user);
-
-              if (!professor) {
-                throw new Error(
-                  "No se pudo obtener el perfil después de crearlo",
-                );
-              }
+            // Detect if Supabase returned a fake user (email already registered)
+            // When email confirmation is ON and email already exists, Supabase
+            // returns a user with identities = [] instead of throwing an error
+            if (
+              authData.user.identities &&
+              authData.user.identities.length === 0
+            ) {
+              throw new Error(
+                "Este email ya está registrado. Intentá iniciar sesión.",
+              );
             }
 
-            const now = Date.now();
-            set({
-              professor,
-              isAuthenticated: true,
-              isLoading: false,
-              rememberMe: true,
-              lastActivity: now,
-              tokenExpiry: now + TOKEN_EXPIRY_TIME,
-            });
+            console.log("User created, awaiting email confirmation:", authData.user.id);
 
-            // Start activity tracking
-            get().updateActivity();
+            // NOTE: Do NOT set isAuthenticated or professor here.
+            // The user must confirm their email first.
+            // The profile row will be created by the DB trigger on email confirmation,
+            // or manually created when the user first logs in (via userToProfessor).
+            set({ isLoading: false });
+
+            // Caller (RegisterPage) will show a "Check your email" screen.
           } catch (error) {
             console.error("Registration error:", error);
             const errorMessage =
@@ -470,7 +479,6 @@ export const useAuthStore = create<AuthState>()(
             professor: null,
             isAuthenticated: false,
             error: null,
-            rememberMe: false,
             lastActivity: null,
             tokenExpiry: null,
           });
@@ -643,7 +651,6 @@ export const useAuthStore = create<AuthState>()(
       partialize: (state) => ({
         professor: state.professor,
         isAuthenticated: state.isAuthenticated,
-        rememberMe: state.rememberMe,
         lastActivity: state.lastActivity,
         tokenExpiry: state.tokenExpiry,
       }),

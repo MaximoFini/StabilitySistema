@@ -16,6 +16,7 @@ export interface ExerciseWeightLog {
   series: number;
   sets_detail: SetDetail[];
   logged_at: string;
+  calculated_rm?: number | null;
   rm_kg?: number | null;
   rm_note_id?: string | null;
 }
@@ -67,19 +68,41 @@ export function useExerciseWeightLogs(studentId: string | undefined) {
         return;
       }
 
+      // Función para calcular el RM usando la fórmula de Epley: 1RM = Peso × (1 + Reps/30)
+      const calculateRm = (setsDetail: SetDetail[]): number | null => {
+        const validSets = setsDetail.filter(
+          (s) => s.kg != null && s.actual_reps != null && s.kg > 0,
+        );
+
+        if (validSets.length === 0) return null;
+
+        const rmSum = validSets.reduce((sum, s) => {
+          const reps = parseFloat(s.actual_reps!);
+          const weight = s.kg!;
+          const oneRm = weight * (1 + reps / 30);
+          return sum + oneRm;
+        }, 0);
+
+        const avgRm = rmSum / validSets.length;
+        return Math.round(avgRm * 100) / 100; // Redondear a 2 decimales
+      };
+
       // Agrupar por nombre de ejercicio
       const groupMap = new Map<string, ExerciseWeightLog[]>();
       for (const row of data) {
         const rmNotes = (row.exercise_rm_notes as ExerciseRmNote[]) || [];
         const rmNote = rmNotes[0];
+        const setsDetail = row.sets_detail as SetDetail[];
+
         const log: ExerciseWeightLog = {
           id: row.id,
           exercise_name: row.exercise_name,
           plan_day_number: row.plan_day_number,
           plan_day_name: row.plan_day_name,
           series: row.series,
-          sets_detail: row.sets_detail as SetDetail[],
+          sets_detail: setsDetail,
           logged_at: row.logged_at,
+          calculated_rm: calculateRm(setsDetail),
           rm_kg: rmNote?.rm_kg ?? null,
           rm_note_id: rmNote?.id ?? null,
         };

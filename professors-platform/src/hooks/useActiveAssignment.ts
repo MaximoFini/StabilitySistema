@@ -2,12 +2,20 @@ import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/features/auth/store/authStore";
 
+export interface AvailableDay {
+  id: string;
+  dayNumber: number;
+  dayName: string;
+  exerciseCount: number;
+  estimatedMinutes: number;
+}
+
 export interface ActiveAssignment {
   assignmentId: string;
   planId: string;
   planTitle: string;
   currentDayNumber: number;
-  currentDayId: string; // UUID from training_plan_days
+  currentDayId: string;
   currentDayName: string;
   totalDays: number;
   completedDays: number;
@@ -16,6 +24,8 @@ export interface ActiveAssignment {
   status: "active" | "completed" | "paused" | "cancelled";
   exerciseCount: number;
   estimatedMinutes: number;
+  daysPerWeek: number;
+  availableDays: AvailableDay[];
 }
 
 interface UseActiveAssignmentReturn {
@@ -42,76 +52,102 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
     setError(null);
 
     try {
-      // Query 1 — active assignment + plan info
-      const { data: assignmentData, error: assignmentErr } = await supabase
-        .from("training_plan_assignments")
-        .select(
-          "id, plan_id, student_id, start_date, end_date, status, current_day_number, completed_days, training_plans(title, total_days)",
-        )
-        .eq("student_id", professor.id)
-        .eq("status", "active")
-        .order("assigned_at", { ascending: false })
-        .limit(1)
-        .single();
+      // ── Fire BOTH queries in parallel ─────────────────────────
+      const [assignmentResult, completionsResult] = await Promise.all([
+        // Q1: Assignment + plan + days + exercise counts (single joined query)
+        supabase
+          .from("training_plan_assignments")
+          .select(
+            `id, plan_id, student_id, start_date, end_date, status, current_day_number, completed_days,
+             training_plans(title, total_days, days_per_week,
+               training_plan_days(id, day_number, day_name,
+                 training_plan_exercises(id)
+               )
+             )`
+          )
+          .eq("student_id", professor.id)
+          .eq("status", "active")
+          .order("assigned_at", { ascending: false })
+          .limit(1)
+          .single(),
+
+        // Q2: All completions for this student (independent)
+        supabase
+          .from("workout_completions")
+          .select("day_number, assignment_id")
+          .eq("student_id", professor.id),
+      ]);
+
+      const { data: assignmentData, error: assignmentErr } = assignmentResult;
+      const { data: completionsData } = completionsResult;
 
       if (assignmentErr || !assignmentData) {
-        // No active assignment — not an error, just no plan yet
+        // No active assignment — not an error
         setAssignment(null);
         setLoading(false);
         return;
       }
 
+      // ── Parse plan info ───────────────────────────────────────
       const planInfo = (
         Array.isArray(assignmentData.training_plans)
           ? assignmentData.training_plans[0]
           : assignmentData.training_plans
-      ) as { title: string; total_days: number } | null;
+      ) as {
+        title: string;
+        total_days: number;
+        days_per_week: number;
+        training_plan_days: Array<{
+          id: string;
+          day_number: number;
+          day_name: string;
+          training_plan_exercises: Array<{ id: string }>;
+        }>;
+      } | null;
+
       const planTitle = planInfo?.title ?? "Plan sin título";
       const totalDays = planInfo?.total_days ?? 0;
+      const daysPerWeek = planInfo?.days_per_week ?? 0;
 
-      // Query 2 — Get all days for this plan
-      const { data: allDays, error: daysErr } = await supabase
-        .from("training_plan_days")
-        .select("id, day_number, day_name")
-        .eq("plan_id", assignmentData.plan_id)
-        .order("day_number", { ascending: true });
+      // ── Parse days + exercise counts ──────────────────────────
+      const rawDays = planInfo?.training_plan_days ?? [];
+      const sortedDays = [...rawDays].sort(
+        (a, b) => a.day_number - b.day_number
+      );
 
-      if (daysErr || !allDays || allDays.length === 0) {
+      const availableDays: AvailableDay[] = sortedDays.map((day) => {
+        const exerciseCount = day.training_plan_exercises?.length ?? 0;
+        return {
+          id: day.id,
+          dayNumber: day.day_number,
+          dayName: day.day_name,
+          exerciseCount,
+          estimatedMinutes: Math.max(exerciseCount * 4, 20),
+        };
+      });
+
+      // ── Find next pending day ─────────────────────────────────
+      const completedDayNumbers = new Set(
+        (completionsData ?? [])
+          .filter((c) => c.assignment_id === assignmentData.id)
+          .map((c) => c.day_number)
+      );
+
+      let dayData = sortedDays.find(
+        (day) => !completedDayNumbers.has(day.day_number)
+      );
+      // If all completed, show the last day
+      if (!dayData && sortedDays.length > 0) {
+        dayData = sortedDays[sortedDays.length - 1];
+      }
+
+      if (!dayData) {
         setAssignment(null);
         setLoading(false);
         return;
       }
 
-      // Query 3 — Get all completed workouts for this assignment
-      const { data: completions } = await supabase
-        .from("workout_completions")
-        .select("day_number")
-        .eq("assignment_id", assignmentData.id);
-
-      // Build a Set of completed day numbers
-      const completedDayNumbers = new Set(
-        (completions ?? []).map((c) => c.day_number),
-      );
-
-      // Find the first day that is NOT completed
-      let dayData = allDays.find(
-        (day) => !completedDayNumbers.has(day.day_number),
-      );
-
-      // If all days are completed, show the last day (or could set status to completed)
-      if (!dayData) {
-        dayData = allDays[allDays.length - 1];
-      }
-
-      // Query 4 — count exercises for this day
-      const { count } = await supabase
-        .from("training_plan_exercises")
-        .select("id", { count: "exact", head: true })
-        .eq("day_id", dayData.id);
-
-      const exerciseCount = count ?? 0;
-      // Rough estimate: ~4 min per exercise
-      const estimatedMinutes = Math.max(exerciseCount * 4, 20);
+      const exerciseCount = dayData.training_plan_exercises?.length ?? 0;
 
       setAssignment({
         assignmentId: assignmentData.id,
@@ -126,7 +162,9 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
         endDate: assignmentData.end_date,
         status: assignmentData.status,
         exerciseCount,
-        estimatedMinutes,
+        estimatedMinutes: Math.max(exerciseCount * 4, 20),
+        daysPerWeek,
+        availableDays,
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");

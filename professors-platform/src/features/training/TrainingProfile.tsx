@@ -75,14 +75,17 @@ export default function TrainingProfile() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
+      // Filtrar campos generados que no pueden actualizarse
+      const updateData = { ...formData };
+
       const { error } = await supabase
         .from("student_profiles")
-        .update(formData)
+        .update(updateData)
         .eq("id", user.id);
 
       if (error) throw error;
 
-      setProfileData({ ...profileData, ...formData } as StudentProfileData);
+      setProfileData({ ...profileData, ...updateData } as StudentProfileData);
       setEditingSection(null);
       toast.success("Perfil actualizado correctamente");
     } catch (error) {
@@ -164,20 +167,36 @@ export default function TrainingProfile() {
 
       <main className="flex-1 overflow-y-auto pb-24">
         {/* Profile Header */}
-        <div className="flex flex-col items-center pt-6 pb-8 px-4">
-          <div className="relative mb-4">
+        <div className="relative pt-10 pb-8 px-4 flex flex-col items-center overflow-hidden">
+          {/* Decorative Background Glow */}
+          <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/5 dark:bg-primary/10 blur-[100px] -z-10 rounded-full" />
+
+          <div className="relative group">
             <div
-              className="w-28 h-28 rounded-full bg-center bg-cover shadow-lg border-4 border-white dark:border-surface-dark"
+              className="w-28 h-28 rounded-full shadow-2xl border-4 border-white dark:border-slate-800 relative z-10 overflow-hidden ring-4 ring-primary/5 transition-transform duration-500 group-hover:scale-[1.02]"
               style={{
                 backgroundImage: professor?.profileImage
                   ? `url("${professor.profileImage}")`
-                  : `url("https://ui-avatars.com/api/?name=${professor?.firstName}+${professor?.lastName}&size=128&background=0056B2&color=fff")`,
+                  : `url("https://ui-avatars.com/api/?name=${professor?.firstName}+${professor?.lastName}&size=256&background=0056B2&color=fff&bold=true")`,
+                backgroundSize: 'cover',
+                backgroundPosition: 'center',
               }}
             />
+            {/* Pulsing ring effect */}
+            <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping opacity-20" />
           </div>
-          <h1 className="text-2xl font-bold text-[#101418] dark:text-white mb-2">
-            {professor?.firstName} {professor?.lastName}
-          </h1>
+
+          <div className="mt-5 text-center">
+            <h1 className="text-2xl font-black text-slate-900 dark:text-white tracking-tight leading-tight">
+              {professor?.firstName} {professor?.lastName}
+            </h1>
+            <div className="flex items-center justify-center gap-2 mt-1.5">
+              <span className="h-1.5 w-1.5 rounded-full bg-emerald-500 animate-pulse" />
+              <p className="text-xs font-bold text-slate-400 uppercase tracking-[0.1em]">
+                Alumno Stability
+              </p>
+            </div>
+          </div>
         </div>
 
         {/* Collapsible Sections */}
@@ -211,145 +230,160 @@ export default function TrainingProfile() {
             </button>
 
             {expandedSection === "personal" && (
-              <div className="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-gray-800">
+              <div className="px-5 pb-6 pt-2 border-t border-slate-50 dark:border-slate-800/50">
                 {editingSection === "personal" ? (
-                  <>
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Teléfono
-                      </label>
-                      <input
-                        type="tel"
-                        value={formData.phone || ""}
-                        onChange={(e) =>
-                          setFormData({ ...formData, phone: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      />
+                  <div className="space-y-4 pt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+                          Teléfono
+                        </label>
+                        <input
+                          type="tel"
+                          value={formData.phone || ""}
+                          onChange={(e) =>
+                            setFormData({ ...formData, phone: e.target.value })
+                          }
+                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+                          Instagram
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.instagram || ""}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              instagram: e.target.value,
+                            })
+                          }
+                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                          placeholder="@usuario"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+                          Fecha de Nacimiento
+                        </label>
+                        <input
+                          type="date"
+                          value={formData.birth_date || ""}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              birth_date: e.target.value,
+                            })
+                          }
+                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                        />
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+                          Género
+                        </label>
+                        <select
+                          value={formData.gender || ""}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              gender: e.target.value as
+                                | "male"
+                                | "female"
+                                | "other",
+                            })
+                          }
+                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none appearance-none"
+                        >
+                          <option value="male">Masculino</option>
+                          <option value="female">Femenino</option>
+                          <option value="other">Otro</option>
+                        </select>
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Instagram
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.instagram || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            instagram: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                        placeholder="@usuario"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Fecha de Nacimiento
-                      </label>
-                      <input
-                        type="date"
-                        value={formData.birth_date || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            birth_date: e.target.value,
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      />
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Género
-                      </label>
-                      <select
-                        value={formData.gender || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            gender: e.target.value as
-                              | "male"
-                              | "female"
-                              | "other",
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      >
-                        <option value="male">Masculino</option>
-                        <option value="female">Femenino</option>
-                        <option value="other">Otro</option>
-                      </select>
-                    </div>
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-3 pt-2">
                       <button
                         onClick={() => handleSave("personal")}
-                        className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                        className="flex-1 px-4 py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-[0.98] transition-all"
                       >
-                        Guardar
+                        Actualizar Datos
                       </button>
                       <button
                         onClick={handleCancel}
-                        className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                       >
                         Cancelar
                       </button>
                     </div>
-                  </>
+                  </div>
                 ) : (
-                  <>
-                    <div className="flex justify-between items-start pt-3">
-                      <div className="flex-1 space-y-2">
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">
-                            Teléfono
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {profileData?.phone || "No especificado"}
-                          </p>
+                  <div className="pt-2">
+                    <div className="grid grid-cols-2 gap-x-4 gap-y-6 pt-4">
+                      {/* Phone */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-emerald-50 a dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400 filled">call</span>
                         </div>
                         <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">
-                            Instagram
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {profileData?.instagram || "No especificado"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">
-                            Fecha de Nacimiento
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {profileData?.birth_date
-                              ? new Date(
-                                  profileData.birth_date,
-                                ).toLocaleDateString("es-ES")
-                              : "No especificado"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">
-                            Género
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {profileData?.gender
-                              ? translateGender(profileData.gender)
-                              : "No especificado"}
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Teléfono</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                            {profileData?.phone || "—"}
                           </p>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleEdit("personal")}
-                        className="ml-4 p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">
-                          edit
-                        </span>
-                      </button>
+
+                      {/* Instagram */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px] text-pink-500 filled">alternate_email</span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Instagram</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                            {profileData?.instagram || "—"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Birthday */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px] text-blue-500 filled">cake</span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nacimiento</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                            {profileData?.birth_date
+                              ? new Date(profileData.birth_date).toLocaleDateString("es-ES")
+                              : "—"}
+                          </p>
+                        </div>
+                      </div>
+
+                      {/* Gender */}
+                      <div className="flex items-start gap-3">
+                        <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px] text-violet-500 filled">wc</span>
+                        </div>
+                        <div>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Género</p>
+                          <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
+                            {profileData?.gender ? translateGender(profileData.gender) : "—"}
+                          </p>
+                        </div>
+                      </div>
                     </div>
-                  </>
+
+                    <button
+                      onClick={() => handleEdit("personal")}
+                      className="w-full mt-8 flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      EDITAR INFORMACIÓN
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -386,11 +420,11 @@ export default function TrainingProfile() {
             </button>
 
             {expandedSection === "medical" && (
-              <div className="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-gray-800">
+              <div className="px-5 pb-6 pt-2 border-t border-slate-50 dark:border-slate-800/50">
                 {editingSection === "medical" ? (
-                  <>
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                  <div className="space-y-4 pt-4">
+                    <div>
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
                         Lesiones Previas
                       </label>
                       <textarea
@@ -401,13 +435,13 @@ export default function TrainingProfile() {
                             previous_injuries: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none resize-none"
                         rows={3}
                         placeholder="Describe lesiones previas..."
                       />
                     </div>
                     <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
+                      <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
                         Condiciones Médicas
                       </label>
                       <textarea
@@ -418,57 +452,56 @@ export default function TrainingProfile() {
                             medical_conditions: e.target.value,
                           })
                         }
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+                        className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none resize-none"
                         rows={3}
                         placeholder="Condiciones médicas relevantes..."
                       />
                     </div>
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-3 pt-2">
                       <button
                         onClick={() => handleSave("medical")}
-                        className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                        className="flex-1 px-4 py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-[0.98] transition-all"
                       >
-                        Guardar
+                        Actualizar Datos
                       </button>
                       <button
                         onClick={handleCancel}
-                        className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                       >
                         Cancelar
                       </button>
                     </div>
-                  </>
+                  </div>
                 ) : (
-                  <>
-                    <div className="flex justify-between items-start pt-3">
-                      <div className="flex-1 space-y-2">
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">
-                            Lesiones Previas
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {profileData?.previous_injuries || "Ninguna"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">
-                            Condiciones Médicas
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {profileData?.medical_conditions || "Ninguna"}
-                          </p>
-                        </div>
+                  <div className="pt-2 space-y-4">
+                    <div className="p-4 bg-orange-50/50 dark:bg-orange-950/20 rounded-2xl border border-orange-100 dark:border-orange-900/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="material-symbols-outlined text-orange-500 text-[18px] filled">warning</span>
+                        <p className="text-[10px] font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wider">Lesiones Previas</p>
                       </div>
-                      <button
-                        onClick={() => handleEdit("medical")}
-                        className="ml-4 p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">
-                          edit
-                        </span>
-                      </button>
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {profileData?.previous_injuries || "No se han registrado lesiones."}
+                      </p>
                     </div>
-                  </>
+
+                    <div className="p-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                      <div className="flex items-center gap-2 mb-2">
+                        <span className="material-symbols-outlined text-blue-500 text-[18px] filled">medical_information</span>
+                        <p className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Condiciones Médicas</p>
+                      </div>
+                      <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                        {profileData?.medical_conditions || "Sin condiciones médicas reportadas."}
+                      </p>
+                    </div>
+
+                    <button
+                      onClick={() => handleEdit("medical")}
+                      className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      EDITAR INFORMACIÓN MÉDICA
+                    </button>
+                  </div>
                 )}
               </div>
             )}
@@ -505,159 +538,168 @@ export default function TrainingProfile() {
             </button>
 
             {expandedSection === "training" && (
-              <div className="px-4 pb-4 space-y-3 border-t border-gray-100 dark:border-gray-800">
+              <div className="px-5 pb-6 pt-2 border-t border-slate-50 dark:border-slate-800/50">
                 {editingSection === "training" ? (
-                  <>
-                    <div className="mt-4">
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Nivel de Actividad
-                      </label>
-                      <select
-                        value={formData.activity_level || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            activity_level: e.target
-                              .value as StudentProfileData["activity_level"],
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      >
-                        <option value="sedentary">Sedentario</option>
-                        <option value="light">Ligero</option>
-                        <option value="moderate">Moderado</option>
-                        <option value="active">Activo</option>
-                        <option value="very_active">Muy Activo</option>
-                      </select>
+                  <div className="space-y-4 pt-4">
+                    <div className="grid grid-cols-1 gap-4">
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+                          Nivel de Actividad
+                        </label>
+                        <select
+                          value={formData.activity_level || ""}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              activity_level: e.target
+                                .value as StudentProfileData["activity_level"],
+                            })
+                          }
+                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none appearance-none"
+                        >
+                          <option value="sedentary">Sedentario</option>
+                          <option value="light">Ligero</option>
+                          <option value="moderate">Moderado</option>
+                          <option value="active">Activo</option>
+                          <option value="very_active">Muy Activo</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+                          Objetivo Principal
+                        </label>
+                        <select
+                          value={formData.primary_goal || ""}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              primary_goal: e.target
+                                .value as StudentProfileData["primary_goal"],
+                            })
+                          }
+                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none appearance-none"
+                        >
+                          <option value="aesthetic">Estética</option>
+                          <option value="sports">Deportivo</option>
+                          <option value="health">Salud</option>
+                          <option value="rehabilitation">Rehabilitación</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+                          Experiencia en Entrenamiento
+                        </label>
+                        <select
+                          value={formData.training_experience || ""}
+                          onChange={(e) =>
+                            setFormData({
+                              ...formData,
+                              training_experience: e.target
+                                .value as StudentProfileData["training_experience"],
+                            })
+                          }
+                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none appearance-none"
+                        >
+                          <option value="none">Ninguna</option>
+                          <option value="beginner">Principiante</option>
+                          <option value="intermediate">Intermedio</option>
+                          <option value="advanced">Avanzado</option>
+                        </select>
+                      </div>
+                      <div>
+                        <label className="block text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 ml-1">
+                          Deportes Practicados
+                        </label>
+                        <input
+                          type="text"
+                          value={formData.sports || ""}
+                          onChange={(e) =>
+                            setFormData({ ...formData, sports: e.target.value })
+                          }
+                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                          placeholder="Ej: Fútbol, natación..."
+                        />
+                      </div>
                     </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Objetivo Principal
-                      </label>
-                      <select
-                        value={formData.primary_goal || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            primary_goal: e.target
-                              .value as StudentProfileData["primary_goal"],
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      >
-                        <option value="aesthetic">Estética</option>
-                        <option value="sports">Deportivo</option>
-                        <option value="health">Salud</option>
-                        <option value="rehabilitation">Rehabilitación</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Experiencia en Entrenamiento
-                      </label>
-                      <select
-                        value={formData.training_experience || ""}
-                        onChange={(e) =>
-                          setFormData({
-                            ...formData,
-                            training_experience: e.target
-                              .value as StudentProfileData["training_experience"],
-                          })
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                      >
-                        <option value="none">Ninguna</option>
-                        <option value="beginner">Principiante</option>
-                        <option value="intermediate">Intermedio</option>
-                        <option value="advanced">Avanzado</option>
-                      </select>
-                    </div>
-                    <div>
-                      <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">
-                        Deportes Practicados
-                      </label>
-                      <input
-                        type="text"
-                        value={formData.sports || ""}
-                        onChange={(e) =>
-                          setFormData({ ...formData, sports: e.target.value })
-                        }
-                        className="w-full px-3 py-2 border border-gray-200 dark:border-gray-700 rounded-lg bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
-                        placeholder="Ej: Fútbol, natación..."
-                      />
-                    </div>
-                    <div className="flex gap-2 pt-2">
+                    <div className="flex gap-3 pt-2">
                       <button
                         onClick={() => handleSave("training")}
-                        className="flex-1 px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors"
+                        className="flex-1 px-4 py-3 bg-primary text-white rounded-xl font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary-hover active:scale-[0.98] transition-all"
                       >
-                        Guardar
+                        Actualizar Datos
                       </button>
                       <button
                         onClick={handleCancel}
-                        className="flex-1 px-4 py-2 bg-gray-200 dark:bg-gray-700 text-gray-700 dark:text-gray-300 rounded-lg font-medium hover:bg-gray-300 dark:hover:bg-gray-600 transition-colors"
+                        className="flex-1 px-4 py-3 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-xl font-bold text-sm hover:bg-slate-200 dark:hover:bg-slate-700 transition-all"
                       >
                         Cancelar
                       </button>
                     </div>
-                  </>
+                  </div>
                 ) : (
-                  <>
-                    <div className="flex justify-between items-start pt-3">
-                      <div className="flex-1 space-y-2">
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">
-                            Nivel de Actividad
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {profileData?.activity_level
-                              ? translateActivityLevel(
-                                  profileData.activity_level,
-                                )
-                              : "No especificado"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">
-                            Objetivo Principal
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {profileData?.primary_goal
-                              ? translateGoal(profileData.primary_goal)
-                              : "No especificado"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">
-                            Experiencia
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {profileData?.training_experience
-                              ? translateExperience(
-                                  profileData.training_experience,
-                                )
-                              : "No especificado"}
-                          </p>
-                        </div>
-                        <div>
-                          <p className="text-xs text-gray-500 uppercase tracking-wide">
-                            Deportes
-                          </p>
-                          <p className="text-sm font-medium text-gray-900 dark:text-white">
-                            {profileData?.sports || "No especificado"}
-                          </p>
+                  <div className="pt-2">
+                    <div className="grid grid-cols-1 gap-4 pt-2">
+                      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
+                            <span className="material-symbols-outlined text-[20px] filled">bolt</span>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nivel Actividad</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">
+                              {profileData?.activity_level ? translateActivityLevel(profileData.activity_level) : "—"}
+                            </p>
+                          </div>
                         </div>
                       </div>
-                      <button
-                        onClick={() => handleEdit("training")}
-                        className="ml-4 p-2 text-primary hover:bg-primary/10 rounded-lg transition-colors"
-                      >
-                        <span className="material-symbols-outlined text-[20px]">
-                          edit
-                        </span>
-                      </button>
+
+                      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600">
+                            <span className="material-symbols-outlined text-[20px] filled">target</span>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Objetivo</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">
+                              {profileData?.primary_goal ? translateGoal(profileData.primary_goal) : "—"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center text-amber-600">
+                            <span className="material-symbols-outlined text-[20px] filled">military_tech</span>
+                          </div>
+                          <div>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Experiencia</p>
+                            <p className="text-sm font-bold text-slate-900 dark:text-white">
+                              {profileData?.training_experience ? translateExperience(profileData.training_experience) : "—"}
+                            </p>
+                          </div>
+                        </div>
+                      </div>
+
+                      <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50">
+                        <div className="flex items-center gap-2 mb-2">
+                          <span className="material-symbols-outlined text-primary text-[18px] filled">sports_basketball</span>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deportes Practicados</p>
+                        </div>
+                        <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                          {profileData?.sports || "No se especificaron deportes."}
+                        </p>
+                      </div>
                     </div>
-                  </>
+
+                    <button
+                      onClick={() => handleEdit("training")}
+                      className="w-full mt-6 flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
+                    >
+                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      EDITAR ENTRENAMIENTO
+                    </button>
+                  </div>
                 )}
               </div>
             )}

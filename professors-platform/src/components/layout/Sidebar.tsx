@@ -47,10 +47,12 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
     <div className="flex h-full flex-col">
       {/* Header */}
       <div className="flex h-16 items-center justify-between px-6 border-b border-gray-100 dark:border-slate-800 shrink-0">
-        {!isCollapsed && (
-          <span className="text-xl font-bold tracking-tight text-primary">
-            Stability
-          </span>
+        {!isCollapsed ? (
+          <div className="flex items-center gap-2">
+            <img src="/logo-stability.png" alt="Stability Logo" className="h-10 w-auto object-contain" />
+          </div>
+        ) : (
+          <img src="/logo-stability.png" alt="S" className="h-6 w-auto object-contain mx-auto" />
         )}
         {/* Close button — only visible on mobile */}
         <button
@@ -72,24 +74,7 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
         </button>
       </div>
 
-      {/* Role badge */}
-      {professor && !isCollapsed && (
-        <div className="px-4 pt-3 pb-1">
-          <span
-            className={cn(
-              "inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full text-[11px] font-semibold uppercase tracking-wider",
-              isStudent
-                ? "bg-emerald-50 text-emerald-700 dark:bg-emerald-900/30 dark:text-emerald-400"
-                : "bg-blue-50 text-primary dark:bg-blue-900/20 dark:text-blue-400",
-            )}
-          >
-            <span className="material-symbols-outlined text-[13px]">
-              {isStudent ? "school" : "sports"}
-            </span>
-            {isStudent ? "Alumno" : "Coach"}
-          </span>
-        </div>
-      )}
+
 
       {/* Navigation */}
       <nav className="flex-1 space-y-0.5 p-3 overflow-y-auto">

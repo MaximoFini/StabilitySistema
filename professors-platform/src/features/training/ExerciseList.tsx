@@ -3,14 +3,28 @@ import { useNavigate, useParams } from "react-router-dom";
 import { useTrainingStore } from "@/features/training/store/trainingStore";
 import { useActiveDayExercises } from "@/hooks/useActiveDayExercises";
 import { cn } from "@/lib/utils";
-import type { ExerciseCategory } from "@/features/training/types";
 
-const categoryStyle: Record<ExerciseCategory, string> = {
+const categoryStyle: Record<string, string> = {
   Compuesto:
     "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-800",
   Aislamiento:
     "bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border-violet-100 dark:border-violet-800",
+  "Activación":
+    "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-800",
+  "Activacion":
+    "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-800",
+  Cardio:
+    "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-100 dark:border-orange-800",
+  Movilidad:
+    "bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border-teal-100 dark:border-teal-800",
 };
+
+function getCategoryStyle(category: string): string {
+  return (
+    categoryStyle[category] ??
+    "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-700"
+  );
+}
 
 export default function ExerciseList() {
   const navigate = useNavigate();
@@ -76,10 +90,6 @@ export default function ExerciseList() {
     );
   }
 
-  const totalSets = workout.exercises.reduce(
-    (acc, ex) => acc + ex.sets.length,
-    0,
-  );
 
   return (
     <div className="flex flex-col min-h-full bg-[#f7f9fc] dark:bg-slate-950">
@@ -98,9 +108,6 @@ export default function ExerciseList() {
             <p className="text-xs font-semibold uppercase tracking-widest text-primary mb-0.5">
               DÍA {workout.id}
             </p>
-            <h1 className="text-lg font-bold text-slate-900 dark:text-white leading-tight truncate">
-              {workout.name}
-            </h1>
           </div>
         </div>
 
@@ -108,14 +115,9 @@ export default function ExerciseList() {
         <div className="flex gap-3">
           {[
             {
-              icon: "schedule",
-              text: `${workout.durationMinutes} min estimados`,
-            },
-            {
               icon: "exercise",
               text: `${workout.exercises.length} ejercicios`,
             },
-            { icon: "stacked_line_chart", text: `${totalSets} series` },
           ].map((m) => (
             <span
               key={m.text}
@@ -147,16 +149,16 @@ export default function ExerciseList() {
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-2 mb-1 flex-wrap">
+              {exercise.category && (
                 <span
                   className={cn(
                     "text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border",
-                    categoryStyle[exercise.category],
+                    getCategoryStyle(exercise.category),
                   )}
                 >
                   {exercise.category}
                 </span>
-              </div>
+              )}
               <p className="text-sm font-semibold text-slate-900 dark:text-white leading-snug">
                 {exercise.name}
               </p>
