@@ -621,6 +621,24 @@ export function useTrainingPlans() {
     }
 
     try {
+      // --- NUEVA VALIDACIÓN: Chequear si ya existen asignaciones ---
+      const { data: existingAssignments, error: checkError } = await supabase
+        .from("training_plan_assignments")
+        .select("student_id")
+        .eq("plan_id", planId)
+        .in("student_id", studentIds);
+
+      if (checkError) throw checkError;
+
+      // Si encuentra al menos un registro, frenamos todo
+      if (existingAssignments && existingAssignments.length > 0) {
+        return { 
+          success: false, 
+          error: "Uno o más alumnos seleccionados ya tienen este plan asignado." 
+        };
+      }
+      // -------------------------------------------------------------
+
       // Create assignments for each student
       const assignments = studentIds.map((studentId) => ({
         plan_id: planId,
@@ -723,7 +741,7 @@ export function useTrainingPlans() {
           return {
             assignmentId: row.id,
             studentId: row.student_id,
-            fullName: profile ? `${profile.first_name || ""} ${profile.last_name || ""}`.trim() || "Sin nombre" : "Sin nombre",
+            fullName: profile ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() || "Sin nombre" : "Sin nombre",
             email: profile?.email || "Sin email",
             avatarUrl: profile?.profile_image || null,
             startDate: row.start_date,
