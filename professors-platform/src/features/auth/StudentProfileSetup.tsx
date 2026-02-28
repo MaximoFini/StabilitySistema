@@ -106,10 +106,8 @@ export default function StudentProfileSetup() {
 
       toast.success("¡Perfil completado exitosamente!");
 
-      // Redirect to student dashboard
-      setTimeout(() => {
-        navigate("/entrenamiento", { replace: true });
-      }, 1500);
+      // Redirigir inmediatamente al dashboard del alumno
+      navigate("/entrenamiento", { replace: true });
     } catch (error) {
       let errorMessage = "Error al completar el perfil";
 

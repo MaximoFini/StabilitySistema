@@ -696,7 +696,7 @@ export function useTrainingPlans() {
 
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, full_name, email, avatar_url")
+        .select("id, first_name, last_name, email, profile_image")
         .in("id", studentIds);
 
       console.log(
@@ -723,9 +723,9 @@ export function useTrainingPlans() {
           return {
             assignmentId: row.id,
             studentId: row.student_id,
-            fullName: profile?.full_name || "Sin nombre",
+            fullName: profile ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() || "Sin nombre" : "Sin nombre",
             email: profile?.email || "Sin email",
-            avatarUrl: profile?.avatar_url || null,
+            avatarUrl: profile?.profile_image || null,
             startDate: row.start_date,
             endDate: row.end_date,
             status: row.status || "active",

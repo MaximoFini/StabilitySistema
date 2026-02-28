@@ -2,6 +2,7 @@ import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
 import { RequireAuth } from "@/components/layout/RequireAuth";
 import { RequireRole } from "@/components/layout/RequireRole";
+import { RequireCompletedProfile } from "@/components/layout/RequireCompletedProfile";
 
 // ── Lazy page imports (code splitting) ────────────────────────────────────
 const MainLayout = lazy(() => import("@/components/layout/MainLayout"));
@@ -102,9 +103,11 @@ export const router = createBrowserRouter([
     element: (
       <RequireAuth>
         <RequireRole role="student">
-          <Suspense fallback={<PageSkeleton />}>
-            <TrainingLayout />
-          </Suspense>
+          <RequireCompletedProfile>
+            <Suspense fallback={<PageSkeleton />}>
+              <TrainingLayout />
+            </Suspense>
+          </RequireCompletedProfile>
         </RequireRole>
       </RequireAuth>
     ),
@@ -117,20 +120,52 @@ export const router = createBrowserRouter([
   // Mood check before workout
   {
     path: "/entrenamiento/mood/:dayId",
-    element: <RequireAuth>{withSuspense(MoodCheckScreen)}</RequireAuth>,
+    element: (
+      <RequireAuth>
+        <RequireRole role="student">
+          <RequireCompletedProfile>
+            {withSuspense(MoodCheckScreen)}
+          </RequireCompletedProfile>
+        </RequireRole>
+      </RequireAuth>
+    ),
   },
   // Workout flow — full-screen, no bottom nav
   {
     path: "/entrenamiento/dia/:dayId",
-    element: <RequireAuth>{withSuspense(ExerciseList)}</RequireAuth>,
+    element: (
+      <RequireAuth>
+        <RequireRole role="student">
+          <RequireCompletedProfile>
+            {withSuspense(ExerciseList)}
+          </RequireCompletedProfile>
+        </RequireRole>
+      </RequireAuth>
+    ),
   },
   {
     path: "/entrenamiento/dia/:dayId/ejercicio/:exerciseNum",
-    element: <RequireAuth>{withSuspense(ExerciseDetail)}</RequireAuth>,
+    element: (
+      <RequireAuth>
+        <RequireRole role="student">
+          <RequireCompletedProfile>
+            {withSuspense(ExerciseDetail)}
+          </RequireCompletedProfile>
+        </RequireRole>
+      </RequireAuth>
+    ),
   },
   {
     path: "/entrenamiento/completado",
-    element: <RequireAuth>{withSuspense(WorkoutComplete)}</RequireAuth>,
+    element: (
+      <RequireAuth>
+        <RequireRole role="student">
+          <RequireCompletedProfile>
+            {withSuspense(WorkoutComplete)}
+          </RequireCompletedProfile>
+        </RequireRole>
+      </RequireAuth>
+    ),
   },
 
   // ── Auth routes ────────────────────────────────────────────────────────
