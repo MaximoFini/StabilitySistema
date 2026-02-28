@@ -114,7 +114,7 @@ export function useTrainingPlans() {
       const totalDaysInPeriod =
         Math.ceil(
           (planData.endDate.getTime() - planData.startDate.getTime()) /
-            msPerDay,
+          msPerDay,
         ) + 1;
       const calculatedWeeks = Math.ceil(totalDaysInPeriod / 7);
       const totalWeeks = planData.durationWeeks ?? calculatedWeeks;
@@ -238,7 +238,7 @@ export function useTrainingPlans() {
       const totalDaysInPeriod =
         Math.ceil(
           (planData.endDate.getTime() - planData.startDate.getTime()) /
-            msPerDay,
+          msPerDay,
         ) + 1;
       const calculatedWeeks = Math.ceil(totalDaysInPeriod / 7);
       const totalWeeks = planData.durationWeeks ?? calculatedWeeks;

@@ -105,12 +105,6 @@ export default function StudentsList() {
 
   return (
     <div className="flex flex-col h-full bg-background-light dark:bg-background-dark relative">
-      <header className="h-20 bg-white dark:bg-card-dark border-b border-gray-100 dark:border-gray-800 hidden md:flex items-center justify-between px-8 z-10 flex-shrink-0">
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          Inicio
-        </h2>
-
-      </header>
       <main className="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-6 lg:p-8">
         <div className="w-full flex flex-col gap-8">
           <div className="flex flex-col gap-1">
@@ -119,9 +113,6 @@ export default function StudentsList() {
                 Mis Alumnos
               </h2>
             </div>
-            <p className="text-secondary text-sm md:text-base">
-              Gestiona los programas de entrenamiento y monitorea el progreso.
-            </p>
           </div>
 
           {/* Error State */}

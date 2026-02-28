@@ -178,8 +178,8 @@ export default function WorkoutComplete() {
       <div className="mt-8 mb-6 relative group">
         <div className="w-20 h-20 rounded-2xl bg-blue-50 dark:bg-blue-900/30 flex items-center justify-center relative z-10 transition-transform duration-500 group-hover:scale-105">
           <img
-            src="/logo-stability.png"
-            alt="Stability Logo"
+            src="/image.png"
+            alt="Logo"
             className="w-16 h-auto object-contain"
           />
         </div>

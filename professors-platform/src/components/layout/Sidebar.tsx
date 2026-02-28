@@ -8,7 +8,7 @@ const coachNavigation = [
   { name: "Alumnos", href: "/inicio", icon: "group" },
   { name: "Planificación", href: "/planificador", icon: "calendar_month" },
   { name: "Biblioteca", href: "/biblioteca", icon: "fitness_center" },
-  { name: "Dashboard", href: "/dashboard", icon: "bar_chart" },
+  { name: "Estadísticas", href: "/dashboard", icon: "bar_chart" },
 ];
 
 const studentNavigation = [
@@ -46,13 +46,16 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className="flex h-16 items-center justify-between px-6 border-b border-gray-100 dark:border-slate-800 shrink-0">
+      <div className={cn(
+        "flex h-16 items-center px-6 border-b border-gray-100 dark:border-slate-800 shrink-0",
+        isCollapsed ? "justify-center px-2" : "justify-between"
+      )}>
         {!isCollapsed ? (
           <div className="flex items-center gap-2">
-            <img src="/logo-stability.png" alt="Stability Logo" className="h-10 w-auto object-contain" />
+            <span className="text-xl font-black text-primary tracking-wider">STABILITY</span>
           </div>
         ) : (
-          <img src="/logo-stability.png" alt="S" className="h-6 w-auto object-contain mx-auto" />
+          <img src="/image.png" alt="Logo" className="h-8 w-auto object-contain" />
         )}
         {/* Close button — only visible on mobile */}
         <button
@@ -61,16 +64,6 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
           aria-label="Cerrar menú"
         >
           <X size={18} />
-        </button>
-        {/* Collapse button — only visible on desktop */}
-        <button
-          onClick={() => setIsCollapsed(!isCollapsed)}
-          className="hidden lg:flex p-1.5 rounded-lg text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors ml-auto"
-          aria-label={isCollapsed ? "Expandir menú" : "Colapsar menú"}
-        >
-          <span className="material-symbols-outlined text-[20px]">
-            {isCollapsed ? "chevron_right" : "chevron_left"}
-          </span>
         </button>
       </div>
 
@@ -110,6 +103,21 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
 
       {/* Footer: user info + logout */}
       <div className="p-4 border-t border-gray-100 dark:border-slate-800 space-y-2 shrink-0">
+        {/* Desktop Toggle Button */}
+        <button
+          onClick={() => setIsCollapsed(!isCollapsed)}
+          className={cn(
+            "hidden lg:flex items-center gap-3 w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group",
+            isCollapsed && "justify-center px-0"
+          )}
+          title={isCollapsed ? "Expandir" : undefined}
+        >
+          <span className="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">
+            {isCollapsed ? "chevron_right" : "chevron_left"}
+          </span>
+          {!isCollapsed && <span className="group-hover:text-primary">Colapsar</span>}
+        </button>
+
         {!isCollapsed ? (
           <>
             <div className="flex items-center gap-3 px-2 py-2">
