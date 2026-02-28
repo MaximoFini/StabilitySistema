@@ -134,19 +134,13 @@ export default function SortableExerciseRow({
                     />
                 </div>
                 <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
-                    <div className="relative w-full">
-                        <input
-                            className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0 pr-4"
-                            type="number"
-                            value={exercise.intensity}
-                            onChange={(e) => handleUpdateExercise(exercise.id, "intensity", parseInt(e.target.value) || 0)}
-                            min="1"
-                            max="10"
-                        />
-                        <span className="absolute right-2 top-1/2 -translate-y-1/2 text-[10px] text-gray-400 font-bold pointer-events-none">
-                            RPE
-                        </span>
-                    </div>
+                    <input
+                        className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0"
+                        type="text"
+                        value={exercise.carga}
+                        onChange={(e) => handleUpdateExercise(exercise.id, "carga", e.target.value)}
+                        placeholder="-"
+                    />
                 </div>
                 <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
                     <input

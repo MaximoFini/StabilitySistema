@@ -25,7 +25,7 @@ interface TrainingPlanExercise {
   video_url: string | null;
   series: number;
   reps: string;
-  intensity: number;
+  carga: string;
   pause: string;
   notes: string | null;
   coach_instructions: string | null;
@@ -120,11 +120,10 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
             <button
               key={day.id}
               onClick={() => setActiveDay(index)}
-              className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
-                activeDay === index
+              className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${activeDay === index
                   ? "bg-primary text-white"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
+                }`}
             >
               {day.day_name}
             </button>
@@ -166,7 +165,7 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
                       Reps
                     </th>
                     <th className="text-center py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
-                      Intensidad
+                      Carga
                     </th>
                     <th className="text-center py-3 px-4 text-xs font-bold text-slate-600 dark:text-slate-400 uppercase tracking-wider">
                       Pausa
@@ -221,7 +220,7 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
                         {exercise.reps}
                       </td>
                       <td className="py-3 px-4 text-center text-sm text-slate-700 dark:text-slate-300">
-                        {exercise.intensity}
+                        {exercise.carga || '-'}
                       </td>
                       <td className="py-3 px-4 text-center text-sm text-slate-700 dark:text-slate-300">
                         {exercise.pause}

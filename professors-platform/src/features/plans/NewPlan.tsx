@@ -97,7 +97,7 @@ export default function NewPlan() {
           exercise_name: "Plancha Lateral + Remo",
           series: 3,
           reps: "30s",
-          intensity: 6,
+          carga: '-',
           pause: "20s",
           notes: "Flexibilidad estática y dinámica",
           order: 0,
@@ -114,7 +114,7 @@ export default function NewPlan() {
           exercise_name: "Plancha Lateral + Remo",
           series: 3,
           reps: "30s",
-          intensity: 6,
+          carga: '-',
           pause: "20s",
           notes: "Flexibilidad estática y dinámica",
           order: 0,
@@ -187,7 +187,7 @@ export default function NewPlan() {
       video_url: string | null;
       series: number;
       reps: string;
-      intensity: number;
+      carga: string;
       pause: string;
       notes: string | null;
       display_order: number;
@@ -219,7 +219,7 @@ export default function NewPlan() {
           video_url: ex.video_url,
           series: ex.series,
           reps: ex.reps,
-          intensity: ex.intensity,
+          carga: ex.carga || '-',
           pause: ex.pause,
           notes: ex.notes || "",
           order: ex.display_order,
@@ -336,7 +336,7 @@ export default function NewPlan() {
       exercise_name: "",
       series: 3,
       reps: "10",
-      intensity: 7,
+      carga: '-',
       pause: "60s",
       notes: "",
       order: exercises.length,
@@ -394,7 +394,7 @@ export default function NewPlan() {
         exercise_name: "",
         series: 0,
         reps: "",
-        intensity: 0,
+        carga: '-',
         pause: "",
         notes: "",
         order: 0,
@@ -778,7 +778,7 @@ export default function NewPlan() {
               Reps
             </div>
             <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">
-              Intensidad
+              Carga
             </div>
             <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">
               Pausa
