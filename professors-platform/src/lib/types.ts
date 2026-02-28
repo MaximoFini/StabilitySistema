@@ -18,7 +18,7 @@ export interface PlanExercise {
   video_url?: string | null;
   series: number;
   reps: string;
-  intensity: number;
+  carga: string;
   pause: string;
   notes: string;
   order: number;

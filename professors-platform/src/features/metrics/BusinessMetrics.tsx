@@ -13,38 +13,6 @@ function MetricCardSkeleton() {
   );
 }
 
-// --- Growth Badge ---
-function GrowthBadge({ percent }: { percent: number | null }) {
-  if (percent === null) {
-    return (
-      <span className="flex items-center text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-        <span className="material-symbols-outlined text-[14px] mr-0.5">trending_up</span>
-        Nuevo
-      </span>
-    );
-  }
-  if (percent > 0) {
-    return (
-      <span className="flex items-center text-xs font-bold text-green-700 bg-green-50 px-2 py-0.5 rounded-full border border-green-100">
-        <span className="material-symbols-outlined text-[14px] mr-0.5">trending_up</span>
-        +{percent}%
-      </span>
-    );
-  }
-  if (percent < 0) {
-    return (
-      <span className="flex items-center text-xs font-bold text-red-700 bg-red-50 px-2 py-0.5 rounded-full border border-red-100">
-        <span className="material-symbols-outlined text-[14px] mr-0.5">trending_down</span>
-        {percent}%
-      </span>
-    );
-  }
-  return (
-    <span className="flex items-center text-xs font-bold text-gray-600 bg-gray-50 px-2 py-0.5 rounded-full border border-gray-200">
-      0%
-    </span>
-  );
-}
 
 // --- Donut Chart ---
 const CIRCUMFERENCE = 2 * Math.PI * 40;
@@ -155,7 +123,7 @@ export default function BusinessMetrics() {
                 <div className="bg-white dark:bg-surface-light rounded-xl p-6 shadow-card border border-gray-200 dark:border-border-light flex flex-col justify-between h-32 relative overflow-hidden group hover:border-green-200 transition-all">
                   <div className="flex items-center justify-between relative z-10">
                     <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Nuevos este Mes</span>
-                    <GrowthBadge percent={metrics?.growthPercent ?? 0} />
+                    <span className="material-symbols-outlined text-green-600 bg-green-50 p-1.5 rounded-md text-[20px]">person_add</span>
                   </div>
                   <div className="relative z-10">
                     <span className="text-3xl font-bold text-gray-900">

@@ -170,7 +170,7 @@ export interface Database {
           video_url: string | null;
           series: number;
           reps: string;
-          intensity: number | null;
+          carga: string;
           pause: string;
           notes: string | null;
           coach_instructions: string | null;
@@ -188,7 +188,7 @@ export interface Database {
           video_url?: string | null;
           series?: number;
           reps?: string;
-          intensity?: number | null;
+          carga?: string;
           pause?: string;
           notes?: string | null;
           coach_instructions?: string | null;
@@ -206,7 +206,7 @@ export interface Database {
           video_url?: string | null;
           series?: number;
           reps?: string;
-          intensity?: number | null;
+          carga?: string;
           pause?: string;
           notes?: string | null;
           coach_instructions?: string | null;

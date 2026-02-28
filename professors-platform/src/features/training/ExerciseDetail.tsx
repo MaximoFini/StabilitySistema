@@ -297,6 +297,7 @@ export default function ExerciseDetail() {
           </div>
         )}
 
+
         {/* Series table */}
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
           {/* Weight log reminder */}
@@ -318,7 +319,7 @@ export default function ExerciseDetail() {
               Objetivo
             </span>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">
-              KG
+              Carga
             </span>
             <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400 text-center">
               REPS
@@ -363,14 +364,12 @@ export default function ExerciseDetail() {
                       </p>
                     </div>
 
-                    {/* KG input — solo si el coach lo indica */}
+                    {/* Carga input — siempre visible, carga del coach como placeholder */}
                     {exercise.writeWeight ? (
                       <input
-                        type="number"
+                        type="text"
                         inputMode="decimal"
-                        placeholder={
-                          set.targetWeight ? String(set.targetWeight) : "kg"
-                        }
+                        placeholder={exercise.carga && exercise.carga !== '-' ? exercise.carga : 'kg'}
                         value={log?.kg ?? ""}
                         onChange={(e) =>
                           updateSeriesLog(key, "kg", e.target.value)
@@ -382,8 +381,8 @@ export default function ExerciseDetail() {
                         )}
                       />
                     ) : (
-                      <div className="w-full text-center text-sm font-bold text-slate-400 dark:text-slate-500 rounded-xl border border-dashed border-slate-200 dark:border-slate-700 px-2 py-2 min-h-[40px] flex items-center justify-center">
-                        —
+                      <div className="w-full text-center text-sm font-bold text-slate-500 dark:text-slate-400 rounded-xl border border-slate-200 dark:border-slate-700 px-2 py-2 min-h-[40px] flex items-center justify-center">
+                        {exercise.carga && exercise.carga !== '-' ? exercise.carga : '—'}
                       </div>
                     )}
 

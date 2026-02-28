@@ -6,7 +6,7 @@ const todayWorkout = {
   name: "Fuerza — Tren Superior",
   duration: "55 min",
   exercises: 6,
-  intensity: "Media-Alta",
+  carga: "Media-Alta",
   done: false,
 };
 
@@ -134,7 +134,7 @@ export default function StudentDashboard() {
                   icon: "exercise",
                   text: `${todayWorkout.exercises} ejercicios`,
                 },
-                { icon: "speed", text: todayWorkout.intensity },
+                { icon: "speed", text: todayWorkout.carga },
               ].map((m) => (
                 <span
                   key={m.text}

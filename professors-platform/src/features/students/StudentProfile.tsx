@@ -275,7 +275,7 @@ function GeneralTab({ student }: { student: StudentProfileType }) {
       </div>
       <div className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-card border border-slate-200 dark:border-slate-800">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+          <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
             <span className="material-symbols-outlined text-[18px] filled">fitness_center</span>
           </div>
           Entrenamiento y Objetivos
@@ -286,36 +286,36 @@ function GeneralTab({ student }: { student: StudentProfileType }) {
             icon="target"
             label="Objetivo"
             value={student.primaryGoal ? GOAL_LABELS[student.primaryGoal] : null}
-            colorClass="text-emerald-500"
-            bgClass="bg-emerald-50 dark:bg-emerald-950/30"
+            colorClass="text-sky-500"
+            bgClass="bg-sky-50 dark:bg-sky-950/30"
           />
           <StatCard
             icon="military_tech"
             label="Nivel"
             value={student.trainingExperience ? EXPERIENCE_LABELS[student.trainingExperience] : null}
-            colorClass="text-emerald-500"
-            bgClass="bg-emerald-50 dark:bg-emerald-950/30"
+            colorClass="text-sky-500"
+            bgClass="bg-sky-50 dark:bg-sky-950/30"
           />
           <StatCard
             icon="bolt"
             label="Actividad"
             value={student.activityLevel ? ACTIVITY_LABELS[student.activityLevel] : null}
-            colorClass="text-emerald-500"
-            bgClass="bg-emerald-50 dark:bg-emerald-950/30"
+            colorClass="text-sky-500"
+            bgClass="bg-sky-50 dark:bg-sky-950/30"
           />
           <StatCard
             icon="sports_basketball"
             label="Deporte"
             value={student.sports || null}
-            colorClass="text-emerald-500"
-            bgClass="bg-emerald-50 dark:bg-emerald-950/30"
+            colorClass="text-sky-500"
+            bgClass="bg-sky-50 dark:bg-sky-950/30"
           />
         </div>
       </div>
 
       <div className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-card border border-slate-200 dark:border-slate-800">
         <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
-          <div className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
+          <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
             <span className="material-symbols-outlined text-[18px] filled">medical_information</span>
           </div>
           Información Médica
@@ -326,15 +326,15 @@ function GeneralTab({ student }: { student: StudentProfileType }) {
             icon="warning"
             label="Lesiones Previas"
             value={student.previousInjuries}
-            colorClass="text-rose-500"
-            bgClass="bg-rose-50 dark:bg-rose-950/30"
+            colorClass="text-sky-500"
+            bgClass="bg-sky-50 dark:bg-sky-950/30"
           />
           <InfoRow
             icon="health_and_safety"
             label="Condiciones Médicas"
             value={student.medicalConditions}
-            colorClass="text-rose-500"
-            bgClass="bg-rose-50 dark:bg-rose-950/30"
+            colorClass="text-sky-500"
+            bgClass="bg-sky-50 dark:bg-sky-950/30"
           />
         </div>
       </div>

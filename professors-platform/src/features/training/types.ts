@@ -18,6 +18,7 @@ export interface Exercise {
   videoUrl?: string;
   instructions?: string;
   writeWeight?: boolean;
+  carga?: string;
 }
 
 export interface WorkoutDay {
