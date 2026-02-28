@@ -183,7 +183,7 @@ export default function TrainingProgress() {
   const { groups, loading } = useExerciseWeightLogs(professor?.id);
 
   return (
-    <div className="bg-background-light dark:bg-background-dark font-display text-text-main dark:text-white pb-24 transition-colors duration-200 min-h-screen">
+    <div className="bg-background-light dark:bg-background-dark font-display text-text-main dark:text-white pb-24 transition-colors duration-200">
       <Header />
 
       <main className="flex flex-col gap-6 px-4 pt-4">

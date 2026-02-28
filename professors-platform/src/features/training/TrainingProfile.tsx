@@ -75,8 +75,9 @@ export default function TrainingProfile() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Filtrar campos generados que no pueden actualizarse
-      const updateData = { ...formData };
+      // Excluir columnas generadas por la DB (ej: bmi) que no se pueden actualizar manualmente
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { bmi, ...updateData } = formData as Record<string, unknown>;
 
       const { error } = await supabase
         .from("student_profiles")
@@ -158,14 +159,14 @@ export default function TrainingProfile() {
   }
 
   return (
-    <div className="bg-background-light dark:bg-background-dark font-display text-[#1F2937] dark:text-gray-100 flex flex-col min-h-screen overflow-hidden">
+    <div className="bg-background-light dark:bg-background-dark font-display text-[#1F2937] dark:text-gray-100 flex flex-col">
       <header className="flex items-center justify-between p-4 bg-background-light dark:bg-background-dark sticky top-0 z-10 border-b border-gray-100 dark:border-gray-800">
         <div className="w-8"></div>
         <h2 className="text-lg font-bold">Perfil</h2>
         <div className="w-8"></div>
       </header>
 
-      <main className="flex-1 overflow-y-auto pb-24">
+      <div className="pb-24">
         {/* Profile Header */}
         <div className="relative pt-10 pb-8 px-4 flex flex-col items-center overflow-hidden">
           {/* Decorative Background Glow */}
@@ -244,7 +245,7 @@ export default function TrainingProfile() {
                           onChange={(e) =>
                             setFormData({ ...formData, phone: e.target.value })
                           }
-                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                          className="block w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                         />
                       </div>
                       <div>
@@ -260,7 +261,7 @@ export default function TrainingProfile() {
                               instagram: e.target.value,
                             })
                           }
-                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                          className="block w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                           placeholder="@usuario"
                         />
                       </div>
@@ -277,7 +278,7 @@ export default function TrainingProfile() {
                               birth_date: e.target.value,
                             })
                           }
-                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                          className="block w-full min-w-full appearance-none px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                         />
                       </div>
                       <div>
@@ -722,7 +723,7 @@ export default function TrainingProfile() {
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

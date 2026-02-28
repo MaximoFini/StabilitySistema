@@ -60,7 +60,7 @@ export default function ExerciseList() {
   // Loading state — shown when navigating directly via URL bookmark
   if (!workout) {
     return (
-      <div className="flex flex-col min-h-full bg-[#f7f9fc] dark:bg-slate-950">
+      <div className="flex flex-col bg-[#f7f9fc] dark:bg-slate-950">
         <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 pt-12 pb-4 safe-area-pt animate-pulse">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
@@ -92,7 +92,7 @@ export default function ExerciseList() {
 
 
   return (
-    <div className="flex flex-col min-h-full bg-[#f7f9fc] dark:bg-slate-950">
+    <div className="flex flex-col bg-[#f7f9fc] dark:bg-slate-950">
       {/* ── Header ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 pt-12 pb-4 safe-area-pt">
         <div className="flex items-center gap-3 mb-3">
