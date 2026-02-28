@@ -37,46 +37,50 @@ function RestTimer({
   const pct = (remaining / seconds) * 100;
 
   return (
-    <div className="flex flex-col items-center gap-3 bg-slate-900 rounded-2xl p-5 my-2">
+    <div className="flex flex-col items-center gap-2 bg-slate-900 rounded-2xl py-3 px-4 my-2 max-w-xs mx-auto">
       {/* Circular progress */}
-      <div className="relative w-20 h-20">
+      <div className="relative w-16 h-16">
         <svg className="w-full h-full -rotate-90" viewBox="0 0 80 80">
           <circle
             cx="40"
             cy="40"
-            r="34"
+            r="36"
             fill="none"
             stroke="#1e293b"
-            strokeWidth="6"
+            strokeWidth="5"
           />
           <circle
             cx="40"
             cy="40"
-            r="34"
+            r="36"
             fill="none"
             stroke="#0056b2"
-            strokeWidth="6"
+            strokeWidth="5"
             strokeLinecap="round"
-            strokeDasharray={`${2 * Math.PI * 34}`}
-            strokeDashoffset={`${2 * Math.PI * 34 * (1 - pct / 100)}`}
+            strokeDasharray={`${2 * Math.PI * 36}`}
+            strokeDashoffset={`${2 * Math.PI * 36 * (1 - pct / 100)}`}
             className="transition-all duration-1000"
           />
         </svg>
         <div className="absolute inset-0 flex items-center justify-center">
-          <span className="text-2xl font-bold text-white tabular-nums">
+          <span className="text-3xl font-bold text-white tabular-nums tracking-tight">
             {remaining}
           </span>
         </div>
       </div>
 
-      <p className="text-sm font-semibold text-slate-300">Descansando…</p>
-
-      <button
-        onClick={onCancel}
-        className="text-xs font-bold text-slate-400 hover:text-white underline underline-offset-2 transition-colors min-h-[36px] px-4"
-      >
-        Saltar descanso
-      </button>
+      <div className="flex items-center justify-between w-full mt-1 px-1">
+        <p className="text-xs font-semibold text-slate-300">Descansando…</p>
+        <button
+          onClick={onCancel}
+          className="flex items-center justify-center w-8 h-8 rounded-full bg-slate-800 text-slate-400 hover:text-white hover:bg-slate-700 transition-colors"
+          title="Saltar descanso"
+        >
+          <span className="material-symbols-outlined text-[18px]">
+            skip_next
+          </span>
+        </button>
+      </div>
     </div>
   );
 }
@@ -130,7 +134,7 @@ export default function ExerciseDetail() {
 
   if (!exercise) {
     return (
-      <div className="flex items-center justify-center h-screen">
+      <div className="flex items-center justify-center">
         <div className="flex flex-col items-center gap-3 text-slate-400">
           <span className="material-symbols-outlined text-[40px]">
             fitness_center
@@ -168,7 +172,7 @@ export default function ExerciseDetail() {
   };
 
   return (
-    <div className="flex flex-col min-h-full bg-[#f7f9fc] dark:bg-slate-950">
+    <div className="flex flex-col bg-[#f7f9fc] dark:bg-slate-950">
       {/* ── Header ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 pt-12 pb-4 safe-area-pt">
         <div className="flex items-center gap-3">
@@ -220,7 +224,7 @@ export default function ExerciseDetail() {
       </div>
 
       {/* ── Content ───────────────────────────────────────────────── */}
-      <div className="flex-1 overflow-y-auto px-4 py-4 space-y-4 max-w-lg mx-auto w-full pb-28">
+      <div className="px-4 py-4 space-y-4 max-w-lg mx-auto w-full pb-28">
         {/* Exercise title */}
         <div>
           <h1 className="text-2xl font-bold text-slate-900 dark:text-white leading-tight">
@@ -295,6 +299,18 @@ export default function ExerciseDetail() {
 
         {/* Series table */}
         <div className="rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm overflow-hidden">
+          {/* Weight log reminder */}
+          {exercise.writeWeight && (
+            <div className="flex items-center gap-2.5 bg-blue-50 dark:bg-blue-900/20 px-4 py-3 border-b border-blue-100/50 dark:border-blue-900/30">
+              <span className="material-symbols-outlined text-[16px] text-blue-600 dark:text-blue-400">
+                info
+              </span>
+              <p className="text-[11px] font-medium text-blue-700 dark:text-blue-300">
+                Tu profe pidió que registres el peso en este ejercicio
+              </p>
+            </div>
+          )}
+
           {/* Table header */}
           <div className="grid grid-cols-[2rem_1fr_5rem_5rem] gap-2 px-4 py-3 bg-slate-50 dark:bg-slate-800/50 border-b border-slate-100 dark:border-slate-700">
             <span />
@@ -360,7 +376,7 @@ export default function ExerciseDetail() {
                           updateSeriesLog(key, "kg", e.target.value)
                         }
                         className={cn(
-                          "w-full text-center text-sm font-bold rounded-xl border px-2 py-2 min-h-[40px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all",
+                          "w-full text-center text-sm font-bold rounded-xl border px-2 py-2 min-h-[40px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
                           isDone &&
                           "border-emerald-200 dark:border-emerald-800",
                         )}
@@ -382,7 +398,7 @@ export default function ExerciseDetail() {
                           updateSeriesLog(key, "reps", e.target.value)
                         }
                         className={cn(
-                          "w-full text-center text-sm font-bold rounded-xl border px-2 py-2 min-h-[40px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary transition-all",
+                          "w-full text-center text-sm font-bold rounded-xl border px-2 py-2 min-h-[40px] bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all",
                           isDone &&
                           "border-emerald-200 dark:border-emerald-800",
                         )}

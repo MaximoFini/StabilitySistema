@@ -14,23 +14,21 @@ export default function Library() {
                 <div className="px-8 pt-8 pb-0">
                     <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-6">Biblioteca</h1>
                     <div className="flex gap-8 border-b border-slate-200 dark:border-slate-700">
-                        <button 
+                        <button
                             onClick={() => setActiveTab('routines')}
-                            className={`pb-3 px-2 border-b-[3px] font-bold text-sm transition-colors ${
-                                activeTab === 'routines' 
-                                    ? "border-primary text-primary" 
+                            className={`pb-3 px-2 border-b-[3px] font-bold text-sm transition-colors ${activeTab === 'routines'
+                                    ? "border-primary text-primary"
                                     : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300"
-                            }`}
+                                }`}
                         >
                             Planes y Rutinas
                         </button>
-                        <button 
+                        <button
                             onClick={() => setActiveTab('exercises')}
-                            className={`pb-3 px-2 border-b-[3px] font-bold text-sm transition-colors ${
-                                activeTab === 'exercises' 
-                                    ? "border-primary text-primary" 
+                            className={`pb-3 px-2 border-b-[3px] font-bold text-sm transition-colors ${activeTab === 'exercises'
+                                    ? "border-primary text-primary"
                                     : "border-transparent text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 hover:border-slate-300"
-                            }`}
+                                }`}
                         >
                             Base de Ejercicios
                         </button>
@@ -42,23 +40,18 @@ export default function Library() {
                             <span className="absolute inset-y-0 left-0 flex items-center pl-3 text-slate-400">
                                 <span className="material-symbols-outlined text-[20px]">search</span>
                             </span>
-                            <input 
+                            <input
                                 value={searchQuery}
                                 onChange={(e) => setSearchQuery(e.target.value)}
-                                className="w-full h-10 pl-10 pr-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none" 
-                                placeholder={activeTab === 'routines' ? "Buscar rutina..." : "Buscar ejercicio..."} 
-                                type="text" 
+                                className="w-full h-10 pl-10 pr-4 bg-slate-50 dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-900 dark:text-white placeholder:text-slate-500 focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                                placeholder={activeTab === 'routines' ? "Buscar rutina..." : "Buscar ejercicio..."}
+                                type="text"
                             />
                         </div>
-                        {activeTab === 'routines' && (
-                            <button className="h-10 px-3 flex items-center gap-2 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
-                                <span className="material-symbols-outlined text-[20px]">filter_list</span>
-                                <span className="text-sm font-medium hidden sm:inline">Filtros</span>
-                            </button>
-                        )}
+
                     </div>
                     {activeTab === 'routines' && (
-                        <button 
+                        <button
                             onClick={() => navigate("/planificador?mode=new")}
                             className="h-10 px-4 bg-primary hover:bg-primary-dark text-white rounded-lg shadow-sm hover:shadow flex items-center justify-center gap-2 transition-all duration-200 font-medium text-sm whitespace-nowrap"
                         >

@@ -2,29 +2,8 @@ import { useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useTrainingStore } from "@/features/training/store/trainingStore";
 import { useActiveDayExercises } from "@/hooks/useActiveDayExercises";
-import { cn } from "@/lib/utils";
 
-const categoryStyle: Record<string, string> = {
-  Compuesto:
-    "bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300 border-blue-100 dark:border-blue-800",
-  Aislamiento:
-    "bg-violet-50 dark:bg-violet-900/30 text-violet-700 dark:text-violet-300 border-violet-100 dark:border-violet-800",
-  "Activación":
-    "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-800",
-  "Activacion":
-    "bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300 border-emerald-100 dark:border-emerald-800",
-  Cardio:
-    "bg-orange-50 dark:bg-orange-900/30 text-orange-700 dark:text-orange-300 border-orange-100 dark:border-orange-800",
-  Movilidad:
-    "bg-teal-50 dark:bg-teal-900/30 text-teal-700 dark:text-teal-300 border-teal-100 dark:border-teal-800",
-};
 
-function getCategoryStyle(category: string): string {
-  return (
-    categoryStyle[category] ??
-    "bg-slate-50 dark:bg-slate-800 text-slate-600 dark:text-slate-400 border-slate-100 dark:border-slate-700"
-  );
-}
 
 export default function ExerciseList() {
   const navigate = useNavigate();
@@ -47,10 +26,7 @@ export default function ExerciseList() {
 
   const workout = currentDay ?? workoutDay;
 
-  const handleExerciseClick = (index: number) => {
-    goToExercise(index);
-    navigate(`/entrenamiento/dia/${dayId}/ejercicio/${index + 1}`);
-  };
+
 
   const handleStartAll = () => {
     goToExercise(0);
@@ -60,7 +36,7 @@ export default function ExerciseList() {
   // Loading state — shown when navigating directly via URL bookmark
   if (!workout) {
     return (
-      <div className="flex flex-col min-h-full bg-[#f7f9fc] dark:bg-slate-950">
+      <div className="flex flex-col bg-[#f7f9fc] dark:bg-slate-950">
         <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 pt-12 pb-4 safe-area-pt animate-pulse">
           <div className="flex items-center gap-3 mb-3">
             <div className="w-10 h-10 rounded-xl bg-slate-200 dark:bg-slate-800" />
@@ -92,7 +68,7 @@ export default function ExerciseList() {
 
 
   return (
-    <div className="flex flex-col min-h-full bg-[#f7f9fc] dark:bg-slate-950">
+    <div className="flex flex-col bg-[#f7f9fc] dark:bg-slate-950">
       {/* ── Header ──────────────────────────────────────────────── */}
       <div className="bg-white dark:bg-slate-900 border-b border-slate-100 dark:border-slate-800 px-4 pt-12 pb-4 safe-area-pt">
         <div className="flex items-center gap-3 mb-3">
@@ -135,10 +111,9 @@ export default function ExerciseList() {
       {/* ── Exercise list ─────────────────────────────────────────── */}
       <div className="flex-1 px-4 py-4 space-y-2 max-w-lg mx-auto w-full">
         {workout.exercises.map((exercise, index) => (
-          <button
+          <div
             key={exercise.id}
-            onClick={() => handleExerciseClick(index)}
-            className="w-full flex items-center gap-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm hover:shadow-md hover:border-blue-100 dark:hover:border-blue-800 active:scale-[0.99] transition-all text-left group"
+            className="w-full flex items-center gap-4 bg-white dark:bg-slate-900 rounded-2xl border border-slate-100 dark:border-slate-800 p-4 shadow-sm text-left group"
           >
             {/* Number */}
             <div className="w-9 h-9 rounded-xl bg-gradient-to-br from-primary/10 to-primary/5 dark:from-primary/20 dark:to-primary/10 flex items-center justify-center shrink-0">
@@ -149,16 +124,6 @@ export default function ExerciseList() {
 
             {/* Info */}
             <div className="flex-1 min-w-0">
-              {exercise.category && (
-                <span
-                  className={cn(
-                    "text-[10px] font-bold uppercase tracking-wide px-2 py-0.5 rounded-full border",
-                    getCategoryStyle(exercise.category),
-                  )}
-                >
-                  {exercise.category}
-                </span>
-              )}
               <p className="text-sm font-semibold text-slate-900 dark:text-white leading-snug">
                 {exercise.name}
               </p>
@@ -171,12 +136,7 @@ export default function ExerciseList() {
                   : ""}
               </p>
             </div>
-
-            {/* Chevron */}
-            <span className="material-symbols-outlined text-[20px] text-slate-300 dark:text-slate-600 group-hover:text-primary transition-colors shrink-0">
-              chevron_right
-            </span>
-          </button>
+          </div>
         ))}
       </div>
 

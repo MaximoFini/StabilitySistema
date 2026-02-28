@@ -114,7 +114,7 @@ export function useTrainingPlans() {
       const totalDaysInPeriod =
         Math.ceil(
           (planData.endDate.getTime() - planData.startDate.getTime()) /
-            msPerDay,
+          msPerDay,
         ) + 1;
       const calculatedWeeks = Math.ceil(totalDaysInPeriod / 7);
       const totalWeeks = planData.durationWeeks ?? calculatedWeeks;
@@ -238,7 +238,7 @@ export function useTrainingPlans() {
       const totalDaysInPeriod =
         Math.ceil(
           (planData.endDate.getTime() - planData.startDate.getTime()) /
-            msPerDay,
+          msPerDay,
         ) + 1;
       const calculatedWeeks = Math.ceil(totalDaysInPeriod / 7);
       const totalWeeks = planData.durationWeeks ?? calculatedWeeks;
@@ -621,6 +621,24 @@ export function useTrainingPlans() {
     }
 
     try {
+      // --- NUEVA VALIDACIÓN: Chequear si ya existen asignaciones ---
+      const { data: existingAssignments, error: checkError } = await supabase
+        .from("training_plan_assignments")
+        .select("student_id")
+        .eq("plan_id", planId)
+        .in("student_id", studentIds);
+
+      if (checkError) throw checkError;
+
+      // Si encuentra al menos un registro, frenamos todo
+      if (existingAssignments && existingAssignments.length > 0) {
+        return { 
+          success: false, 
+          error: "Uno o más alumnos seleccionados ya tienen este plan asignado." 
+        };
+      }
+      // -------------------------------------------------------------
+
       // Create assignments for each student
       const assignments = studentIds.map((studentId) => ({
         plan_id: planId,
@@ -696,7 +714,7 @@ export function useTrainingPlans() {
 
       const { data: profiles, error: profilesError } = await supabase
         .from("profiles")
-        .select("id, full_name, email, avatar_url")
+        .select("id, first_name, last_name, email, profile_image")
         .in("id", studentIds);
 
       console.log(
@@ -723,9 +741,9 @@ export function useTrainingPlans() {
           return {
             assignmentId: row.id,
             studentId: row.student_id,
-            fullName: profile?.full_name || "Sin nombre",
+            fullName: profile ? `${profile.first_name ?? ""} ${profile.last_name ?? ""}`.trim() || "Sin nombre" : "Sin nombre",
             email: profile?.email || "Sin email",
-            avatarUrl: profile?.avatar_url || null,
+            avatarUrl: profile?.profile_image || null,
             startDate: row.start_date,
             endDate: row.end_date,
             status: row.status || "active",

@@ -75,8 +75,9 @@ export default function TrainingProfile() {
       } = await supabase.auth.getUser();
       if (!user) return;
 
-      // Filtrar campos generados que no pueden actualizarse
-      const updateData = { ...formData };
+      // Excluir columnas generadas por la DB (ej: bmi) que no se pueden actualizar manualmente
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      const { bmi, ...updateData } = formData as Record<string, unknown>;
 
       const { error } = await supabase
         .from("student_profiles")
@@ -158,14 +159,14 @@ export default function TrainingProfile() {
   }
 
   return (
-    <div className="bg-background-light dark:bg-background-dark font-display text-[#1F2937] dark:text-gray-100 flex flex-col min-h-screen overflow-hidden">
+    <div className="bg-background-light dark:bg-background-dark font-display text-[#1F2937] dark:text-gray-100 flex flex-col">
       <header className="flex items-center justify-between p-4 bg-background-light dark:bg-background-dark sticky top-0 z-10 border-b border-gray-100 dark:border-gray-800">
         <div className="w-8"></div>
         <h2 className="text-lg font-bold">Perfil</h2>
         <div className="w-8"></div>
       </header>
 
-      <main className="flex-1 overflow-y-auto pb-24">
+      <div className="pb-24">
         {/* Profile Header */}
         <div className="relative pt-10 pb-8 px-4 flex flex-col items-center overflow-hidden">
           {/* Decorative Background Glow */}
@@ -208,7 +209,7 @@ export default function TrainingProfile() {
               className="w-full flex items-center p-4 hover:bg-gray-50 dark:hover:bg-surface-dark transition-colors"
               disabled={editingSection !== null}
             >
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-blue-500/10 text-blue-500 mr-4 shrink-0">
+              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mr-4 shrink-0">
                 <span className="material-symbols-outlined">person</span>
               </div>
               <div className="flex-1 text-left">
@@ -244,7 +245,7 @@ export default function TrainingProfile() {
                           onChange={(e) =>
                             setFormData({ ...formData, phone: e.target.value })
                           }
-                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                          className="block w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                         />
                       </div>
                       <div>
@@ -260,7 +261,7 @@ export default function TrainingProfile() {
                               instagram: e.target.value,
                             })
                           }
-                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                          className="block w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                           placeholder="@usuario"
                         />
                       </div>
@@ -277,7 +278,7 @@ export default function TrainingProfile() {
                               birth_date: e.target.value,
                             })
                           }
-                          className="w-full px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
+                          className="block w-full min-w-full appearance-none px-4 py-3 border border-slate-200 dark:border-slate-700 rounded-xl bg-slate-50 dark:bg-slate-800/50 text-slate-900 dark:text-white focus:ring-2 focus:ring-primary/20 focus:border-primary transition-all outline-none"
                         />
                       </div>
                       <div>
@@ -323,8 +324,8 @@ export default function TrainingProfile() {
                     <div className="grid grid-cols-2 gap-x-4 gap-y-6 pt-4">
                       {/* Phone */}
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-emerald-50 a dark:bg-emerald-900/20 flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px] text-emerald-600 dark:text-emerald-400 filled">call</span>
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px] text-primary filled">call</span>
                         </div>
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Teléfono</p>
@@ -336,8 +337,8 @@ export default function TrainingProfile() {
 
                       {/* Instagram */}
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-pink-50 dark:bg-pink-900/20 flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px] text-pink-500 filled">alternate_email</span>
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px] text-primary filled">alternate_email</span>
                         </div>
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Instagram</p>
@@ -349,8 +350,8 @@ export default function TrainingProfile() {
 
                       {/* Birthday */}
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-blue-50 dark:bg-blue-900/20 flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px] text-blue-500 filled">cake</span>
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px] text-primary filled">cake</span>
                         </div>
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nacimiento</p>
@@ -364,8 +365,8 @@ export default function TrainingProfile() {
 
                       {/* Gender */}
                       <div className="flex items-start gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-violet-50 dark:bg-violet-900/20 flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px] text-violet-500 filled">wc</span>
+                        <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
+                          <span className="material-symbols-outlined text-[18px] text-primary filled">wc</span>
                         </div>
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Género</p>
@@ -396,7 +397,7 @@ export default function TrainingProfile() {
               className="w-full flex items-center p-4 hover:bg-gray-50 dark:hover:bg-surface-dark transition-colors"
               disabled={editingSection !== null}
             >
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-red-500/10 text-red-500 mr-4 shrink-0">
+              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mr-4 shrink-0">
                 <span className="material-symbols-outlined">
                   medical_services
                 </span>
@@ -474,20 +475,20 @@ export default function TrainingProfile() {
                   </div>
                 ) : (
                   <div className="pt-2 space-y-4">
-                    <div className="p-4 bg-orange-50/50 dark:bg-orange-950/20 rounded-2xl border border-orange-100 dark:border-orange-900/30">
+                    <div className="p-4 bg-slate-50/50 dark:bg-slate-900/20 rounded-2xl border border-slate-100 dark:border-slate-800/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="material-symbols-outlined text-orange-500 text-[18px] filled">warning</span>
-                        <p className="text-[10px] font-bold text-orange-700 dark:text-orange-400 uppercase tracking-wider">Lesiones Previas</p>
+                        <span className="material-symbols-outlined text-primary text-[18px] filled">warning</span>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lesiones Previas</p>
                       </div>
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                         {profileData?.previous_injuries || "No se han registrado lesiones."}
                       </p>
                     </div>
 
-                    <div className="p-4 bg-blue-50/50 dark:bg-blue-950/20 rounded-2xl border border-blue-100 dark:border-blue-900/30">
+                    <div className="p-4 bg-slate-50/50 dark:bg-slate-900/20 rounded-2xl border border-slate-100 dark:border-slate-800/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="material-symbols-outlined text-blue-500 text-[18px] filled">medical_information</span>
-                        <p className="text-[10px] font-bold text-blue-700 dark:text-blue-400 uppercase tracking-wider">Condiciones Médicas</p>
+                        <span className="material-symbols-outlined text-primary text-[18px] filled">medical_information</span>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Condiciones Médicas</p>
                       </div>
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
                         {profileData?.medical_conditions || "Sin condiciones médicas reportadas."}
@@ -514,7 +515,7 @@ export default function TrainingProfile() {
               className="w-full flex items-center p-4 hover:bg-gray-50 dark:hover:bg-surface-dark transition-colors"
               disabled={editingSection !== null}
             >
-              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-green-500/10 text-green-500 mr-4 shrink-0">
+              <div className="flex items-center justify-center w-12 h-12 rounded-lg bg-primary/10 text-primary mr-4 shrink-0">
                 <span className="material-symbols-outlined">
                   fitness_center
                 </span>
@@ -655,7 +656,7 @@ export default function TrainingProfile() {
 
                       <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-emerald-100 dark:bg-emerald-900/20 flex items-center justify-center text-emerald-600">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                             <span className="material-symbols-outlined text-[20px] filled">target</span>
                           </div>
                           <div>
@@ -669,7 +670,7 @@ export default function TrainingProfile() {
 
                       <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center gap-3">
-                          <div className="w-10 h-10 rounded-xl bg-amber-100 dark:bg-amber-900/20 flex items-center justify-center text-amber-600">
+                          <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
                             <span className="material-symbols-outlined text-[20px] filled">military_tech</span>
                           </div>
                           <div>
@@ -722,7 +723,7 @@ export default function TrainingProfile() {
             </div>
           </div>
         </div>
-      </main>
+      </div>
     </div>
   );
 }

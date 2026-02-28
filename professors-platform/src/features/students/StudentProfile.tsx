@@ -43,9 +43,6 @@ import PlanPreview from "@/features/library/PlanPreview";
 function ProfileSkeleton() {
   return (
     <div className="flex flex-col h-full bg-background-light dark:bg-background-dark animate-pulse">
-      <header className="h-20 bg-white dark:bg-card-dark border-b border-gray-100 dark:border-gray-800 hidden md:flex items-center px-8">
-        <div className="h-4 bg-gray-200 rounded w-40" />
-      </header>
       <main className="flex-1 overflow-y-auto p-6 lg:p-10">
         <div className="max-w-7xl mx-auto">
           <div className="grid grid-cols-1 lg:grid-cols-[380px_1fr] gap-6">
@@ -150,17 +147,17 @@ function InfoRow({
   bgClass?: string;
 }) {
   return (
-    <div className="flex items-start gap-4 p-4 rounded-2xl bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-sm">
-      <div className={`w-10 h-10 rounded-xl ${bgClass} flex items-center justify-center shrink-0`}>
+    <div className="flex items-center gap-3 p-3.5 rounded-xl bg-white dark:bg-slate-900/50 border border-slate-100 dark:border-slate-800 shadow-sm">
+      <div className={`w-10 h-10 rounded-lg ${bgClass} flex items-center justify-center shrink-0`}>
         <span className={`material-symbols-outlined ${colorClass} text-[20px] filled`}>
           {icon}
         </span>
       </div>
       <div className="flex-1 min-w-0">
-        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-0.5">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight mb-0.5">
           {label}
         </p>
-        <p className="text-sm font-bold text-slate-900 dark:text-white truncate">
+        <p className="text-sm font-bold text-slate-900 dark:text-white break-words leading-snug">
           {value || (
             <span className="text-slate-300 font-normal italic">
               Sin especificar
@@ -215,29 +212,31 @@ function StatCard({
   bgClass?: string;
 }) {
   return (
-    <div className="bg-white dark:bg-card-dark rounded-2xl p-4 shadow-sm border border-slate-100 dark:border-slate-800 flex flex-col items-center text-center">
-      <div className={`w-10 h-10 rounded-xl ${bgClass} flex items-center justify-center mb-3`}>
+    <div className="bg-white dark:bg-card-dark rounded-xl p-3.5 shadow-sm border border-slate-100 dark:border-slate-800 flex items-center gap-3">
+      <div className={`w-10 h-10 rounded-lg ${bgClass} flex items-center justify-center shrink-0`}>
         <span className={`material-symbols-outlined ${colorClass} text-[20px] filled`}>
           {icon}
         </span>
       </div>
-      <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest mb-1">
-        {label}
-      </p>
-      <p className="text-base font-bold text-slate-900 dark:text-white">
-        {value != null ? (
-          <>
-            {value}
-            {unit && (
-              <span className="text-xs font-medium text-slate-400 ml-0.5">
-                {unit}
-              </span>
-            )}
-          </>
-        ) : (
-          <span className="text-slate-200 font-normal italic">—</span>
-        )}
-      </p>
+      <div className="flex-1 min-w-0">
+        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-widest leading-tight mb-0.5">
+          {label}
+        </p>
+        <p className="text-sm font-bold text-slate-900 dark:text-white break-words leading-snug">
+          {value != null ? (
+            <>
+              {value}
+              {unit && (
+                <span className="text-xs font-medium text-slate-400 ml-0.5">
+                  {unit}
+                </span>
+              )}
+            </>
+          ) : (
+            <span className="text-slate-200 font-normal italic">—</span>
+          )}
+        </p>
+      </div>
     </div>
   );
 }
@@ -246,11 +245,11 @@ function StatCard({
 
 function GeneralTab({ student }: { student: StudentProfileType }) {
   return (
-    <div className="space-y-6">
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-slate-200 dark:border-slate-800">
-        <h3 className="text-base font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
-            <span className="material-symbols-outlined text-[20px] filled">person</span>
+    <div className="space-y-4">
+      <div className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-card border border-slate-200 dark:border-slate-800">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-sky-100 dark:bg-sky-900/30 flex items-center justify-center text-sky-600 dark:text-sky-400">
+            <span className="material-symbols-outlined text-[18px] filled">person</span>
           </div>
           Información Personal
         </h3>
@@ -274,10 +273,10 @@ function GeneralTab({ student }: { student: StudentProfileType }) {
           <InstagramRow instagram={student.instagram || null} />
         </div>
       </div>
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-slate-200 dark:border-slate-800">
-        <h3 className="text-base font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
-            <span className="material-symbols-outlined text-[20px] filled">fitness_center</span>
+      <div className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-card border border-slate-200 dark:border-slate-800">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-emerald-100 dark:bg-emerald-900/30 flex items-center justify-center text-emerald-600 dark:text-emerald-400">
+            <span className="material-symbols-outlined text-[18px] filled">fitness_center</span>
           </div>
           Entrenamiento y Objetivos
         </h3>
@@ -314,10 +313,10 @@ function GeneralTab({ student }: { student: StudentProfileType }) {
         </div>
       </div>
 
-      <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-slate-200 dark:border-slate-800">
-        <h3 className="text-base font-bold text-slate-900 dark:text-white mb-6 flex items-center gap-2">
-          <div className="w-8 h-8 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
-            <span className="material-symbols-outlined text-[20px] filled">medical_information</span>
+      <div className="bg-white dark:bg-card-dark rounded-xl p-5 shadow-card border border-slate-200 dark:border-slate-800">
+        <h3 className="text-sm font-bold text-slate-900 dark:text-white mb-4 flex items-center gap-2">
+          <div className="w-7 h-7 rounded-lg bg-rose-100 dark:bg-rose-900/30 flex items-center justify-center text-rose-600 dark:text-rose-400">
+            <span className="material-symbols-outlined text-[18px] filled">medical_information</span>
           </div>
           Información Médica
         </h3>
@@ -522,8 +521,7 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
             Sin sesiones registradas
           </h3>
           <p className="text-sm text-gray-500">
-            Aquí aparecerán los entrenamientos completados con estado anímico y
-            RPE.
+            Aquí aparecerán los entrenamientos completados.
           </p>
         </div>
       </div>
@@ -1048,17 +1046,6 @@ export default function StudentProfile() {
   if (error || !student) {
     return (
       <div className="flex flex-col h-full bg-background-light dark:bg-background-dark">
-        <header className="h-20 bg-white dark:bg-card-dark border-b border-gray-100 dark:border-gray-800 hidden md:flex items-center px-8">
-          <button
-            onClick={() => navigate("/inicio")}
-            className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-primary transition-colors"
-          >
-            <span className="material-symbols-outlined text-[20px]">
-              arrow_back
-            </span>
-            Volver a Mis Alumnos
-          </button>
-        </header>
         <main className="flex-1 flex items-center justify-center">
           <div className="text-center">
             <span className="material-symbols-outlined text-6xl text-red-300 mb-4 block">
@@ -1083,21 +1070,6 @@ export default function StudentProfile() {
 
   return (
     <div className="flex flex-col h-full bg-background-light dark:bg-background-dark">
-      <header className="h-20 bg-white dark:bg-card-dark border-b border-gray-100 dark:border-gray-800 hidden md:flex items-center justify-between px-8 z-10 flex-shrink-0">
-        <button
-          onClick={() => navigate("/inicio")}
-          className="flex items-center gap-1 text-sm font-medium text-gray-600 hover:text-primary transition-colors"
-        >
-          <span className="material-symbols-outlined text-[20px]">
-            arrow_back
-          </span>
-          Volver a Mis Alumnos
-        </button>
-        <h2 className="text-xl font-bold text-gray-900 dark:text-white">
-          Perfil de Alumno
-        </h2>
-        <div className="w-40" />
-      </header>
 
       <main className="flex-1 overflow-y-auto p-4 lg:p-6">
         <div className="w-full">
@@ -1229,7 +1201,7 @@ export default function StudentProfile() {
                     <p className="text-xs text-gray-500 uppercase font-medium mb-1">
                       Deporte
                     </p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white break-words">
                       {student.sports || "—"}
                     </p>
                   </div>
@@ -1240,7 +1212,7 @@ export default function StudentProfile() {
                     <p className="text-xs text-gray-500 uppercase font-medium mb-1">
                       Nivel
                     </p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white truncate">
+                    <p className="text-sm font-semibold text-gray-900 dark:text-white break-words">
                       {student.trainingExperience
                         ? EXPERIENCE_LABELS[student.trainingExperience]
                         : "—"}

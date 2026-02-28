@@ -24,11 +24,32 @@
       href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"
       rel="stylesheet"
     />
-    <title>professors-platform</title>
+    <title>Stability Sistema</title>
+
+    <!-- Estilos del spinner nativo (visible ANTES de que React cargue el JS) -->
+    <style>
+      body { margin: 0; background-color: #09090b; }
+      .pantalla-carga { display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; }
+      .spinner {
+        width: 40px;
+        height: 40px;
+        border: 3px solid rgba(255, 255, 255, 0.1);
+        border-left-color: #ffffff;
+        border-radius: 50%;
+        animation: girar 0.8s linear infinite;
+      }
+      @keyframes girar { to { transform: rotate(360deg); } }
+    </style>
   </head>
 
   <body>
-    <div id="root"></div>
+    <div id="root">
+      <!-- Spinner visible solo durante la carga inicial del JS bundle.
+           React lo reemplaza automáticamente al montar la app. -->
+      <div class="pantalla-carga">
+        <div class="spinner"></div>
+      </div>
+    </div>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

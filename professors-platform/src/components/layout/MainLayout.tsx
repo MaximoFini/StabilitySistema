@@ -35,8 +35,8 @@ export default function MainLayout() {
             <Menu size={20} />
           </button>
           <img
-            src="/logo-stability.png"
-            alt="Stability Logo"
+            src="/image.png"
+            alt="Logo"
             className="h-8 w-auto object-contain"
           />
 
