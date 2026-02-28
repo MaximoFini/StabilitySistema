@@ -122,13 +122,8 @@ export default function BusinessMetrics() {
 
   return (
     <div className="flex flex-col h-full bg-background-light dark:bg-background-dark relative">
-      <header className="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-800 flex-none">
-        <div className="px-8 pt-8 pb-8">
-          <h1 className="text-3xl font-bold text-slate-900 dark:text-white">Métricas del Negocio</h1>
-        </div>
-      </header>
-
       <main className="flex-1 overflow-y-auto p-4 lg:p-8">
+        <h1 className="text-3xl font-bold text-slate-900 dark:text-white mb-8">Estadísticas</h1>
         {error ? (
           <div className="flex flex-col items-center justify-center h-64 text-center">
             <span className="material-symbols-outlined text-red-400 text-5xl mb-3">error_outline</span>
@@ -318,12 +313,6 @@ export default function BusinessMetrics() {
                         <span className="text-3xl font-bold text-gray-900">
                           {metrics?.retentionPercent != null ? `${metrics.retentionPercent}%` : "—"}
                         </span>
-                        {metrics?.retentionPercent != null && (
-                          <span className={`text-xs font-bold px-2 py-0.5 rounded-full ${metrics.retentionPercent >= 90 ? 'text-green-700 bg-green-50' : 'text-blue-700 bg-blue-50'
-                            }`}>
-                            {metrics.retentionPercent >= 90 ? 'Excelente' : 'Estable'}
-                          </span>
-                        )}
                       </div>
 
                       <div className="w-full h-2 bg-gray-100 rounded-full overflow-hidden">

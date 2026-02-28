@@ -68,13 +68,7 @@ export default function AssignPlanModal({
     setSelectedStudentIds(newSelected);
   };
 
-  const handleSelectAll = () => {
-    if (selectedStudentIds.size === filteredStudents.length) {
-      setSelectedStudentIds(new Set());
-    } else {
-      setSelectedStudentIds(new Set(filteredStudents.map((s) => s.id)));
-    }
-  };
+
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -91,9 +85,7 @@ export default function AssignPlanModal({
     }
   };
 
-  const allSelected =
-    filteredStudents.length > 0 &&
-    selectedStudentIds.size === filteredStudents.length;
+
 
   return (
     <div
@@ -172,7 +164,7 @@ export default function AssignPlanModal({
                     warning
                   </span>
                   {conflictCount} alumno{conflictCount !== 1 ? "s" : ""} con
-                  plan en conflicto
+                  planes asignados
                 </div>
               )}
             </div>
@@ -210,21 +202,9 @@ export default function AssignPlanModal({
 
           {!loading && !error && filteredStudents.length > 0 && (
             <>
-              <div className="mb-3 flex items-center justify-between">
-                <button
-                  type="button"
-                  onClick={handleSelectAll}
-                  disabled={isSubmitting}
-                  className="flex items-center gap-2 px-3 py-1.5 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors disabled:opacity-50"
-                >
-                  <span className="material-symbols-outlined text-lg">
-                    {allSelected ? "check_box" : "check_box_outline_blank"}
-                  </span>
-                  {allSelected ? "Deseleccionar Todos" : "Seleccionar Todos"}
-                </button>
+              <div className="mb-3 flex items-center justify-end">
                 <span className="text-xs text-gray-400">
-                  {filteredStudents.length} alumno
-                  {filteredStudents.length !== 1 ? "s" : ""}
+                  {filteredStudents.length} {filteredStudents.length === 1 ? 'alumno' : 'alumnos'}
                 </span>
               </div>
 
@@ -235,13 +215,12 @@ export default function AssignPlanModal({
                   return (
                     <label
                       key={student.id}
-                      className={`flex items-center gap-4 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${
-                        isSelected
-                          ? "border-primary bg-primary/5"
-                          : conflict
-                            ? "border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10"
-                            : "border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
-                      } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
+                      className={`flex items-center gap-4 p-3.5 rounded-xl border-2 cursor-pointer transition-all ${isSelected
+                        ? "border-primary bg-primary/5"
+                        : conflict
+                          ? "border-amber-200 dark:border-amber-800 bg-amber-50/50 dark:bg-amber-900/10"
+                          : "border-gray-100 dark:border-gray-700 hover:border-gray-200 dark:hover:border-gray-600"
+                        } ${isSubmitting ? "opacity-50 cursor-not-allowed" : ""}`}
                     >
                       <input
                         type="checkbox"
@@ -279,7 +258,7 @@ export default function AssignPlanModal({
                         </p>
                         {/* Active assignments */}
                         {student.activeAssignments &&
-                        student.activeAssignments.length > 0 ? (
+                          student.activeAssignments.length > 0 ? (
                           <div className="flex items-center gap-1.5 mt-1 flex-wrap">
                             {student.activeAssignments
                               .slice(0, 2)
@@ -293,7 +272,7 @@ export default function AssignPlanModal({
                                   </span>
                                   {assignment.plan_title.length > 18
                                     ? assignment.plan_title.substring(0, 18) +
-                                      "…"
+                                    "…"
                                     : assignment.plan_title}
                                 </span>
                               ))}
@@ -320,7 +299,7 @@ export default function AssignPlanModal({
                             <span className="material-symbols-outlined text-[14px]">
                               warning
                             </span>
-                            Conflicto
+                            Plan asignado
                           </span>
                         </div>
                       )}

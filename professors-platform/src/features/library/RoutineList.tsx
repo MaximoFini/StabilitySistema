@@ -4,13 +4,27 @@ import { toast } from "sonner";
 import { useTrainingPlans } from "../../hooks/useTrainingPlans";
 import PlanPreview from "./PlanPreview";
 import AssignedStudentsModal from "../../components/AssignedStudentsModal";
+import AssignPlanModal from "../../components/AssignPlanModal";
+import ConfirmActionModal from "../../components/ConfirmActionModal";
 
 export default function RoutineList({ searchQuery }: { searchQuery: string }) {
   const navigate = useNavigate();
-  const { plans, loading, deletePlan, duplicatePlan } = useTrainingPlans();
+  const { plans, loading, deletePlan, duplicatePlan, assignPlanToStudents } = useTrainingPlans();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
+  const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
+  const [selectedPlanToAssign, setSelectedPlanToAssign] = useState<{
+    id: string;
+    title: string;
+    start_date: string;
+    end_date: string;
+  } | null>(null);
+  const [isAssigning, setIsAssigning] = useState(false);
   const [assignedModalPlan, setAssignedModalPlan] = useState<{
+    id: string;
+    title: string;
+  } | null>(null);
+  const [planToDelete, setPlanToDelete] = useState<{
     id: string;
     title: string;
   } | null>(null);
@@ -28,7 +42,7 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
   const handleMenuAction = async (
     e: React.MouseEvent,
     action: string,
-    plan: { id: string; title: string },
+    plan: any,
   ) => {
     e.stopPropagation();
     setOpenMenuId(null);
@@ -50,17 +64,11 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
         });
         break;
       case "delete":
-        if (window.confirm("¿Seguro que quieres eliminar este plan?")) {
-          const result = await deletePlan(plan.id);
-          if (result.success) {
-            toast.success("Plan eliminado");
-          } else {
-            toast.error(`Error al eliminar: ${result.error}`);
-          }
-        }
+        setPlanToDelete(plan);
         break;
       case "assign":
-        navigate(`/planificador?planId=${plan.id}&mode=edit&openAssign=true`);
+        setSelectedPlanToAssign(plan as any);
+        setIsAssignModalOpen(true);
         break;
       case "viewStudents":
         setAssignedModalPlan(plan);
@@ -70,7 +78,7 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
 
   const handleAvatarClick = (
     e: React.MouseEvent,
-    plan: { id: string; title: string },
+    plan: any,
   ) => {
     e.stopPropagation();
     setAssignedModalPlan(plan);
@@ -217,9 +225,8 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
                   <button
                     onClick={(e) => {
                       e.stopPropagation();
-                      navigate(
-                        `/planificador?planId=${plan.id}&mode=edit&openAssign=true`,
-                      );
+                      setSelectedPlanToAssign(plan);
+                      setIsAssignModalOpen(true);
                     }}
                     className="flex items-center gap-1.5 text-primary hover:text-primary/80 transition-colors"
                   >
@@ -268,6 +275,56 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
           onClose={() => setAssignedModalPlan(null)}
           planId={assignedModalPlan.id}
           planTitle={assignedModalPlan.title}
+        />
+      )}
+
+      {/* Assign Plan Modal */}
+      <AssignPlanModal
+        isOpen={isAssignModalOpen}
+        onClose={() => setIsAssignModalOpen(false)}
+        onAssign={async (studentIds) => {
+          if (!selectedPlanToAssign) return;
+          setIsAssigning(true);
+          try {
+            const result = await assignPlanToStudents(
+              selectedPlanToAssign.id,
+              studentIds,
+              new Date(selectedPlanToAssign.start_date),
+              new Date(selectedPlanToAssign.end_date)
+            );
+            if (result?.success) {
+              toast.success("Plan asignado correctamente");
+              setIsAssignModalOpen(false);
+            } else {
+              toast.error(result?.error || "Error al asignar plan");
+            }
+          } catch (err) {
+            toast.error("Error al asignar plan");
+          } finally {
+            setIsAssigning(false);
+          }
+        }}
+        isSubmitting={isAssigning}
+        planTitle={selectedPlanToAssign?.title}
+        planStartDate={selectedPlanToAssign ? new Date(selectedPlanToAssign.start_date) : undefined}
+        planEndDate={selectedPlanToAssign ? new Date(selectedPlanToAssign.end_date) : undefined}
+      />
+
+      {planToDelete && (
+        <ConfirmActionModal
+          isOpen={!!planToDelete}
+          onClose={() => setPlanToDelete(null)}
+          onConfirm={async () => {
+            const result = await deletePlan(planToDelete.id);
+            if (result.success) {
+              toast.success("Plan eliminado");
+            } else {
+              toast.error(`Error al eliminar: ${result.error}`);
+            }
+          }}
+          title="¿Eliminar plan?"
+          description={`¿Estás seguro que quieres eliminar el plan "${planToDelete.title}"? Esta acción no se puede deshacer.`}
+          confirmText="Eliminar Plan"
         />
       )}
     </>

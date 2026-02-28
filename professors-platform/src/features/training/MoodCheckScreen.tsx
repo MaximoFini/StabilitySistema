@@ -58,8 +58,8 @@ export default function MoodCheckScreen() {
         {/* ── Logo ────────────────────────────────────────────── */}
         <div className="bg-white/95 dark:bg-white p-4 rounded-2xl shadow-[0_4px_20px_rgb(0,0,0,0.03)] border border-slate-100/50 flex items-center justify-center mb-10 transform hover:scale-105 transition-all duration-500">
           <img
-            src="/logo-stability.png"
-            alt="Stability Logo"
+            src="/image.png"
+            alt="Logo"
             className="w-32 h-auto object-contain drop-shadow-sm"
           />
         </div>

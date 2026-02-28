@@ -15,21 +15,8 @@ interface SavePlanModalProps {
 
 export interface SavePlanFormData {
   name: string;
-  description: string;
   durationWeeks: number;
-  frequencyPerWeek: number;
-  category: string;
 }
-
-const PLAN_CATEGORIES = [
-  "Hipertrofia",
-  "Fuerza",
-  "Resistencia",
-  "Movilidad",
-  "Funcional",
-  "Rehabilitación",
-  "Otro",
-];
 
 export default function SavePlanModal({
   isOpen,
@@ -39,35 +26,25 @@ export default function SavePlanModal({
   initialData,
 }: SavePlanModalProps) {
   const [name, setName] = useState(initialData.title);
-  const [description, setDescription] = useState("");
   const [durationWeeks, setDurationWeeks] = useState(1);
-  const [frequencyPerWeek, setFrequencyPerWeek] = useState(1);
-  const [category, setCategory] = useState("Hipertrofia");
   const [nameError, setNameError] = useState("");
+  const daysPlanned = initialData.daysCount;
 
   // Reset form when modal opens
   useEffect(() => {
     if (!isOpen) return;
 
     setName(initialData.title);
-    setDescription("");
     setNameError("");
-    setCategory("Hipertrofia");
 
     const msPerDay = 24 * 60 * 60 * 1000;
     const totalDaysInPeriod =
       Math.ceil(
         (initialData.endDate.getTime() - initialData.startDate.getTime()) /
-          msPerDay
+        msPerDay
       ) + 1;
     const weeks = Math.max(1, Math.ceil(totalDaysInPeriod / 7));
     setDurationWeeks(weeks);
-
-    const freq = Math.max(
-      1,
-      Math.min(7, Math.ceil(initialData.daysCount / weeks))
-    );
-    setFrequencyPerWeek(freq);
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isOpen]);
 
@@ -84,10 +61,7 @@ export default function SavePlanModal({
     setNameError("");
     await onSave({
       name: name.trim(),
-      description: description.trim(),
       durationWeeks,
-      frequencyPerWeek,
-      category,
     });
   };
 
@@ -148,11 +122,10 @@ export default function SavePlanModal({
                 if (e.target.value.trim()) setNameError("");
               }}
               placeholder="Ej: Plan de Hipertrofia Fase 1"
-              className={`w-full px-3.5 py-2.5 rounded-lg border text-sm font-medium ${
-                nameError
+              className={`w-full px-3.5 py-2.5 rounded-lg border text-sm font-medium ${nameError
                   ? "border-red-300 focus:ring-red-500 focus:border-red-500 bg-red-50 dark:bg-red-900/10"
                   : "border-gray-200 dark:border-gray-600 focus:ring-primary focus:border-primary bg-white dark:bg-slate-700"
-              } text-gray-900 dark:text-white transition-colors`}
+                } text-gray-900 dark:text-white transition-colors`}
               disabled={isSubmitting}
               autoFocus
             />
@@ -166,23 +139,7 @@ export default function SavePlanModal({
             )}
           </div>
 
-          {/* Description */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-              Descripción{" "}
-              <span className="text-gray-400 font-normal">(opcional)</span>
-            </label>
-            <textarea
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Describe brevemente el objetivo del plan..."
-              rows={3}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-primary focus:border-primary resize-none"
-              disabled={isSubmitting}
-            />
-          </div>
-
-          {/* Duration & Frequency Row */}
+          {/* Duration & Automatic Frequency Row */}
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
@@ -202,41 +159,14 @@ export default function SavePlanModal({
             </div>
             <div>
               <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-                Frecuencia (días/semana)
+                Días planificados
               </label>
-              <input
-                type="number"
-                value={frequencyPerWeek}
-                onChange={(e) =>
-                  setFrequencyPerWeek(
-                    Math.max(1, Math.min(7, parseInt(e.target.value) || 1))
-                  )
-                }
-                min={1}
-                max={7}
-                className="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-primary focus:border-primary"
-                disabled={isSubmitting}
-              />
+              <div className="w-full h-[42px] px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 bg-gray-50 dark:bg-slate-800/50 flex items-center">
+                <span className="text-sm font-semibold text-gray-600 dark:text-gray-300">
+                  {daysPlanned} {daysPlanned === 1 ? 'día' : 'días'}
+                </span>
+              </div>
             </div>
-          </div>
-
-          {/* Category */}
-          <div>
-            <label className="block text-sm font-semibold text-gray-700 dark:text-gray-300 mb-1.5">
-              Categoría
-            </label>
-            <select
-              value={category}
-              onChange={(e) => setCategory(e.target.value)}
-              className="w-full px-3.5 py-2.5 rounded-lg border border-gray-200 dark:border-gray-600 text-sm font-medium bg-white dark:bg-slate-700 text-gray-900 dark:text-white focus:ring-primary focus:border-primary appearance-none cursor-pointer"
-              disabled={isSubmitting}
-            >
-              {PLAN_CATEGORIES.map((cat) => (
-                <option key={cat} value={cat}>
-                  {cat}
-                </option>
-              ))}
-            </select>
           </div>
 
           {/* Info Box */}

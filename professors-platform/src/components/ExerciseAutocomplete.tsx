@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 import { supabase } from '@/lib/supabase'
 
 interface Category {
@@ -41,7 +42,17 @@ export default function ExerciseAutocomplete({
     const dropdownRef = useRef<HTMLDivElement>(null)
     const [dropdownPosition, setDropdownPosition] = useState({ top: 0, left: 0, width: 0 })
 
-    // Load all exercises from Supabase
+    const updateDropdownPosition = useCallback(() => {
+        if (isOpen && inputRef.current) {
+            const rect = inputRef.current.getBoundingClientRect()
+            setDropdownPosition({
+                top: rect.bottom,
+                left: rect.left,
+                // Make sure it's at least 380px wide to show all text regardless of the narrow table cell
+                width: Math.max(rect.width, 380)
+            })
+        }
+    }, [isOpen])
     const loadAllExercises = useCallback(async () => {
         if (hasLoaded && allExercises.length > 0) return
 
@@ -69,19 +80,25 @@ export default function ExerciseAutocomplete({
         }
     }, [hasLoaded, allExercises.length])
 
-    // Update dropdown position when opening
+    // Focus search input when opening and update position
     useEffect(() => {
-        if (isOpen && inputRef.current) {
-            const rect = inputRef.current.getBoundingClientRect()
-            setDropdownPosition({
-                top: rect.bottom + window.scrollY,
-                left: rect.left + window.scrollX,
-                width: Math.max(rect.width, 360)
-            })
-            // Focus the search input after dropdown opens
-            setTimeout(() => searchInputRef.current?.focus(), 50)
+        if (isOpen) {
+            updateDropdownPosition()
+
+            // Re-calculate position on scroll/resize just in case
+            window.addEventListener('scroll', updateDropdownPosition, true)
+            window.addEventListener('resize', updateDropdownPosition)
+
+            if (searchInputRef.current) {
+                setTimeout(() => searchInputRef.current?.focus(), 50)
+            }
         }
-    }, [isOpen])
+
+        return () => {
+            window.removeEventListener('scroll', updateDropdownPosition, true)
+            window.removeEventListener('resize', updateDropdownPosition)
+        }
+    }, [isOpen, updateDropdownPosition])
 
     // Close dropdown when clicking outside
     useEffect(() => {
@@ -150,7 +167,7 @@ export default function ExerciseAutocomplete({
                 />
             </div>
 
-            {isOpen && (
+            {isOpen && typeof document !== 'undefined' && createPortal(
                 <div
                     ref={dropdownRef}
                     className="fixed bg-white dark:bg-slate-800 border border-gray-200 dark:border-gray-700 rounded-xl shadow-2xl z-[99999] flex flex-col overflow-hidden"
@@ -247,7 +264,8 @@ export default function ExerciseAutocomplete({
                             {filteredExercises.length} ejercicio{filteredExercises.length !== 1 ? 's' : ''} encontrado{filteredExercises.length !== 1 ? 's' : ''}
                         </div>
                     )}
-                </div>
+                </div>,
+                document.body
             )}
 
             <span className="absolute right-0 top-1/2 -translate-y-1/2 material-symbols-outlined text-gray-400 text-sm pointer-events-none">
