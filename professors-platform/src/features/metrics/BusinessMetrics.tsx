@@ -1,18 +1,65 @@
-import { useBusinessMetrics } from "@/hooks/useBusinessMetrics";
+import { useBusinessMetrics, type MonthlyRegistration } from "@/hooks/useBusinessMetrics";
 
 // --- Loading Skeleton ---
 function MetricCardSkeleton() {
   return (
-    <div className="bg-white dark:bg-surface-light rounded-xl p-6 shadow-card border border-gray-200 dark:border-border-light h-32 animate-pulse">
+    <div className={`bg-white dark:bg-surface-light rounded-xl p-6 shadow-card border border-gray-200 dark:border-border-light h-[156px] animate-pulse`}>
       <div className="flex items-center justify-between mb-4">
         <div className="h-3 bg-gray-200 rounded w-32" />
         <div className="h-8 w-8 bg-gray-200 rounded-md" />
       </div>
-      <div className="h-8 bg-gray-200 rounded w-16" />
+      <div className="h-8 bg-gray-200 rounded w-16 mb-2" />
+      <div className="h-8 bg-gray-100 rounded w-full mt-auto" />
     </div>
   );
 }
 
+// --- Mini Bar Chart ---
+function MiniBarChart({ data }: { data: MonthlyRegistration[] }) {
+  const maxCount = Math.max(...data.map((d) => d.count), 1);
+  const isCurrentMonth = (_idx: number) => _idx === data.length - 1;
+
+  return (
+    <div className="w-full mt-2">
+      <div className="flex items-end gap-1 h-8">
+        {data.map((d, idx) => {
+          const heightPct = Math.max(8, Math.round((d.count / maxCount) * 100));
+          return (
+            <div key={idx} className="flex-1 flex flex-col items-center gap-0 group/bar relative">
+              {/* Tooltip */}
+              <div className="absolute bottom-full mb-1 left-1/2 -translate-x-1/2 hidden group-hover/bar:flex flex-col items-center z-10 pointer-events-none">
+                <div className="bg-gray-800 text-white text-[10px] font-bold px-1.5 py-0.5 rounded whitespace-nowrap">
+                  {d.count}
+                </div>
+                <div className="w-0 h-0 border-l-[3px] border-r-[3px] border-t-[3px] border-transparent border-t-gray-800" />
+              </div>
+              {/* Barra */}
+              <div
+                className={`w-full rounded-[2px] transition-all duration-500 ${isCurrentMonth(idx)
+                  ? "bg-green-500"
+                  : "bg-green-100 group-hover/bar:bg-green-300"
+                  }`}
+                style={{ height: `${heightPct}%` }}
+              />
+            </div>
+          );
+        })}
+      </div>
+      {/* Etiquetas de meses */}
+      <div className="flex gap-1 mt-1">
+        {data.map((d, idx) => (
+          <span
+            key={idx}
+            className={`flex-1 text-center text-[9px] font-medium leading-none ${isCurrentMonth(idx) ? "text-green-600 font-bold" : "text-gray-400"
+              }`}
+          >
+            {d.month}
+          </span>
+        ))}
+      </div>
+    </div>
+  );
+}
 
 // --- Donut Chart ---
 const CIRCUMFERENCE = 2 * Math.PI * 40;
@@ -64,13 +111,10 @@ function DonutChart({
 
       {hasData ? (
         <div className="flex items-center justify-center gap-6 w-full flex-wrap">
-          {genderDistribution.map((seg, idx) => (
+          {genderDistribution.map((seg) => (
             <div key={seg.label} className="flex flex-col items-center">
-              {idx > 0 && (
-                <div className="hidden" /> // spacer (divider handled by gap)
-              )}
               <div className="flex items-center gap-2 mb-1">
-                <div className={`w-3 h-3 rounded-full`} style={{ backgroundColor: seg.stroke }} />
+                <div className="w-3 h-3 rounded-full" style={{ backgroundColor: seg.stroke }} />
                 <span className="text-sm font-medium text-gray-600">{seg.label}</span>
               </div>
               <span className="text-lg font-bold text-gray-900">{seg.percent}%</span>
@@ -106,48 +150,54 @@ export default function BusinessMetrics() {
 
               {/* Alumnos Activos */}
               {isLoading ? <MetricCardSkeleton /> : (
-                <div className="bg-white dark:bg-surface-light rounded-xl p-6 shadow-card border border-gray-200 dark:border-border-light flex flex-col justify-between h-32 relative overflow-hidden group hover:border-blue-200 transition-all">
-                  <div className="flex items-center justify-between relative z-10">
+                <div className="bg-white dark:bg-surface-light rounded-xl p-6 shadow-card border border-gray-200 dark:border-border-light flex flex-col h-[156px] relative overflow-hidden group hover:border-blue-200 transition-all">
+                  <div className="flex items-center justify-between relative z-10 mb-2">
                     <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Alumnos Activos</span>
                     <span className="material-symbols-outlined text-primary bg-blue-50 p-1.5 rounded-md text-[20px]">groups</span>
                   </div>
-                  <div className="relative z-10">
-                    <span className="text-3xl font-bold text-gray-900">{metrics?.activeStudents ?? 0}</span>
+                  <div className="relative z-10 mt-auto">
+                    <span className="text-4xl font-bold text-gray-900">{metrics?.activeStudents ?? 0}</span>
                   </div>
                   <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-primary/5 rounded-full group-hover:scale-110 transition-transform" />
                 </div>
               )}
 
-              {/* Nuevos este Mes */}
+              {/* Nuevos este Mes — con mini gráfico de 6 meses */}
               {isLoading ? <MetricCardSkeleton /> : (
-                <div className="bg-white dark:bg-surface-light rounded-xl p-6 shadow-card border border-gray-200 dark:border-border-light flex flex-col justify-between h-32 relative overflow-hidden group hover:border-green-200 transition-all">
-                  <div className="flex items-center justify-between relative z-10">
+                <div className="bg-white dark:bg-surface-light rounded-xl p-6 shadow-card border border-gray-200 dark:border-border-light flex flex-col h-[156px] relative overflow-hidden group hover:border-green-200 transition-all">
+                  <div className="flex items-center justify-between relative z-10 mb-2">
                     <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Nuevos este Mes</span>
                     <span className="material-symbols-outlined text-green-600 bg-green-50 p-1.5 rounded-md text-[20px]">person_add</span>
                   </div>
-                  <div className="relative z-10">
-                    <span className="text-3xl font-bold text-gray-900">
+                  <div className="flex items-end justify-between relative z-10 mt-auto w-full gap-4">
+                    <span className="text-4xl font-bold text-gray-900 leading-none pb-1">
                       {(metrics?.newThisMonth ?? 0) > 0 ? `+${metrics!.newThisMonth}` : metrics?.newThisMonth ?? 0}
                     </span>
+                    {/* Mini bar chart: tendencia últimos 6 meses */}
+                    {metrics?.monthlyRegistrations && metrics.monthlyRegistrations.length > 0 && (
+                      <div className="flex-1 w-full max-w-[140px] ml-auto">
+                        <MiniBarChart data={metrics.monthlyRegistrations} />
+                      </div>
+                    )}
                   </div>
-                  <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-green-500/5 rounded-full group-hover:scale-110 transition-transform" />
+                  <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-green-500/5 rounded-full group-hover:scale-110 transition-transform pointer-events-none" />
                 </div>
               )}
 
               {/* Promedio de Edad */}
               {isLoading ? <MetricCardSkeleton /> : (
-                <div className="bg-white dark:bg-surface-light rounded-xl p-6 shadow-card border border-gray-200 dark:border-border-light flex flex-col justify-between h-32 relative overflow-hidden group hover:border-blue-200 transition-all">
-                  <div className="flex items-center justify-between relative z-10">
+                <div className="bg-white dark:bg-surface-light rounded-xl p-6 shadow-card border border-gray-200 dark:border-border-light flex flex-col h-[156px] relative overflow-hidden group hover:border-blue-200 transition-all">
+                  <div className="flex items-center justify-between relative z-10 mb-2">
                     <span className="text-sm font-medium text-gray-500 uppercase tracking-wide">Promedio de Edad</span>
                     <span className="material-symbols-outlined text-gray-500 bg-gray-50 p-1.5 rounded-md text-[20px]">cake</span>
                   </div>
-                  <div className="relative z-10">
+                  <div className="relative z-10 mt-auto">
                     {metrics?.averageAge != null ? (
-                      <span className="text-3xl font-bold text-gray-900">
+                      <span className="text-4xl font-bold text-gray-900">
                         {metrics.averageAge} <span className="text-base font-medium text-gray-500">años</span>
                       </span>
                     ) : (
-                      <span className="text-3xl font-bold text-gray-400">—</span>
+                      <span className="text-4xl font-bold text-gray-400">—</span>
                     )}
                   </div>
                   <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-gray-500/5 rounded-full group-hover:scale-110 transition-transform" />
@@ -168,7 +218,7 @@ export default function BusinessMetrics() {
                 </div>
 
                 {isLoading ? (
-                  <div className="flex flex-col gap-6 flex-1 justify-center animate-pulse">
+                  <div className="flex flex-col gap-6 flex-1 mt-6 animate-pulse">
                     {[80, 50, 35, 20].map((w, i) => (
                       <div key={i}>
                         <div className="flex justify-between mb-2">
@@ -182,7 +232,7 @@ export default function BusinessMetrics() {
                     ))}
                   </div>
                 ) : metrics?.goalDistribution && metrics.goalDistribution.length > 0 ? (
-                  <div className="flex flex-col gap-6 flex-1 justify-center">
+                  <div className="flex flex-col gap-6 flex-1 mt-6">
                     {metrics.goalDistribution.map((goal) => {
                       const widthPct = Math.max(4, Math.round((goal.count / metrics.maxGoalCount) * 100));
                       return (
@@ -235,7 +285,6 @@ export default function BusinessMetrics() {
 
                 {/* Retention card */}
                 <div className="bg-white dark:bg-surface-light rounded-xl shadow-card border border-gray-200 dark:border-border-light p-6 md:p-8 flex flex-col justify-between relative group hover:border-blue-200 transition-all">
-                  {/* Background Decoration Container (Clipped) */}
                   <div className="absolute inset-0 rounded-xl overflow-hidden pointer-events-none">
                     <div className="absolute -bottom-4 -right-4 w-20 h-20 bg-primary/5 rounded-full group-hover:scale-110 transition-transform" />
                   </div>
@@ -255,15 +304,15 @@ export default function BusinessMetrics() {
                         <ul className="space-y-2 text-gray-300">
                           <li className="flex gap-2">
                             <strong className="text-white w-4">S</strong>
-                            <span><span className="text-gray-500">(Start)</span> Alumnos al inicio del mes.</span>
+                            <span><span className="text-gray-500">(Start)</span> Activos al inicio del mes (excluye archivados antes del mes).</span>
                           </li>
                           <li className="flex gap-2">
                             <strong className="text-white w-4">N</strong>
-                            <span><span className="text-gray-500">(New)</span> Alumnos nuevos este mes.</span>
+                            <span><span className="text-gray-500">(New)</span> Alumnos dados de alta este mes.</span>
                           </li>
                           <li className="flex gap-2">
                             <strong className="text-white w-4">E</strong>
-                            <span><span className="text-gray-500">(End)</span> Alumnos totales activos hoy.</span>
+                            <span><span className="text-gray-500">(End)</span> Alumnos activos hoy.</span>
                           </li>
                         </ul>
                       </div>

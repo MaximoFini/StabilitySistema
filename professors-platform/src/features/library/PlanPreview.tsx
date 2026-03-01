@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useTrainingPlanDetail } from "../../hooks/useTrainingPlans";
+import { useExportPlanPDF } from "../../hooks/useExportPlanPDF";
+import PlanPDFTemplate from "./components/PlanPDFTemplate";
 
 interface PlanPreviewProps {
   planId: string;
@@ -36,6 +38,7 @@ interface TrainingPlanExercise {
 export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
   const navigate = useNavigate();
   const { plan, loading, error } = useTrainingPlanDetail(planId);
+  const { exportPDF, isExporting, templateRef, pdfData } = useExportPlanPDF();
   const [activeDay, setActiveDay] = useState(0);
 
   const handleEditPlan = () => {
@@ -120,10 +123,11 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
             <button
               key={day.id}
               onClick={() => setActiveDay(index)}
-              className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${activeDay === index
+              className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
+                activeDay === index
                   ? "bg-primary text-white"
                   : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-                }`}
+              }`}
             >
               {day.day_name}
             </button>
@@ -220,7 +224,7 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
                         {exercise.reps}
                       </td>
                       <td className="py-3 px-4 text-center text-sm text-slate-700 dark:text-slate-300">
-                        {exercise.carga || '-'}
+                        {exercise.carga || "-"}
                       </td>
                       <td className="py-3 px-4 text-center text-sm text-slate-700 dark:text-slate-300">
                         {exercise.pause}
@@ -258,12 +262,39 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
             Cerrar
           </button>
           <button
+            onClick={() => exportPDF(planId)}
+            disabled={isExporting}
+            className="px-6 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors font-medium flex items-center gap-2 disabled:opacity-60 disabled:cursor-not-allowed"
+          >
+            {isExporting ? (
+              <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-white"></span>
+            ) : (
+              <span className="material-symbols-outlined text-[18px]">
+                picture_as_pdf
+              </span>
+            )}
+            {isExporting ? "Generando..." : "Descargar PDF"}
+          </button>
+          <button
             onClick={handleEditPlan}
             className="px-6 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors font-medium flex items-center gap-2"
           >
             <span className="material-symbols-outlined text-[18px]">edit</span>
             Editar Plan
           </button>
+        </div>
+
+        {/* Hidden PDF template — rendered off-screen for html2canvas capture */}
+        <div
+          style={{
+            position: "fixed",
+            left: "-9999px",
+            top: 0,
+            zIndex: -1,
+            pointerEvents: "none",
+          }}
+        >
+          {pdfData && <PlanPDFTemplate ref={templateRef} data={pdfData} />}
         </div>
       </div>
     </div>

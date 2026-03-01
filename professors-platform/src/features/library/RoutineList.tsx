@@ -2,14 +2,18 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useTrainingPlans } from "../../hooks/useTrainingPlans";
+import { useExportPlanPDF } from "../../hooks/useExportPlanPDF";
 import PlanPreview from "./PlanPreview";
+import PlanPDFTemplate from "./components/PlanPDFTemplate";
 import AssignedStudentsModal from "../../components/AssignedStudentsModal";
 import AssignPlanModal from "../../components/AssignPlanModal";
 import ConfirmActionModal from "../../components/ConfirmActionModal";
 
 export default function RoutineList({ searchQuery }: { searchQuery: string }) {
   const navigate = useNavigate();
-  const { plans, loading, deletePlan, duplicatePlan, assignPlanToStudents } = useTrainingPlans();
+  const { plans, loading, deletePlan, duplicatePlan, assignPlanToStudents } =
+    useTrainingPlans();
+  const { exportPDF, isExporting, templateRef, pdfData } = useExportPlanPDF();
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [isAssignModalOpen, setIsAssignModalOpen] = useState(false);
@@ -73,13 +77,17 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
       case "viewStudents":
         setAssignedModalPlan(plan);
         break;
+      case "exportPDF":
+        toast.promise(exportPDF(plan.id), {
+          loading: "Generando PDF...",
+          success: "PDF descargado correctamente",
+          error: "Error al generar el PDF",
+        });
+        break;
     }
   };
 
-  const handleAvatarClick = (
-    e: React.MouseEvent,
-    plan: any,
-  ) => {
+  const handleAvatarClick = (e: React.MouseEvent, plan: any) => {
     e.stopPropagation();
     setAssignedModalPlan(plan);
   };
@@ -184,6 +192,20 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
                       </span>
                       Asignar a alumno
                     </button>
+                    <button
+                      onClick={(e) => handleMenuAction(e, "exportPDF", plan)}
+                      disabled={isExporting}
+                      className="w-full text-left px-4 py-2 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-100 dark:hover:bg-slate-700 flex items-center gap-2 disabled:opacity-50 disabled:cursor-not-allowed"
+                    >
+                      {isExporting ? (
+                        <span className="inline-block animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></span>
+                      ) : (
+                        <span className="material-symbols-outlined text-[16px]">
+                          picture_as_pdf
+                        </span>
+                      )}
+                      Exportar a PDF
+                    </button>
                     <div className="h-px bg-slate-200 dark:bg-slate-700 my-1"></div>
                     <button
                       onClick={(e) => handleMenuAction(e, "delete", plan)}
@@ -213,7 +235,6 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
                 </span>
                 {plan.days_per_week} Días/Sem
               </span>
-
             </div>
 
             <div className="mt-auto border-t border-slate-100 dark:border-slate-700 pt-4 flex items-center justify-between">
@@ -268,6 +289,19 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
         />
       )}
 
+      {/* Hidden PDF template — rendered off-screen for html2canvas capture */}
+      <div
+        style={{
+          position: "fixed",
+          left: "-9999px",
+          top: 0,
+          zIndex: -1,
+          pointerEvents: "none",
+        }}
+      >
+        {pdfData && <PlanPDFTemplate ref={templateRef} data={pdfData} />}
+      </div>
+
       {/* Assigned Students Modal */}
       {assignedModalPlan && (
         <AssignedStudentsModal
@@ -290,7 +324,7 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
               selectedPlanToAssign.id,
               studentIds,
               new Date(selectedPlanToAssign.start_date),
-              new Date(selectedPlanToAssign.end_date)
+              new Date(selectedPlanToAssign.end_date),
             );
             if (result?.success) {
               toast.success("Plan asignado correctamente");
@@ -306,8 +340,16 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
         }}
         isSubmitting={isAssigning}
         planTitle={selectedPlanToAssign?.title}
-        planStartDate={selectedPlanToAssign ? new Date(selectedPlanToAssign.start_date) : undefined}
-        planEndDate={selectedPlanToAssign ? new Date(selectedPlanToAssign.end_date) : undefined}
+        planStartDate={
+          selectedPlanToAssign
+            ? new Date(selectedPlanToAssign.start_date)
+            : undefined
+        }
+        planEndDate={
+          selectedPlanToAssign
+            ? new Date(selectedPlanToAssign.end_date)
+            : undefined
+        }
       />
 
       {planToDelete && (
