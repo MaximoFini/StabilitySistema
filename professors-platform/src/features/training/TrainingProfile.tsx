@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { useAuthStore } from "@/features/auth/store/authStore";
 import { supabase } from "@/lib/supabase";
 import { toast } from "sonner";
-import { cn } from "@/lib/utils";
+import { cn, formatDateLocal } from "@/lib/utils";
 
 interface StudentProfileData {
   phone: string;
@@ -356,9 +356,7 @@ export default function TrainingProfile() {
                         <div>
                           <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nacimiento</p>
                           <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                            {profileData?.birth_date
-                              ? new Date(profileData.birth_date).toLocaleDateString("es-ES")
-                              : "—"}
+                            {formatDateLocal(profileData?.birth_date)}
                           </p>
                         </div>
                       </div>

@@ -386,16 +386,29 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Categoría *</label>
-                                <select
-                                    required
-                                    value={formData.category_id}
-                                    onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
-                                    className="w-full h-10 px-3 rounded-md border border-slate-200 dark:border-slate-700 bg-transparent text-sm"
-                                >
-                                    {categories.map(cat => (
-                                        <option key={cat.id} value={cat.id}>{cat.name}</option>
-                                    ))}
-                                </select>
+                                <div className="relative">
+                                    {formData.category_id && (
+                                        <div
+                                            className="absolute left-3 top-1/2 -translate-y-1/2 w-3 h-3 rounded-full shadow-sm z-10"
+                                            style={{ backgroundColor: categories.find(c => c.id === formData.category_id)?.color || '#3B82F6' }}
+                                        />
+                                    )}
+                                    <select
+                                        required
+                                        value={formData.category_id}
+                                        onChange={(e) => setFormData({ ...formData, category_id: e.target.value })}
+                                        className={cn(
+                                            "w-full h-10 rounded-md border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-sm focus:ring-1 focus:ring-primary focus:border-primary transition-all pr-8 relative",
+                                            formData.category_id ? "pl-9" : "pl-3"
+                                        )}
+                                    >
+                                        {categories.map(cat => (
+                                            <option key={cat.id} value={cat.id} className="py-2">
+                                                {cat.name}
+                                            </option>
+                                        ))}
+                                    </select>
+                                </div>
                             </div>
                             <div className="space-y-2">
                                 <label className="text-sm font-medium">Link de Video (Opcional)</label>

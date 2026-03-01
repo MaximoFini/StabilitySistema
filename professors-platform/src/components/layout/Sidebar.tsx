@@ -6,7 +6,7 @@ import { useState } from "react";
 
 const coachNavigation = [
   { name: "Alumnos", href: "/inicio", icon: "group" },
-  { name: "Planificación", href: "/planificador", icon: "calendar_month" },
+  { name: "Planificador", href: "/planificador", icon: "calendar_month" },
   { name: "Biblioteca", href: "/biblioteca", icon: "fitness_center" },
   { name: "Estadísticas", href: "/dashboard", icon: "bar_chart" },
 ];

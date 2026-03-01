@@ -136,16 +136,15 @@ export default function SortableExerciseRow({
                 <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
                     <input
                         className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0"
-                        type="text"
+                        type="number"
                         value={exercise.carga}
                         onChange={(e) => handleUpdateExercise(exercise.id, "carga", e.target.value)}
-                        placeholder="-"
                     />
                 </div>
                 <div className="px-2 h-12 flex items-center justify-center border-l border-gray-100 dark:border-gray-800">
                     <input
                         className="w-full h-8 text-center text-sm font-medium bg-[#f5f7f8] dark:bg-gray-800 rounded border-none focus:ring-1 focus:ring-primary p-0"
-                        type="text"
+                        type="number"
                         value={exercise.pause}
                         onChange={(e) => handleUpdateExercise(exercise.id, "pause", e.target.value)}
                     />

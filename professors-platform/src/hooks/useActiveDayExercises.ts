@@ -89,7 +89,7 @@ export function useActiveDayExercises(
             carga?: string;
           }) => {
             const sets: ExerciseSet[] = Array.from(
-              { length: ex.series ?? 1 },
+              { length: Math.max(ex.series ?? 1, 1) },
               (_, i) => ({
                 setNumber: i + 1,
                 targetReps: ex.reps ?? "10",

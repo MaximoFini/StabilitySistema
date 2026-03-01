@@ -90,17 +90,15 @@ export default function WorkoutComplete() {
   const todayDayOfWeek = today.getDay() === 0 ? 6 : today.getDay() - 1; // 0 = Mon, 6 = Sun
 
   const handleGoHome = async () => {
+    if (!rpe || !mood) {
+      toast.error("Por favor completa ambos campos obligatorios (*)");
+      return;
+    }
+
     if (assignmentId) {
       setIsSaving(true);
 
-      console.log("=== Iniciando guardado de entrenamiento ===");
-      console.log("assignmentId:", assignmentId);
-      console.log("currentDayNumber:", currentDayNumber);
-      console.log("rpe:", rpe);
-      console.log("mood:", mood);
-      console.log("moodComment:", moodComment);
-      console.log("doneSets:", doneSets);
-
+      // 1. Save workout completion
       const result = await saveCompletion({
         assignmentId,
         dayNumber: currentDayNumber,
@@ -111,55 +109,58 @@ export default function WorkoutComplete() {
         totalSetsDone: doneSets,
         seriesLog,
       });
+
       if (result.success) {
+        // 2. Save exercise_weight_logs if needed
+        const exercisesToLog =
+          currentDay?.exercises.filter((ex) => ex.writeWeight) ?? [];
+
+        if (exercisesToLog.length > 0 && professor?.id) {
+          const logsToInsert = exercisesToLog.map((ex) => {
+            const setsDetail = ex.sets.map((set, setIndex) => {
+              const key = `${ex.id}-${setIndex}`;
+              const log = seriesLog[key];
+              return {
+                set_number: set.setNumber,
+                target_reps: set.targetReps,
+                actual_reps: log?.reps ?? null,
+                kg: log?.kg ? parseFloat(log.kg) : null,
+              };
+            });
+
+            return {
+              student_id: professor.id,
+              assignment_id: assignmentId,
+              exercise_id: String(ex.id),
+              exercise_name: ex.name,
+              plan_day_number: currentDayNumber,
+              plan_day_name: currentDay?.name ?? "",
+              series: ex.sets.length,
+              sets_detail: setsDetail,
+            };
+          });
+
+          const { error: logsError } = await supabase
+            .from("exercise_weight_logs")
+            .insert(logsToInsert);
+
+          if (logsError) {
+            console.error("Error saving exercise weight logs:", logsError);
+          }
+        }
+
         toast.success("¡Entrenamiento guardado! 💪");
+        resetTraining();
+        navigate("/entrenamiento", { replace: true });
       } else {
         console.error("Error al guardar:", result.error);
         toast.error("No se pudo guardar. Intenta de nuevo.");
       }
-
-      // 2. Guardar exercise_weight_logs para ejercicios con writeWeight = true
-      const exercisesToLog =
-        currentDay?.exercises.filter((ex) => ex.writeWeight) ?? [];
-
-      if (exercisesToLog.length > 0 && professor?.id) {
-        const logsToInsert = exercisesToLog.map((ex) => {
-          const setsDetail = ex.sets.map((set, setIndex) => {
-            const key = `${ex.id}-${setIndex}`;
-            const log = seriesLog[key];
-            return {
-              set_number: set.setNumber,
-              target_reps: set.targetReps,
-              actual_reps: log?.reps ?? null,
-              kg: log?.kg ? parseFloat(log.kg) : null,
-            };
-          });
-
-          return {
-            student_id: professor.id,
-            assignment_id: assignmentId,
-            exercise_id: String(ex.id),
-            exercise_name: ex.name,
-            plan_day_number: currentDayNumber,
-            plan_day_name: currentDay?.name ?? "",
-            series: ex.sets.length,
-            sets_detail: setsDetail,
-          };
-        });
-
-        const { error: logsError } = await supabase
-          .from("exercise_weight_logs")
-          .insert(logsToInsert);
-
-        if (logsError) {
-          console.error("Error saving exercise weight logs:", logsError);
-        }
-      }
-
       setIsSaving(false);
+    } else {
+      resetTraining();
+      navigate("/entrenamiento", { replace: true });
     }
-    resetTraining();
-    navigate("/entrenamiento", { replace: true });
   };
 
   // Congratulations message based on RPE
@@ -199,7 +200,7 @@ export default function WorkoutComplete() {
       {/* ── RPE selector ─────────────────────────────────────────── */}
       <div className="w-full mt-6 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 shadow-sm">
         <p className="text-sm font-bold text-slate-900 dark:text-white mb-1">
-          ¿Qué tan difícil fue hoy?
+          ¿Qué tan difícil fue hoy? *
         </p>
         <p className="text-xs text-slate-500 dark:text-slate-400 mb-4">
           Escala de esfuerzo percibido (RPE 1–10)
@@ -247,7 +248,7 @@ export default function WorkoutComplete() {
       {/* ── ¿Cómo te sentiste? ──────────────────────────────────── */}
       <div className="w-full mt-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-5 shadow-sm">
         <p className="text-sm font-bold text-slate-900 dark:text-white mb-4">
-          ¿Cómo te sentiste?
+          ¿Cómo te sentiste? *
         </p>
 
         <div className="grid grid-cols-4 gap-2">

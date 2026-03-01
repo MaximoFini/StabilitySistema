@@ -295,8 +295,16 @@ export default function StudentProfileSetup() {
                 </span>
                 <Input
                   type="date"
+                  className="h-14 block w-full appearance-none"
+                  lang="es"
                   {...step4Form.register("birthDate")}
-                  className="h-14"
+                  onFocus={(e) => {
+                    if ("showPicker" in e.target) {
+                      try {
+                        (e.target as any).showPicker();
+                      } catch (err) {}
+                    }
+                  }}
                 />
                 {step4Form.formState.errors.birthDate && (
                   <span className="text-xs text-red-500">

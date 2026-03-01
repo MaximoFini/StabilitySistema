@@ -35,6 +35,7 @@ import {
   CartesianGrid,
 } from "recharts";
 import { supabase } from "@/lib/supabase";
+import { formatDateLocal } from "@/lib/utils";
 import { detectRpeAlert } from "@/lib/rpeHelpers";
 import PlanPreview from "@/features/library/PlanPreview";
 
@@ -258,7 +259,7 @@ function GeneralTab({ student }: { student: StudentProfileType }) {
           <StatCard
             icon="event"
             label="Nacimiento"
-            value={student.birthDate ? new Date(student.birthDate).toLocaleDateString() : null}
+            value={formatDateLocal(student.birthDate)}
             colorClass="text-sky-500"
             bgClass="bg-sky-50 dark:bg-sky-950/30"
           />
@@ -1064,8 +1065,22 @@ export default function StudentProfile() {
     <div className="flex flex-col h-full bg-background-light dark:bg-background-dark">
 
       <main className="flex-1 overflow-y-auto p-4 lg:p-6">
-        <div className="w-full">
-          <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
+        <div className="w-full max-w-7xl mx-auto">
+          {/* Back Button */}
+          <button
+            onClick={() => navigate("/inicio")}
+            className="mb-6 flex items-center gap-2 text-slate-500 dark:text-slate-400 hover:text-primary dark:hover:text-primary transition-all text-sm font-bold group"
+          >
+            <div className="w-9 h-9 rounded-xl bg-white dark:bg-slate-900 flex items-center justify-center group-hover:bg-primary group-hover:text-white transition-all shadow-sm border border-slate-100 dark:border-slate-800">
+              <span className="material-symbols-outlined text-[20px]">
+                arrow_back
+              </span>
+            </div>
+            Volver a Alumnos
+          </button>
+
+          <div className="w-full">
+            <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
             {/* Left Column - Student Info */}
             <div className="flex flex-col gap-6">
               {/* Profile Card */}
@@ -1287,6 +1302,7 @@ export default function StudentProfile() {
                 {activeTab === "progreso" && <ProgresoTab studentId={studentId} />}
               </div>
             </div>
+          </div>
           </div>
         </div>
       </main>

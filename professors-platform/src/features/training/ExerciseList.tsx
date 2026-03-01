@@ -128,10 +128,10 @@ export default function ExerciseList() {
                 {exercise.name}
               </p>
               <p className="text-xs text-slate-500 dark:text-slate-400 mt-0.5">
-                {exercise.sets.length} series
-                {exercise.sets[0].targetReps &&
+                {exercise.sets?.length ?? 0} series
+                {exercise.sets?.[0]?.targetReps &&
                   ` × ${exercise.sets[0].targetReps} reps`}
-                {exercise.sets[0].targetWeight
+                {exercise.sets?.[0]?.targetWeight
                   ? ` @ ${exercise.sets[0].targetWeight}kg`
                   : ""}
               </p>

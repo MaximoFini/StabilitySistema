@@ -50,7 +50,7 @@ export interface AssignedPlan {
 // ── Helper maps ────────────────────────────────────────────────────────────
 
 export const GOAL_LABELS: Record<string, string> = {
-  aesthetic: "Estética / Hipertrofia",
+  aesthetic: "Estética",
   sports: "Rendimiento Deportivo",
   health: "Salud General",
   rehabilitation: "Rehabilitación",

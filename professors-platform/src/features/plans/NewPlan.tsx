@@ -97,8 +97,8 @@ export default function NewPlan() {
           exercise_name: "Plancha Lateral + Remo",
           series: 3,
           reps: "30s",
-          carga: "-",
-          pause: "20s",
+          carga: "",
+          pause: "20",
           notes: "Flexibilidad estática y dinámica",
           order: 0,
           write_weight: false,
@@ -114,8 +114,8 @@ export default function NewPlan() {
           exercise_name: "Plancha Lateral + Remo",
           series: 3,
           reps: "30s",
-          carga: "-",
-          pause: "20s",
+          carga: "",
+          pause: "20",
           notes: "Flexibilidad estática y dinámica",
           order: 0,
           write_weight: false,
@@ -279,6 +279,10 @@ export default function NewPlan() {
   }, [exercises, days, activeDay, startDate, endDate, planTitle, isEditMode]);
 
   const handleAddDay = () => {
+    if (days.length >= 7) {
+      toast.error("El límite máximo es de 7 días");
+      return;
+    }
     const newDayNumber = days.length + 1;
     const newDay: Day = {
       id: Date.now().toString(),
@@ -336,8 +340,8 @@ export default function NewPlan() {
       exercise_name: "",
       series: 3,
       reps: "10",
-      carga: "-",
-      pause: "60s",
+      carga: "",
+      pause: "60",
       notes: "",
       order: exercises.length,
       write_weight: false,
@@ -394,8 +398,8 @@ export default function NewPlan() {
         exercise_name: "",
         series: 0,
         reps: "",
-        carga: "-",
-        pause: "",
+        carga: "",
+        pause: "0",
         notes: "",
         order: 0,
       },
@@ -750,7 +754,8 @@ export default function NewPlan() {
             ))}
             <button
               onClick={handleAddDay}
-              className="ml-2 flex items-center gap-1 px-3 py-2 text-[#5e758d] hover:text-primary font-bold text-xs uppercase tracking-wide transition-colors whitespace-nowrap mb-0.5"
+              disabled={days.length >= 7}
+              className="ml-2 flex items-center gap-1 px-3 py-2 text-[#5e758d] hover:text-primary font-bold text-xs uppercase tracking-wide transition-colors whitespace-nowrap mb-0.5 disabled:opacity-30 disabled:cursor-not-allowed disabled:hover:text-[#5e758d]"
             >
               <span className="material-symbols-outlined text-lg">
                 add_circle
@@ -780,10 +785,10 @@ export default function NewPlan() {
               Reps
             </div>
             <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">
-              Carga
+              Carga (kg)
             </div>
             <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">
-              Pausa
+              Pausa (s)
             </div>
             <div className="py-3 text-center border-l border-gray-100 dark:border-gray-800">
               Escribir Peso
