@@ -97,7 +97,7 @@ export default function NewPlan() {
           exercise_name: "Plancha Lateral + Remo",
           series: 3,
           reps: "30s",
-          carga: '-',
+          carga: "-",
           pause: "20s",
           notes: "Flexibilidad estática y dinámica",
           order: 0,
@@ -114,7 +114,7 @@ export default function NewPlan() {
           exercise_name: "Plancha Lateral + Remo",
           series: 3,
           reps: "30s",
-          carga: '-',
+          carga: "-",
           pause: "20s",
           notes: "Flexibilidad estática y dinámica",
           order: 0,
@@ -219,7 +219,7 @@ export default function NewPlan() {
           video_url: ex.video_url,
           series: ex.series,
           reps: ex.reps,
-          carga: ex.carga || '-',
+          carga: ex.carga || "-",
           pause: ex.pause,
           notes: ex.notes || "",
           order: ex.display_order,
@@ -336,7 +336,7 @@ export default function NewPlan() {
       exercise_name: "",
       series: 3,
       reps: "10",
-      carga: '-',
+      carga: "-",
       pause: "60s",
       notes: "",
       order: exercises.length,
@@ -394,7 +394,7 @@ export default function NewPlan() {
         exercise_name: "",
         series: 0,
         reps: "",
-        carga: '-',
+        carga: "-",
         pause: "",
         notes: "",
         order: 0,
@@ -449,13 +449,9 @@ export default function NewPlan() {
 
       if (result.success) {
         setSavedPlanId(result.planId!);
+        // Mostrar solo el título del toast según el modo (sin descripción)
         toast.success(
           isEditMode ? "Plan actualizado" : "Plan guardado en biblioteca",
-          {
-            description: isEditMode
-              ? `"${formData.name}" actualizado correctamente`
-              : `"${formData.name}" disponible en Biblioteca > Planes y Rutinas`,
-          },
         );
         setIsSaveModalOpen(false);
         if (isEditMode) {
@@ -544,7 +540,7 @@ export default function NewPlan() {
     }),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
-    })
+    }),
   );
 
   const handleDragEnd = (event: DragEndEvent) => {
@@ -558,7 +554,11 @@ export default function NewPlan() {
         const oldIndex = activeDayExs.findIndex((ex) => ex.id === active.id);
         const newIndex = activeDayExs.findIndex((ex) => ex.id === over.id);
 
-        const reorderedActiveDayExs = arrayMove(activeDayExs, oldIndex, newIndex);
+        const reorderedActiveDayExs = arrayMove(
+          activeDayExs,
+          oldIndex,
+          newIndex,
+        );
 
         const updatedReordered = reorderedActiveDayExs.map((ex, idx) => ({
           ...ex,
@@ -645,10 +645,11 @@ export default function NewPlan() {
               )}
               <button
                 onClick={handleOpenSaveModal}
-                className={`flex items-center justify-center rounded-lg h-9 px-5 font-bold transition-colors text-sm shadow-sm ${isEditMode
-                  ? "bg-primary text-white hover:bg-primary/90"
-                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                  }`}
+                className={`flex items-center justify-center rounded-lg h-9 px-5 font-bold transition-colors text-sm shadow-sm ${
+                  isEditMode
+                    ? "bg-primary text-white hover:bg-primary/90"
+                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                }`}
               >
                 <span className="material-symbols-outlined text-lg mr-2">
                   {isEditMode ? "sync" : "save"}
@@ -680,10 +681,11 @@ export default function NewPlan() {
           </div>
           {isEditMode && (
             <div
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium mb-2 ${editAssignedCount > 0
-                ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-                }`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium mb-2 ${
+                editAssignedCount > 0
+                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                  : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+              }`}
             >
               <span className="material-symbols-outlined text-[16px]">
                 {editAssignedCount > 0 ? "warning" : "edit_note"}
@@ -715,18 +717,18 @@ export default function NewPlan() {
                 />
               </div>
             </div>
-            <div className="flex items-center gap-6">
-            </div>
+            <div className="flex items-center gap-6"></div>
           </div>
           <div className="flex items-end gap-1 mt-2 overflow-x-auto">
             {days.map((day) => (
               <div key={day.id} className="relative group">
                 <button
                   onClick={() => setActiveDay(day.id)}
-                  className={`px-6 py-2.5 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeDay === day.id
-                    ? "border-primary text-primary bg-white dark:bg-[#1a202c] font-bold"
-                    : "border-transparent text-[#5e758d] hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                    }`}
+                  className={`px-6 py-2.5 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
+                    activeDay === day.id
+                      ? "border-primary text-primary bg-white dark:bg-[#1a202c] font-bold"
+                      : "border-transparent text-[#5e758d] hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                  }`}
                 >
                   {day.name}
                 </button>

@@ -961,7 +961,7 @@ export default function StudentProfile() {
     try {
       const { error } = await supabase
         .from("student_profiles")
-        .update({ is_archived: true })
+        .update({ is_archived: true, archived_at: new Date().toISOString() })
         .eq("id", studentId);
 
       if (error) throw error;
@@ -1005,26 +1005,18 @@ export default function StudentProfile() {
 
     setActionLoading(true);
     try {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (!session) throw new Error("No hay sesión activa");
-
-      const res = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-student`,
-        {
-          method: "POST",
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-            apikey: import.meta.env.VITE_SUPABASE_ANON_KEY,
-          },
-          body: JSON.stringify({ studentId }),
-        }
+      // Usar supabase.functions.invoke() en lugar de fetch() manual
+      // El cliente maneja el token automáticamente, igual que las queries normales
+      const { data: result, error: fnError } = await supabase.functions.invoke(
+        "delete-student",
+        { body: { studentId } }
       );
 
-      const result = await res.json();
-
-      if (!res.ok) {
-        throw new Error(result.error || "Error al eliminar el alumno");
+      if (fnError) {
+        throw new Error(fnError.message || "Error al eliminar el alumno");
+      }
+      if (!result?.success) {
+        throw new Error(result?.error || "Error al eliminar el alumno");
       }
 
       setShowDeleteModal(false);
