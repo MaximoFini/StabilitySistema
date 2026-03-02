@@ -177,6 +177,7 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
           .from("training_plan_assignments")
           .update({
             completed_days: newCompletedDays,
+            current_day_number: params.dayNumber,
             status: newStatus,
           })
           .eq("id", params.assignmentId);
