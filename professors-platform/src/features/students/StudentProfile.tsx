@@ -374,12 +374,21 @@ function HistorialTab({ plans }: { plans: AssignedPlan[] }) {
           Historial de Planificaciones
         </h3>
         {plans.map((plan) => {
+          const today = new Date();
+          today.setHours(0, 0, 0, 0);
+          const endDate = new Date(plan.endDate + "T00:00:00");
+          endDate.setHours(0, 0, 0, 0);
+
+          const isOverdue = plan.status === "active" && today > endDate;
+          const displayStatus = isOverdue ? "vencido" : plan.status;
+          const displayLabel = isOverdue ? "Vencido" : (PLAN_STATUS_LABELS[plan.status] || plan.status);
+
           const statusColor =
-            plan.status === "active"
+            displayStatus === "active"
               ? "bg-green-50 text-green-700 border-green-200"
-              : plan.status === "completed"
+              : displayStatus === "completed"
                 ? "bg-blue-50 text-blue-700 border-blue-200"
-                : plan.status === "paused"
+                : displayStatus === "paused"
                   ? "bg-yellow-50 text-yellow-700 border-yellow-200"
                   : "bg-gray-50 text-gray-700 border-gray-200";
           const progress =
@@ -406,7 +415,7 @@ function HistorialTab({ plans }: { plans: AssignedPlan[] }) {
                   <span
                     className={`text-xs font-bold px-2.5 py-1 rounded-full border ${statusColor}`}
                   >
-                    {PLAN_STATUS_LABELS[plan.status] || plan.status}
+                    {displayLabel}
                   </span>
                   <span className="material-symbols-outlined text-gray-400 group-hover:text-primary transition-colors text-[20px]">
                     open_in_new
@@ -576,12 +585,21 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
 
       {plans.map((plan) => {
         const isOpen = openPlan === plan.assignmentId;
+        const today = new Date();
+        today.setHours(0, 0, 0, 0);
+        const endDate = new Date(plan.endDate + "T00:00:00");
+        endDate.setHours(0, 0, 0, 0);
+
+        const isOverdue = plan.status === "active" && today > endDate;
+        const displayStatus = isOverdue ? "vencido" : plan.status;
+        const displayLabel = isOverdue ? "Vencido" : (PLAN_STATUS_LABELS[plan.status] || plan.status);
+
         const statusColor =
-          plan.status === "active"
+          displayStatus === "active"
             ? "bg-green-50 text-green-700 border-green-200"
-            : plan.status === "completed"
+            : displayStatus === "completed"
               ? "bg-blue-50 text-blue-700 border-blue-200"
-              : plan.status === "paused"
+              : displayStatus === "paused"
                 ? "bg-yellow-50 text-yellow-700 border-yellow-200"
                 : "bg-gray-50 text-gray-700 border-gray-200";
 
@@ -603,7 +621,7 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
                   <span
                     className={`text-xs font-bold px-2.5 py-0.5 rounded-full border ${statusColor}`}
                   >
-                    {PLAN_STATUS_LABELS[plan.status] || plan.status}
+                    {displayLabel}
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">
@@ -1081,228 +1099,228 @@ export default function StudentProfile() {
 
           <div className="w-full">
             <div className="grid grid-cols-1 lg:grid-cols-[300px_1fr] gap-6">
-            {/* Left Column - Student Info */}
-            <div className="flex flex-col gap-6">
-              {/* Profile Card */}
-              <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
-                <div className="flex flex-col items-center text-center">
-                  <div className="relative mb-4">
-                    <div
-                      className="h-28 w-28 rounded-full bg-gray-200 bg-cover bg-center ring-4 ring-blue-50 dark:ring-gray-700 shadow-md"
-                      style={{
-                        backgroundImage: avatarUrl
-                          ? `url('${avatarUrl}')`
-                          : "url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23e5e7eb%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22system-ui%22 font-size=%2236%22 fill=%22%239ca3af%22%3E" +
-                          (student.firstName?.[0]?.toUpperCase() || "?") +
-                          "%3C/text%3E%3C/svg%3E')",
-                      }}
-                    />
-                  </div>
-                  <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
-                    {student.fullName}
-                  </h1>
-                  <p className="text-sm text-gray-500 mb-4">
-                    {student.birthDate
-                      ? `${calculateAge(student.birthDate)} años`
-                      : "Edad no especificada"}
-                  </p>
-
-                  <div className="w-full space-y-3 mb-6">
-                    <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                      <span className="material-symbols-outlined text-[20px] text-primary/60">
-                        email
-                      </span>
-                      <span className="truncate">{student.email}</span>
+              {/* Left Column - Student Info */}
+              <div className="flex flex-col gap-6">
+                {/* Profile Card */}
+                <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
+                  <div className="flex flex-col items-center text-center">
+                    <div className="relative mb-4">
+                      <div
+                        className="h-28 w-28 rounded-full bg-gray-200 bg-cover bg-center ring-4 ring-blue-50 dark:ring-gray-700 shadow-md"
+                        style={{
+                          backgroundImage: avatarUrl
+                            ? `url('${avatarUrl}')`
+                            : "url('data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22%3E%3Crect fill=%22%23e5e7eb%22 width=%22100%22 height=%22100%22/%3E%3Ctext x=%2250%25%22 y=%2250%25%22 dominant-baseline=%22middle%22 text-anchor=%22middle%22 font-family=%22system-ui%22 font-size=%2236%22 fill=%22%239ca3af%22%3E" +
+                            (student.firstName?.[0]?.toUpperCase() || "?") +
+                            "%3C/text%3E%3C/svg%3E')",
+                        }}
+                      />
                     </div>
-                    {student.phone && (
-                      <div className="flex flex-col gap-2">
-                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                          <span className="material-symbols-outlined text-[20px] text-primary/60">
-                            phone
-                          </span>
-                          <span>{student.phone}</span>
-                        </div>
-                        <button
-                          onClick={() =>
-                            window.open(
-                              `https://wa.me/${formatPhoneForWhatsApp(student.phone!)}?text=Hola!`,
-                              "_blank"
-                            )
-                          }
-                          className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-                          style={{ background: "#25D366" }}
-                        >
-                          <WhatsAppIcon />
-                          Contactar por WhatsApp
-                        </button>
+                    <h1 className="text-xl font-bold text-gray-900 dark:text-white mb-1">
+                      {student.fullName}
+                    </h1>
+                    <p className="text-sm text-gray-500 mb-4">
+                      {student.birthDate
+                        ? `${calculateAge(student.birthDate)} años`
+                        : "Edad no especificada"}
+                    </p>
+
+                    <div className="w-full space-y-3 mb-6">
+                      <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                        <span className="material-symbols-outlined text-[20px] text-primary/60">
+                          email
+                        </span>
+                        <span className="truncate">{student.email}</span>
                       </div>
-                    )}
-                    {student.instagram && (
-                      <div className="flex flex-col gap-2 pt-1">
-                        <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
-                          <span className="material-symbols-outlined text-[20px] text-primary/60">
-                            link
-                          </span>
-                          <span className="truncate">@{formatInstagramUsername(student.instagram)}</span>
+                      {student.phone && (
+                        <div className="flex flex-col gap-2">
+                          <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                            <span className="material-symbols-outlined text-[20px] text-primary/60">
+                              phone
+                            </span>
+                            <span>{student.phone}</span>
+                          </div>
+                          <button
+                            onClick={() =>
+                              window.open(
+                                `https://wa.me/${formatPhoneForWhatsApp(student.phone!)}?text=Hola!`,
+                                "_blank"
+                              )
+                            }
+                            className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+                            style={{ background: "#25D366" }}
+                          >
+                            <WhatsAppIcon />
+                            Contactar por WhatsApp
+                          </button>
                         </div>
-                        <button
-                          onClick={() =>
-                            window.open(
-                              `https://instagram.com/${formatInstagramUsername(student.instagram!)}`,
-                              "_blank"
-                            )
-                          }
-                          className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
-                          style={{
-                            background: "linear-gradient(135deg, #E1306C 0%, #F56040 100%)",
-                          }}
-                        >
-                          <InstagramIcon />
-                          Ver Perfil de Instagram
-                        </button>
-                      </div>
+                      )}
+                      {student.instagram && (
+                        <div className="flex flex-col gap-2 pt-1">
+                          <div className="flex items-center gap-3 text-sm text-gray-600 dark:text-gray-400">
+                            <span className="material-symbols-outlined text-[20px] text-primary/60">
+                              link
+                            </span>
+                            <span className="truncate">@{formatInstagramUsername(student.instagram)}</span>
+                          </div>
+                          <button
+                            onClick={() =>
+                              window.open(
+                                `https://instagram.com/${formatInstagramUsername(student.instagram!)}`,
+                                "_blank"
+                              )
+                            }
+                            className="flex items-center justify-center gap-2 w-full py-2 rounded-xl text-xs font-bold text-white transition-all hover:opacity-90 active:scale-[0.98]"
+                            style={{
+                              background: "linear-gradient(135deg, #E1306C 0%, #F56040 100%)",
+                            }}
+                          >
+                            <InstagramIcon />
+                            Ver Perfil de Instagram
+                          </button>
+                        </div>
+                      )}
+                    </div>
+                  </div>
+                </div>
+
+                {/* Physical Stats */}
+                <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="material-symbols-outlined text-primary text-[20px]">
+                      straighten
+                    </span>
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                      Datos Físicos
+                    </h3>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <span className="material-symbols-outlined text-primary text-[20px] mb-1 block">
+                        monitor_weight
+                      </span>
+                      <p className="text-xs text-gray-500 uppercase font-medium mb-1">
+                        Peso
+                      </p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">
+                        {student.weightKg
+                          ? `${Number(student.weightKg).toFixed(1)} kg`
+                          : "—"}
+                      </p>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <span className="material-symbols-outlined text-primary text-[20px] mb-1 block">
+                        height
+                      </span>
+                      <p className="text-xs text-gray-500 uppercase font-medium mb-1">
+                        Altura
+                      </p>
+                      <p className="text-lg font-bold text-gray-900 dark:text-white">
+                        {student.heightCm ? `${student.heightCm} cm` : "—"}
+                      </p>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <span className="material-symbols-outlined text-primary text-[20px] mb-1 block">
+                        sports
+                      </span>
+                      <p className="text-xs text-gray-500 uppercase font-medium mb-1">
+                        Deporte
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white break-words">
+                        {student.sports || "—"}
+                      </p>
+                    </div>
+                    <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
+                      <span className="material-symbols-outlined text-primary text-[20px] mb-1 block">
+                        trending_up
+                      </span>
+                      <p className="text-xs text-gray-500 uppercase font-medium mb-1">
+                        Nivel
+                      </p>
+                      <p className="text-sm font-semibold text-gray-900 dark:text-white break-words">
+                        {student.trainingExperience
+                          ? EXPERIENCE_LABELS[student.trainingExperience]
+                          : "—"}
+                      </p>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Action Buttons */}
+                <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
+                  <div className="flex items-center gap-2 mb-4">
+                    <span className="material-symbols-outlined text-primary text-[20px]">
+                      settings
+                    </span>
+                    <h3 className="text-base font-bold text-gray-900 dark:text-white">
+                      Acciones
+                    </h3>
+                  </div>
+                  <div className="space-y-3">
+                    {student.isArchived ? (
+                      <button
+                        onClick={() => setShowUnarchiveModal(true)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 font-medium rounded-xl transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          unarchive
+                        </span>
+                        Desarchivar Alumno
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => setShowArchiveModal(true)}
+                        className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors"
+                      >
+                        <span className="material-symbols-outlined text-[20px]">
+                          archive
+                        </span>
+                        Archivar Alumno
+                      </button>
                     )}
+                    <button
+                      onClick={() => setShowDeleteModal(true)}
+                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-medium rounded-xl transition-colors"
+                    >
+                      <span className="material-symbols-outlined text-[20px]">
+                        delete
+                      </span>
+                      Eliminar Alumno
+                    </button>
                   </div>
                 </div>
               </div>
 
-              {/* Physical Stats */}
-              <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="material-symbols-outlined text-primary text-[20px]">
-                    straighten
-                  </span>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                    Datos Físicos
-                  </h3>
+              {/* Right Column - Tabs */}
+              <div className="bg-white dark:bg-card-dark rounded-2xl shadow-card border border-gray-200 dark:border-gray-700 overflow-hidden">
+                <div className="flex border-b border-gray-200 dark:border-gray-700">
+                  {TABS.map((tab) => (
+                    <button
+                      key={tab.key}
+                      onClick={() => setActiveTab(tab.key)}
+                      className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-all border-b-2 ${activeTab === tab.key
+                        ? "text-primary border-primary bg-blue-50/50 dark:bg-blue-900/10"
+                        : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
+                        }`}
+                    >
+                      <span className="material-symbols-outlined text-[18px]">
+                        {tab.icon}
+                      </span>
+                      <span className="hidden sm:inline">{tab.label}</span>
+                    </button>
+                  ))}
                 </div>
-                <div className="grid grid-cols-2 gap-4">
-                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                    <span className="material-symbols-outlined text-primary text-[20px] mb-1 block">
-                      monitor_weight
-                    </span>
-                    <p className="text-xs text-gray-500 uppercase font-medium mb-1">
-                      Peso
-                    </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {student.weightKg
-                        ? `${Number(student.weightKg).toFixed(1)} kg`
-                        : "—"}
-                    </p>
-                  </div>
-                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                    <span className="material-symbols-outlined text-primary text-[20px] mb-1 block">
-                      height
-                    </span>
-                    <p className="text-xs text-gray-500 uppercase font-medium mb-1">
-                      Altura
-                    </p>
-                    <p className="text-lg font-bold text-gray-900 dark:text-white">
-                      {student.heightCm ? `${student.heightCm} cm` : "—"}
-                    </p>
-                  </div>
-                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                    <span className="material-symbols-outlined text-primary text-[20px] mb-1 block">
-                      sports
-                    </span>
-                    <p className="text-xs text-gray-500 uppercase font-medium mb-1">
-                      Deporte
-                    </p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white break-words">
-                      {student.sports || "—"}
-                    </p>
-                  </div>
-                  <div className="text-center p-3 bg-gray-50 dark:bg-gray-800/50 rounded-xl">
-                    <span className="material-symbols-outlined text-primary text-[20px] mb-1 block">
-                      trending_up
-                    </span>
-                    <p className="text-xs text-gray-500 uppercase font-medium mb-1">
-                      Nivel
-                    </p>
-                    <p className="text-sm font-semibold text-gray-900 dark:text-white break-words">
-                      {student.trainingExperience
-                        ? EXPERIENCE_LABELS[student.trainingExperience]
-                        : "—"}
-                    </p>
-                  </div>
-                </div>
-              </div>
 
-              {/* Action Buttons */}
-              <div className="bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card border border-gray-200 dark:border-gray-700">
-                <div className="flex items-center gap-2 mb-4">
-                  <span className="material-symbols-outlined text-primary text-[20px]">
-                    settings
-                  </span>
-                  <h3 className="text-base font-bold text-gray-900 dark:text-white">
-                    Acciones
-                  </h3>
-                </div>
-                <div className="space-y-3">
-                  {student.isArchived ? (
-                    <button
-                      onClick={() => setShowUnarchiveModal(true)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-green-50 hover:bg-green-100 dark:bg-green-900/20 dark:hover:bg-green-900/30 text-green-600 dark:text-green-400 font-medium rounded-xl transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">
-                        unarchive
-                      </span>
-                      Desarchivar Alumno
-                    </button>
-                  ) : (
-                    <button
-                      onClick={() => setShowArchiveModal(true)}
-                      className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-gray-100 hover:bg-gray-200 dark:bg-gray-800 dark:hover:bg-gray-700 text-gray-700 dark:text-gray-300 font-medium rounded-xl transition-colors"
-                    >
-                      <span className="material-symbols-outlined text-[20px]">
-                        archive
-                      </span>
-                      Archivar Alumno
-                    </button>
+                <div className="p-6">
+                  {activeTab === "general" && <GeneralTab student={student} />}
+                  {activeTab === "historial" && <HistorialTab plans={plans} />}
+                  {activeTab === "constancia" && studentId && (
+                    <ConstanciaTab studentId={studentId} />
                   )}
-                  <button
-                    onClick={() => setShowDeleteModal(true)}
-                    className="w-full flex items-center justify-center gap-2 px-4 py-2.5 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:hover:bg-red-900/30 text-red-600 dark:text-red-400 font-medium rounded-xl transition-colors"
-                  >
-                    <span className="material-symbols-outlined text-[20px]">
-                      delete
-                    </span>
-                    Eliminar Alumno
-                  </button>
+                  {activeTab === "progreso" && <ProgresoTab studentId={studentId} />}
                 </div>
               </div>
             </div>
-
-            {/* Right Column - Tabs */}
-            <div className="bg-white dark:bg-card-dark rounded-2xl shadow-card border border-gray-200 dark:border-gray-700 overflow-hidden">
-              <div className="flex border-b border-gray-200 dark:border-gray-700">
-                {TABS.map((tab) => (
-                  <button
-                    key={tab.key}
-                    onClick={() => setActiveTab(tab.key)}
-                    className={`flex-1 flex items-center justify-center gap-2 py-3.5 text-sm font-semibold transition-all border-b-2 ${activeTab === tab.key
-                      ? "text-primary border-primary bg-blue-50/50 dark:bg-blue-900/10"
-                      : "text-gray-500 border-transparent hover:text-gray-700 hover:bg-gray-50 dark:hover:bg-gray-800"
-                      }`}
-                  >
-                    <span className="material-symbols-outlined text-[18px]">
-                      {tab.icon}
-                    </span>
-                    <span className="hidden sm:inline">{tab.label}</span>
-                  </button>
-                ))}
-              </div>
-
-              <div className="p-6">
-                {activeTab === "general" && <GeneralTab student={student} />}
-                {activeTab === "historial" && <HistorialTab plans={plans} />}
-                {activeTab === "constancia" && studentId && (
-                  <ConstanciaTab studentId={studentId} />
-                )}
-                {activeTab === "progreso" && <ProgresoTab studentId={studentId} />}
-              </div>
-            </div>
-          </div>
           </div>
         </div>
       </main>

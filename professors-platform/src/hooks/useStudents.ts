@@ -55,7 +55,7 @@ interface AssignmentRow {
   start_date: string;
   end_date: string;
   status: string;
-  training_plans: { title: string; days_per_week: number } | null;
+  training_plans: { title: string; total_days: number; days_per_week: number } | null;
 }
 
 export function useStudents() {
@@ -89,6 +89,12 @@ export function useStudents() {
         (p: ProfileRow) => p.id,
       );
 
+      const todayISO = new Date(
+        Date.now() - new Date().getTimezoneOffset() * 60_000
+      )
+        .toISOString()
+        .slice(0, 10);
+
       // Fetch queries 2 and 3 in parallel (no dependen entre sí)
       const [
         { data: studentDetails, error: detailsError },
@@ -109,11 +115,12 @@ export function useStudents() {
             start_date,
             end_date,
             status,
-            training_plans ( title, days_per_week )
+            training_plans ( title, total_days, days_per_week )
           `,
           )
           .in("student_id", studentIds)
-          .in("status", ["active", "paused"]),
+          .in("status", ["active", "paused"])
+          .gte("end_date", todayISO),
       ]);
 
       if (detailsError) throw detailsError;
@@ -126,6 +133,13 @@ export function useStudents() {
       const assignmentsMap = new Map<string, ActiveAssignment[]>();
       if (assignmentsData) {
         for (const row of assignmentsData as unknown as AssignmentRow[]) {
+          // Frontend guard: double-check end_date hasn't expired
+          if (row.end_date) {
+            const endDate = new Date(row.end_date + "T23:59:59");
+            const now = new Date();
+            if (endDate < now) continue;
+          }
+
           const existing = assignmentsMap.get(row.student_id) || [];
           existing.push({
             plan_id: row.plan_id,
@@ -133,7 +147,7 @@ export function useStudents() {
             start_date: row.start_date,
             end_date: row.end_date,
             status: row.status,
-            days_per_week: row.training_plans?.days_per_week ?? 3,
+            days_per_week: row.training_plans?.total_days ?? row.training_plans?.days_per_week ?? 3,
           });
           assignmentsMap.set(row.student_id, existing);
         }

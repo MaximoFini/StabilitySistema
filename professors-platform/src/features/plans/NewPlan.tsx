@@ -332,11 +332,22 @@ export default function NewPlan() {
   };
 
   const handleAddExercise = () => {
+    const activeDayExercises = exercises.filter((ex) => ex.day_id === activeDay);
+
+    let defaultStageId = stages.length > 0 ? stages[0].id : "";
+    let defaultStageName = stages.length > 0 ? stages[0].name : "";
+
+    if (activeDayExercises.length > 0) {
+      const lastExercise = activeDayExercises[activeDayExercises.length - 1];
+      defaultStageId = lastExercise.stage_id || "";
+      defaultStageName = lastExercise.stage_name || "";
+    }
+
     const newExercise: PlanExercise = {
       id: Date.now().toString(),
       day_id: activeDay,
-      stage_id: stages.length > 0 ? stages[0].id : "",
-      stage_name: stages.length > 0 ? stages[0].name : "",
+      stage_id: defaultStageId,
+      stage_name: defaultStageName,
       exercise_name: "",
       series: 3,
       reps: "10",
@@ -446,19 +457,19 @@ export default function NewPlan() {
         durationWeeks: formData.durationWeeks,
       };
 
-      const result =
-        isEditMode && planId
-          ? await updatePlan(planId, planPayload)
-          : await savePlan(planPayload);
+      const targetPlanId = isEditMode && planId ? planId : formData.overwritePlanId;
+      const result = targetPlanId
+        ? await updatePlan(targetPlanId, planPayload)
+        : await savePlan(planPayload);
 
       if (result.success) {
         setSavedPlanId(result.planId!);
         // Mostrar solo el título del toast según el modo (sin descripción)
         toast.success(
-          isEditMode ? "Plan actualizado" : "Plan guardado en biblioteca",
+          targetPlanId ? "Plan actualizado" : "Plan guardado en biblioteca",
         );
         setIsSaveModalOpen(false);
-        if (isEditMode) {
+        if (targetPlanId) {
           navigate("/biblioteca");
         }
       } else {
@@ -649,11 +660,10 @@ export default function NewPlan() {
               )}
               <button
                 onClick={handleOpenSaveModal}
-                className={`flex items-center justify-center rounded-lg h-9 px-5 font-bold transition-colors text-sm shadow-sm ${
-                  isEditMode
-                    ? "bg-primary text-white hover:bg-primary/90"
-                    : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
-                }`}
+                className={`flex items-center justify-center rounded-lg h-9 px-5 font-bold transition-colors text-sm shadow-sm ${isEditMode
+                  ? "bg-primary text-white hover:bg-primary/90"
+                  : "bg-white border border-gray-300 text-gray-700 hover:bg-gray-50"
+                  }`}
               >
                 <span className="material-symbols-outlined text-lg mr-2">
                   {isEditMode ? "sync" : "save"}
@@ -685,11 +695,10 @@ export default function NewPlan() {
           </div>
           {isEditMode && (
             <div
-              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium mb-2 ${
-                editAssignedCount > 0
-                  ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
-                  : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
-              }`}
+              className={`flex items-center gap-2 px-3 py-2 rounded-lg text-xs font-medium mb-2 ${editAssignedCount > 0
+                ? "bg-amber-50 dark:bg-amber-900/20 text-amber-700 dark:text-amber-300 border border-amber-200 dark:border-amber-800"
+                : "bg-blue-50 dark:bg-blue-900/20 text-blue-700 dark:text-blue-300 border border-blue-200 dark:border-blue-800"
+                }`}
             >
               <span className="material-symbols-outlined text-[16px]">
                 {editAssignedCount > 0 ? "warning" : "edit_note"}
@@ -728,11 +737,10 @@ export default function NewPlan() {
               <div key={day.id} className="relative group">
                 <button
                   onClick={() => setActiveDay(day.id)}
-                  className={`px-6 py-2.5 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${
-                    activeDay === day.id
-                      ? "border-primary text-primary bg-white dark:bg-[#1a202c] font-bold"
-                      : "border-transparent text-[#5e758d] hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
-                  }`}
+                  className={`px-6 py-2.5 border-b-2 font-medium text-sm transition-colors whitespace-nowrap ${activeDay === day.id
+                    ? "border-primary text-primary bg-white dark:bg-[#1a202c] font-bold"
+                    : "border-transparent text-[#5e758d] hover:text-gray-800 dark:hover:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-800"
+                    }`}
                 >
                   {day.name}
                 </button>
@@ -879,6 +887,7 @@ export default function NewPlan() {
           startDate,
           endDate,
         }}
+        currentPlanId={savedPlanId || planId}
       />
       <ConfirmActionModal
         isOpen={isDeleteDayModalOpen}

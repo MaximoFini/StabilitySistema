@@ -165,6 +165,7 @@ export default function StudentsList() {
                 return (
                   <div
                     key={student.id}
+                    onClick={() => navigate(`/alumno/${student.id}`)}
                     className={`relative group bg-white dark:bg-card-dark rounded-2xl p-6 shadow-card transition-all duration-300 border flex flex-col items-center text-center cursor-pointer ${isArchived
                       ? "opacity-60 border-gray-300 dark:border-gray-600 hover:opacity-80"
                       : "border-transparent hover:border-blue-100 dark:hover:border-blue-900/30 hover:shadow-lg"
@@ -198,6 +199,25 @@ export default function StudentsList() {
                         student.primaryGoal
                       )}
                     </p>
+
+                    {/* Plan Status */}
+                    <div className="mb-4 w-full flex justify-center">
+                      {!student.activeAssignments || student.activeAssignments.length === 0 ? (
+                        <div className="flex items-center gap-1.5 text-amber-600 dark:text-amber-400 bg-amber-50 dark:bg-amber-900/20 px-2.5 py-1 rounded-lg border border-amber-200 dark:border-amber-800">
+                          <span className="material-symbols-outlined text-[16px]">
+                            assignment_late
+                          </span>
+                          <span className="text-xs font-semibold">Sin plan activo</span>
+                        </div>
+                      ) : (
+                        <div className="flex flex-col items-center">
+                          <span className="text-[11px] font-semibold tracking-wider text-gray-500 dark:text-gray-400 uppercase">Plan Actual</span>
+                          <span className="text-sm font-medium text-gray-900 dark:text-white truncate max-w-[180px]" title={student.activeAssignments[0].plan_title}>
+                            {student.activeAssignments[0].plan_title}
+                          </span>
+                        </div>
+                      )}
+                    </div>
 
                     <div className="flex flex-col gap-2 mb-6 min-h-[32px]">
                       {/* Low Attendance Alert */}

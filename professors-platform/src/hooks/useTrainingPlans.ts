@@ -118,8 +118,7 @@ export function useTrainingPlans() {
         ) + 1;
       const calculatedWeeks = Math.ceil(totalDaysInPeriod / 7);
       const totalWeeks = planData.durationWeeks ?? calculatedWeeks;
-      const daysPerWeek =
-        planData.daysPerWeek ?? Math.ceil(totalDays / totalWeeks);
+      const daysPerWeek = planData.daysPerWeek ?? totalDays;
       console.log(
         "[savePlan] duration_weeks:",
         totalWeeks,
@@ -242,8 +241,7 @@ export function useTrainingPlans() {
         ) + 1;
       const calculatedWeeks = Math.ceil(totalDaysInPeriod / 7);
       const totalWeeks = planData.durationWeeks ?? calculatedWeeks;
-      const daysPerWeek =
-        planData.daysPerWeek ?? Math.ceil(totalDays / totalWeeks);
+      const daysPerWeek = planData.daysPerWeek ?? totalDays;
       console.log(
         "[updatePlan] duration_weeks:",
         totalWeeks,
@@ -632,9 +630,9 @@ export function useTrainingPlans() {
 
       // Si encuentra al menos un registro, frenamos todo
       if (existingAssignments && existingAssignments.length > 0) {
-        return { 
-          success: false, 
-          error: "Uno o más alumnos seleccionados ya tienen este plan asignado." 
+        return {
+          success: false,
+          error: "Uno o más alumnos seleccionados ya tienen este plan asignado."
         };
       }
       // -------------------------------------------------------------

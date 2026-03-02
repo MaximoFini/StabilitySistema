@@ -48,7 +48,7 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 max-w-4xl w-full">
           <div className="text-center">
             <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-primary mb-4"></div>
@@ -63,7 +63,7 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
 
   if (error || !plan) {
     return (
-      <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+      <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
         <div className="bg-white dark:bg-slate-900 rounded-2xl p-8 max-w-4xl w-full">
           <div className="text-center">
             <span className="material-symbols-outlined text-6xl text-red-400 mb-4">
@@ -96,7 +96,7 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
+    <div className="fixed inset-0 z-[60] bg-black/50 backdrop-blur-sm flex items-center justify-center p-4">
       <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-6xl w-full max-h-[90vh] overflow-hidden flex flex-col">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-slate-200 dark:border-slate-700">
@@ -106,7 +106,7 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
             </h2>
             <p className="text-sm text-slate-500 dark:text-slate-400">
               {formatDate(plan.start_date)} - {formatDate(plan.end_date)} ·{" "}
-              {plan.total_weeks} semanas · {plan.days_per_week} días/sem
+              {plan.total_weeks} semanas · {plan.total_days} días/sem
             </p>
           </div>
           <button
@@ -123,11 +123,10 @@ export default function PlanPreview({ planId, onClose }: PlanPreviewProps) {
             <button
               key={day.id}
               onClick={() => setActiveDay(index)}
-              className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${
-                activeDay === index
-                  ? "bg-primary text-white"
-                  : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
-              }`}
+              className={`px-6 py-3 text-sm font-medium rounded-t-lg transition-colors whitespace-nowrap ${activeDay === index
+                ? "bg-primary text-white"
+                : "text-slate-600 dark:text-slate-400 hover:bg-slate-100 dark:hover:bg-slate-800"
+                }`}
             >
               {day.day_name}
             </button>
