@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/features/auth/store/authStore";
+import { useDataCacheStore } from "@/store/dataCacheStore";
 import type { SeriesLog } from "@/features/training/types";
 
 export interface WorkoutCompletion {
@@ -36,17 +37,27 @@ interface UseWorkoutCompletionsReturn {
 
 export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
   const professor = useAuthStore((s) => s.professor);
-  const [completions, setCompletions] = useState<WorkoutCompletion[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const workoutCompletions = useDataCacheStore((s) => s.workoutCompletions);
+  const loadedWorkoutCompletions = useDataCacheStore((s) => s.loadedWorkoutCompletions);
+  const setWorkoutCompletionsData = useDataCacheStore((s) => s.setWorkoutCompletionsData);
+  const invalidateWorkoutCompletions = useDataCacheStore((s) => s.invalidateWorkoutCompletions);
+
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
-    if (!professor?.id) {
-      setLoading(false);
+  const studentId = professor?.id;
+  const isLoaded = studentId ? !!loadedWorkoutCompletions[studentId] : false;
+
+  const fetch = useCallback(async (force = false) => {
+    if (!studentId) {
+      setIsFetching(false);
       return;
     }
 
-    setLoading(true);
+    if (isLoaded && !force) return;
+
+    setIsFetching(true);
     setError(null);
 
     try {
@@ -63,7 +74,8 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
         return;
       }
 
-      setCompletions(
+      setWorkoutCompletionsData(
+        studentId,
         (data ?? []).map((row) => ({
           id: row.id,
           assignmentId: row.assignment_id,
@@ -76,9 +88,9 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");
     } finally {
-      setLoading(false);
+      setIsFetching(false);
     }
-  }, [professor?.id]);
+  }, [studentId, isLoaded, setWorkoutCompletionsData]);
 
   useEffect(() => {
     fetch();
@@ -184,8 +196,15 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
 
         if (updateErr) return { success: false, error: updateErr.message };
 
-        // Refresh local state
-        await fetch();
+        // Invalidar caché general que dependa de esto: constancias, assignment, profiles (estadísticas)
+        invalidateWorkoutCompletions(professor.id);
+
+        const dataStore = useDataCacheStore.getState();
+        dataStore.invalidateActiveAssignment(professor.id);
+        dataStore.invalidateStudentConstancia(professor.id);
+
+        // Refresh local state local state (for completions)
+        await fetch(true);
 
         return { success: true };
       } catch (err) {
@@ -198,9 +217,13 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
     [professor?.id, fetch],
   );
 
+  // Completions cached state
+  const completions = studentId ? workoutCompletions[studentId] || [] : [];
+  const loading = isFetching && !isLoaded;
+
   // Build a Set of 'YYYY-MM-DD' strings for completed dates
   const completedDates: Set<string> = new Set(
-    completions.map((c) => c.completedAt.slice(0, 10)),
+    completions.map((c: WorkoutCompletion) => c.completedAt.slice(0, 10)),
   );
 
   return {
@@ -209,6 +232,9 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
     loading,
     error,
     saveCompletion,
-    refetch: fetch,
+    refetch: () => {
+      if (studentId) invalidateWorkoutCompletions(studentId);
+      fetch(true);
+    },
   };
 }

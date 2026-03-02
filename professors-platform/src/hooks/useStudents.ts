@@ -1,6 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "../lib/supabase";
+import { useEffect } from "react";
 import { useAuthStore } from "../features/auth/store/authStore";
+import { useDataCacheStore } from "../store/dataCacheStore";
 
 interface ActiveAssignment {
   plan_id: string;
@@ -32,171 +32,38 @@ interface AuthState {
   professor: { id: string } | null;
 }
 
-interface ProfileRow {
-  id: string;
-  first_name: string;
-  last_name: string;
-}
-
-interface StudentDetailRow {
-  id: string;
-  profile_image_url: string | null;
-  training_experience: string;
-  primary_goal: string;
-  activity_level: string;
-  phone: string | null;
-  instagram: string | null;
-  is_archived: boolean;
-}
-
-interface AssignmentRow {
-  student_id: string;
-  plan_id: string;
-  start_date: string;
-  end_date: string;
-  status: string;
-  training_plans: { title: string; total_days: number; days_per_week: number } | null;
-}
-
 export function useStudents() {
-  const [students, setStudents] = useState<Student[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const professor = useAuthStore((state: AuthState) => state.professor);
 
-  const loadStudents = useCallback(async () => {
-    if (!professor) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch students from profiles table (role = 'student')
-      const { data: profilesData, error: profilesError } = await supabase
-        .from("profiles")
-        .select("id, first_name, last_name")
-        .eq("role", "student")
-        .order("created_at", { ascending: false });
-
-      if (profilesError) throw profilesError;
-      if (!profilesData || profilesData.length === 0) {
-        setStudents([]);
-        return;
-      }
-
-      // Get all student IDs
-      const studentIds = (profilesData as ProfileRow[]).map(
-        (p: ProfileRow) => p.id,
-      );
-
-      const todayISO = new Date(
-        Date.now() - new Date().getTimezoneOffset() * 60_000
-      )
-        .toISOString()
-        .slice(0, 10);
-
-      // Fetch queries 2 and 3 in parallel (no dependen entre sí)
-      const [
-        { data: studentDetails, error: detailsError },
-        { data: assignmentsData, error: assignmentsError },
-      ] = await Promise.all([
-        supabase
-          .from("student_profiles")
-          .select(
-            "id, profile_image_url, training_experience, primary_goal, activity_level, phone, instagram, is_archived",
-          )
-          .in("id", studentIds),
-        supabase
-          .from("training_plan_assignments")
-          .select(
-            `
-            student_id,
-            plan_id,
-            start_date,
-            end_date,
-            status,
-            training_plans ( title, total_days, days_per_week )
-          `,
-          )
-          .in("student_id", studentIds)
-          .in("status", ["active", "paused"])
-          .gte("end_date", todayISO),
-      ]);
-
-      if (detailsError) throw detailsError;
-
-      if (assignmentsError) {
-        console.warn("Could not load assignments:", assignmentsError);
-      }
-
-      // Build assignments map: studentId -> assignments[]
-      const assignmentsMap = new Map<string, ActiveAssignment[]>();
-      if (assignmentsData) {
-        for (const row of assignmentsData as unknown as AssignmentRow[]) {
-          // Frontend guard: double-check end_date hasn't expired
-          if (row.end_date) {
-            const endDate = new Date(row.end_date + "T23:59:59");
-            const now = new Date();
-            if (endDate < now) continue;
-          }
-
-          const existing = assignmentsMap.get(row.student_id) || [];
-          existing.push({
-            plan_id: row.plan_id,
-            plan_title: row.training_plans?.title || "Plan sin nombre",
-            start_date: row.start_date,
-            end_date: row.end_date,
-            status: row.status,
-            days_per_week: row.training_plans?.total_days ?? row.training_plans?.days_per_week ?? 3,
-          });
-          assignmentsMap.set(row.student_id, existing);
-        }
-      }
-
-      // Create a map for quick lookup
-      const detailsMap = new Map(
-        ((studentDetails as StudentDetailRow[]) || []).map(
-          (d: StudentDetailRow) => [d.id, d],
-        ),
-      );
-
-      // Combine data
-      const transformedStudents: Student[] = (profilesData as ProfileRow[])
-        .filter((profile: ProfileRow) => detailsMap.has(profile.id))
-        .map((profile: ProfileRow) => {
-          const details = detailsMap.get(profile.id);
-          return {
-            id: profile.id,
-            fullName: `${profile.first_name} ${profile.last_name}`,
-            profileImageUrl: details?.profile_image_url || null,
-            trainingLevel: details?.training_experience || "beginner",
-            primaryGoal: details?.primary_goal || "health",
-            activityLevel: details?.activity_level || "moderate",
-            phone: details?.phone || undefined,
-            instagram: details?.instagram || undefined,
-            activeAssignments: assignmentsMap.get(profile.id) || [],
-            isArchived: details?.is_archived || false,
-          };
-        });
-
-      setStudents(transformedStudents);
-    } catch (err) {
-      console.error("Error loading students:", err);
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  }, [professor]);
+  // Selectors — each is an atomic primitive to avoid unnecessary re-renders
+  const students = useDataCacheStore((s) => s.students);
+  const isLoaded = useDataCacheStore((s) => s.isStudentsLoaded);
+  const isLoading = useDataCacheStore((s) => s.isStudentsLoading);
+  const fetchStudents = useDataCacheStore((s) => s.fetchStudents);
+  const reloadStudents = useDataCacheStore((s) => s.reloadStudents);
 
   useEffect(() => {
-    loadStudents();
-  }, [loadStudents]);
+    if (!professor) return;
+    // fetchStudents guards internally against double-fetching
+    fetchStudents(professor.id);
+  }, [professor, fetchStudents, isLoaded]);
+
+  /**
+   * reload() invalida la caché y fuerza un re-fetch inmediato.
+   * Usar tras crear / editar / eliminar un estudiante.
+   */
+  const reload = () => {
+    if (!professor) return;
+    reloadStudents();
+    // El useEffect se disparará en el siguiente tick porque isLoaded cambió
+    fetchStudents(professor.id);
+  };
 
   return {
     students,
-    loading,
-    error,
-    reload: loadStudents,
+    loading: isLoading && !isLoaded,
+    error: null,
+    reload,
   };
 }
 

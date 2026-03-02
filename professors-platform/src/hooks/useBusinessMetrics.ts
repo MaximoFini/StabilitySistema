@@ -1,4 +1,5 @@
-import { useState, useEffect, useCallback } from "react";
+import { useEffect } from "react";
+import { create } from "zustand";
 import { supabase } from "../lib/supabase";
 
 // --- Types ---
@@ -107,16 +108,26 @@ function buildGenderDistribution(
   return result;
 }
 
-// --- Hook ---
+interface MetricsStore {
+  metrics: BusinessMetrics | null;
+  isLoading: boolean;
+  isLoaded: boolean;
+  error: string | null;
+  fetchMetrics: () => Promise<void>;
+  reloadMetrics: () => void;
+}
 
-export function useBusinessMetrics() {
-  const [metrics, setMetrics] = useState<BusinessMetrics | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+const useMetricsStore = create<MetricsStore>((set, get) => ({
+  metrics: null,
+  isLoading: false,
+  isLoaded: false,
+  error: null,
 
-  const load = useCallback(async () => {
-    setIsLoading(true);
-    setError(null);
+  fetchMetrics: async () => {
+    const state = get();
+    if (state.isLoaded || state.isLoading) return;
+
+    set({ isLoading: true, error: null });
 
     try {
       // Traemos TODOS los alumnos (activos + archivados) con archived_at para retención
@@ -276,27 +287,53 @@ export function useBusinessMetrics() {
         return { month: MONTH_LABELS[monthIndex], count };
       });
 
-      setMetrics({
-        activeStudents: activeStudentsCount,
-        newThisMonth: newThisMonthTotal,
-        growthPercent,
-        averageAge,
-        retentionPercent,
-        monthlyRegistrations,
-        goalDistribution,
-        maxGoalCount,
-        genderDistribution: genderDistributionResult,
-        totalStudentsForGender,
+      set({
+        metrics: {
+          activeStudents: activeStudentsCount,
+          newThisMonth: newThisMonthTotal,
+          growthPercent,
+          averageAge,
+          retentionPercent,
+          monthlyRegistrations,
+          goalDistribution,
+          maxGoalCount,
+          genderDistribution: genderDistributionResult,
+          totalStudentsForGender,
+        },
+        isLoaded: true,
       });
     } catch (err) {
       console.error("[useBusinessMetrics] Error loading metrics:", err);
-      setError(err instanceof Error ? err.message : "Error al cargar métricas");
+      set({ error: err instanceof Error ? err.message : "Error al cargar métricas" });
     } finally {
-      setIsLoading(false);
+      set({ isLoading: false });
     }
-  }, []);
+  },
 
-  useEffect(() => { load(); }, [load]);
+  reloadMetrics: () => set({ isLoaded: false, metrics: null }),
+}));
 
-  return { metrics, isLoading, error, reload: load };
+// --- Hook ---
+
+export function useBusinessMetrics() {
+  const metrics = useMetricsStore((s) => s.metrics);
+  const isLoading = useMetricsStore((s) => s.isLoading);
+  const isLoaded = useMetricsStore((s) => s.isLoaded);
+  const error = useMetricsStore((s) => s.error);
+  const fetchMetrics = useMetricsStore((s) => s.fetchMetrics);
+  const reloadMetrics = useMetricsStore((s) => s.reloadMetrics);
+
+  useEffect(() => {
+    fetchMetrics();
+  }, [fetchMetrics, isLoaded]);
+
+  return {
+    metrics,
+    isLoading: isLoading && !isLoaded,
+    error,
+    reload: () => {
+      reloadMetrics();
+      fetchMetrics();
+    },
+  };
 }

@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { useDataCacheStore } from "@/store/dataCacheStore";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -63,17 +64,25 @@ export const MOOD_EMOJIS: Record<string, string> = {
 // ── Hook ───────────────────────────────────────────────────────────────────
 
 export function useStudentConstancia(studentId: string | undefined) {
-  const [plans, setPlans] = useState<PlanConstancia[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const studentConstancias = useDataCacheStore((s) => s.studentConstancias);
+  const loadedStudentConstancias = useDataCacheStore((s) => s.loadedStudentConstancias);
+  const setStudentConstanciaData = useDataCacheStore((s) => s.setStudentConstanciaData);
+  const invalidateStudentConstancia = useDataCacheStore((s) => s.invalidateStudentConstancia);
+
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const isLoaded = studentId ? !!loadedStudentConstancias[studentId] : false;
+
+  const load = useCallback(async (force = false) => {
     if (!studentId) {
-      setIsLoading(false);
+      setIsFetching(false);
       return;
     }
 
-    setIsLoading(true);
+    if (isLoaded && !force) return;
+
+    setIsFetching(true);
     setError(null);
 
     try {
@@ -96,8 +105,8 @@ export function useStudentConstancia(studentId: string | undefined) {
 
       if (assignErr) throw assignErr;
       if (!assignments || assignments.length === 0) {
-        setPlans([]);
-        setIsLoading(false);
+        setStudentConstanciaData(studentId, []);
+        setIsFetching(false);
         return;
       }
 
@@ -145,18 +154,29 @@ export function useStudentConstancia(studentId: string | undefined) {
         };
       });
 
-      setPlans(result);
+      setStudentConstanciaData(studentId, result);
     } catch (err) {
       console.error("[useStudentConstancia]", err);
       setError(err instanceof Error ? err.message : "Error al cargar datos");
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
     }
-  }, [studentId]);
+  }, [studentId, isLoaded, setStudentConstanciaData]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  return { plans, isLoading, error, reload: load };
+  const plans = studentId ? studentConstancias[studentId] || [] : [];
+  const isLoading = isFetching && !isLoaded;
+
+  return {
+    plans,
+    isLoading,
+    error,
+    reload: () => {
+      if (studentId) invalidateStudentConstancia(studentId);
+      load(true);
+    },
+  };
 }

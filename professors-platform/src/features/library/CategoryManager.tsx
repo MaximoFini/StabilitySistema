@@ -1,15 +1,8 @@
-import { useState, useEffect } from "react"
+import { useState } from "react"
 import { toast } from "sonner"
 import { supabase } from "@/lib/supabase"
 import { cn } from "@/lib/utils"
-
-interface Category {
-    id: string
-    name: string
-    color: string
-    created_at: string
-    updated_at: string
-}
+import { useCategories, type ExerciseCategory } from "@/hooks/useCategories"
 
 interface CategoryManagerProps {
     isOpen: boolean
@@ -23,8 +16,8 @@ const COLOR_OPTIONS = [
 ]
 
 export default function CategoryManager({ isOpen, onClose, onCategoryCreated }: CategoryManagerProps) {
-    const [categories, setCategories] = useState<Category[]>([])
-    const [isLoading, setIsLoading] = useState(false)
+    const { categories, isLoading: isLoadingCats, reload } = useCategories()
+    const [isLoadingMut, setIsLoadingMut] = useState(false)
     const [isCreating, setIsCreating] = useState(false)
     const [editingId, setEditingId] = useState<string | null>(null)
 
@@ -34,29 +27,9 @@ export default function CategoryManager({ isOpen, onClose, onCategoryCreated }: 
         color: '#3B82F6'
     })
 
-    useEffect(() => {
-        if (isOpen) {
-            fetchCategories()
-        }
-    }, [isOpen])
-
-    const fetchCategories = async () => {
-        setIsLoading(true)
-        try {
-            const { data, error } = await supabase
-                .from('exercise_categories')
-                .select('*')
-                .order('name', { ascending: true })
-
-            if (error) throw error
-            setCategories(data || [])
-        } catch (error) {
-            console.error('Error fetching categories:', error)
-            toast.error('Error al cargar las categorías')
-        } finally {
-            setIsLoading(false)
-        }
-    }
+    // Ya no es necesario el fetchCategories local porque useCategories se encarga.
+    // Solo mostramos loading spinner si isLoadingCats o isLoadingMut son true
+    const isLoading = isLoadingCats || isLoadingMut
 
     const handleSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
@@ -66,7 +39,7 @@ export default function CategoryManager({ isOpen, onClose, onCategoryCreated }: 
             return
         }
 
-        setIsLoading(true)
+        setIsLoadingMut(true)
         try {
             if (editingId) {
                 // Update existing category
@@ -98,7 +71,7 @@ export default function CategoryManager({ isOpen, onClose, onCategoryCreated }: 
             setFormData({ name: '', color: '#3B82F6' })
             setEditingId(null)
             setIsCreating(false)
-            fetchCategories()
+            reload() // <-- Invalida caché para que otros componentes se enteren
         } catch (error: any) {
             console.error('Error saving category:', error)
             if (error.code === '23505') {
@@ -107,11 +80,11 @@ export default function CategoryManager({ isOpen, onClose, onCategoryCreated }: 
                 toast.error('Error al guardar la categoría')
             }
         } finally {
-            setIsLoading(false)
+            setIsLoadingMut(false)
         }
     }
 
-    const handleEdit = (category: Category) => {
+    const handleEdit = (category: ExerciseCategory) => {
         setFormData({
             name: category.name,
             color: category.color
@@ -125,7 +98,7 @@ export default function CategoryManager({ isOpen, onClose, onCategoryCreated }: 
             return
         }
 
-        setIsLoading(true)
+        setIsLoadingMut(true)
         try {
             const { error } = await supabase
                 .from('exercise_categories')
@@ -134,12 +107,12 @@ export default function CategoryManager({ isOpen, onClose, onCategoryCreated }: 
 
             if (error) throw error
             toast.success('Categoría eliminada')
-            fetchCategories()
+            reload() // <-- Invalida y recarga
         } catch (error) {
             console.error('Error deleting category:', error)
             toast.error('Error al eliminar la categoría')
         } finally {
-            setIsLoading(false)
+            setIsLoadingMut(false)
         }
     }
 

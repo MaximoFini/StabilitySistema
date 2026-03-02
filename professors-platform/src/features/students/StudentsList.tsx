@@ -62,8 +62,8 @@ export default function StudentsList() {
 
           if (student.activeAssignments) {
             for (const assignment of student.activeAssignments) {
-              const assignStart = new Date(assignment.start_date);
-              const assignEnd = new Date(assignment.end_date);
+              const assignStart = new Date(assignment.start_date + "T00:00:00");
+              const assignEnd = new Date(assignment.end_date + "T00:00:00");
 
               if (assignEnd < monthStart || assignStart > endDate) continue;
 

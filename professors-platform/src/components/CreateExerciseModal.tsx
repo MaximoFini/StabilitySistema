@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useEffect } from "react";
 import { createPortal } from "react-dom";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import * as z from "zod";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/features/auth/store/authStore";
+import { useCategories } from "@/hooks/useCategories";
 import { toast } from "sonner";
 import type { LibraryExercise } from "@/features/training/store/trainingStore";
 
@@ -17,11 +18,7 @@ const exerciseSchema = z.object({
 
 type ExerciseFormValues = z.infer<typeof exerciseSchema>;
 
-interface Category {
-    id: string;
-    name: string;
-    color: string;
-}
+
 
 interface CreateExerciseModalProps {
     isOpen: boolean;
@@ -37,8 +34,7 @@ export default function CreateExerciseModal({
     onSuccess,
 }: CreateExerciseModalProps) {
     const { professor } = useAuthStore();
-    const [categories, setCategories] = useState<Category[]>([]);
-    const [isLoadingCats, setIsLoadingCats] = useState(false);
+    const { categories, isLoading: isLoadingCats } = useCategories();
 
     const {
         register,
@@ -63,33 +59,12 @@ export default function CreateExerciseModal({
         }
     }, [isOpen, initialName, setValue]);
 
+    // Pre-select the first category when categories become available
     useEffect(() => {
-        if (isOpen) {
-            fetchCategories();
+        if (categories.length > 0) {
+            setValue("category_id", categories[0].id);
         }
-    }, [isOpen]);
-
-    const fetchCategories = async () => {
-        setIsLoadingCats(true);
-        try {
-            const { data, error } = await supabase
-                .from("exercise_categories")
-                .select("*")
-                .order("name", { ascending: true });
-
-            if (error) throw error;
-            setCategories(data || []);
-
-            if (data && data.length > 0) {
-                setValue("category_id", data[0].id);
-            }
-        } catch (error) {
-            console.error("Error fetching categories:", error);
-            toast.error("Error al cargar las categorías");
-        } finally {
-            setIsLoadingCats(false);
-        }
-    };
+    }, [categories, setValue]);
 
     const onSubmit = async (data: ExerciseFormValues) => {
         if (!professor) {

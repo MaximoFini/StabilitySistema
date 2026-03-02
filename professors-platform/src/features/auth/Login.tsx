@@ -216,6 +216,12 @@ export default function Login() {
                   >
                     Contraseña
                   </Label>
+                  <Link
+                    to="/recuperar-password"
+                    className="text-xs font-medium text-primary hover:text-blue-700 dark:hover:text-blue-400 transition-colors"
+                  >
+                    ¿Olvidaste tu contraseña?
+                  </Link>
                 </div>
                 <div className="relative rounded-md shadow-sm">
                   <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
