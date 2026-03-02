@@ -19,18 +19,43 @@ interface StudentProfileData {
 
 type Section = "personal" | "medical" | "training" | null;
 
+const SESSION_KEY = "training_profile_data";
+
+/** Read cached profile from sessionStorage (survives same-tab navigation). */
+function readCachedProfile(): StudentProfileData | null {
+  try {
+    const raw = sessionStorage.getItem(SESSION_KEY);
+    return raw ? (JSON.parse(raw) as StudentProfileData) : null;
+  } catch {
+    return null;
+  }
+}
+
+/** Persist profile to sessionStorage after a successful fetch. */
+function writeCachedProfile(data: StudentProfileData) {
+  try {
+    sessionStorage.setItem(SESSION_KEY, JSON.stringify(data));
+  } catch {
+    /* ignore quota errors */
+  }
+}
+
 export default function TrainingProfile() {
   const { logout, professor } = useAuthStore();
+
+  // Pre-populate from sessionStorage so there's NEVER a blocking spinner on return visits
   const [profileData, setProfileData] = useState<StudentProfileData | null>(
-    null,
+    () => readCachedProfile(),
   );
-  const [loading, setLoading] = useState(true);
+  // Only show the full-page spinner when we have no cached data at all
+  const [loading, setLoading] = useState<boolean>(() => !readCachedProfile());
   const [expandedSection, setExpandedSection] = useState<Section>(null);
   const [editingSection, setEditingSection] = useState<Section>(null);
   const [formData, setFormData] = useState<Partial<StudentProfileData>>({});
 
   useEffect(() => {
     loadProfileData();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadProfileData = async () => {
@@ -48,7 +73,8 @@ export default function TrainingProfile() {
 
       if (error) throw error;
       if (data) {
-        setProfileData(data);
+        writeCachedProfile(data as StudentProfileData);
+        setProfileData(data as StudentProfileData);
       }
     } catch (error) {
       console.error("Error loading profile:", error);
@@ -148,7 +174,8 @@ export default function TrainingProfile() {
     return translations[exp as keyof typeof translations] || exp;
   };
 
-  if (loading) {
+  // Only block the UI on the very first render (no data yet)
+  if (loading && !profileData) {
     return (
       <div className="flex items-center justify-center min-h-screen">
         <span className="material-symbols-outlined animate-spin text-4xl text-primary">

@@ -245,14 +245,23 @@ export function useTrainingPlans() {
 
       if (planError) throw planError;
 
-      // Sincronizar fechas en las asignaciones de este plan
+      // Sincronizar fechas en las asignaciones de este plan.
+      // También reseteamos completed_days y current_day_number en los assignments
+      // activos: si el coach reprogramó el plan hacia adelante, el progreso
+      // realizado en el período anterior no debe contar.
+      const newStartDate = formatLocalDate(planData.startDate);
+      const newEndDate = formatLocalDate(planData.endDate);
+
       const { error: cascadeError } = await supabase
         .from("training_plan_assignments")
         .update({
-          start_date: formatLocalDate(planData.startDate),
-          end_date: formatLocalDate(planData.endDate),
+          start_date: newStartDate,
+          end_date: newEndDate,
+          completed_days: 0,
+          current_day_number: 1,
         })
-        .eq("plan_id", planId);
+        .eq("plan_id", planId)
+        .eq("status", "active");
 
       if (cascadeError) {
         console.warn("Could not sync training plan assignments:", cascadeError);

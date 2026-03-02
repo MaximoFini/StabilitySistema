@@ -6,6 +6,8 @@ import type { StudentProfile, AssignedPlan } from "@/hooks/useStudentProfile";
 import type { ActiveAssignment } from "@/hooks/useActiveAssignment";
 import type { PlanConstancia } from "@/hooks/useStudentConstancia";
 import type { WorkoutCompletion } from "@/hooks/useWorkoutCompletions";
+import type { ExerciseGroup } from "@/hooks/useExerciseWeightLogs";
+import type { WorkoutDay } from "@/features/training/types";
 
 // ── Types ───────────────────────────────────────────────────────────────────
 
@@ -49,6 +51,13 @@ interface DataCacheState {
     workoutCompletions: Record<string, WorkoutCompletion[]>;
     loadedWorkoutCompletions: Record<string, boolean>;
 
+    exerciseWeightLogs: Record<string, ExerciseGroup[]>;
+    loadedExerciseWeightLogs: Record<string, boolean>;
+
+    // Ejercicios por día (clave: dayId de training_plan_days)
+    dayExercises: Record<string, WorkoutDay>;
+    loadedDayExercises: Record<string, boolean>;
+
     // ── Actions ───────────────────────────────────────────────────────────────
     setStudents: (students: Student[]) => void;
     markStudentsLoaded: () => void;
@@ -77,6 +86,12 @@ interface DataCacheState {
 
     setWorkoutCompletionsData: (id: string, completions: WorkoutCompletion[]) => void;
     invalidateWorkoutCompletions: (id: string) => void;
+
+    setExerciseWeightLogsData: (id: string, groups: ExerciseGroup[]) => void;
+    invalidateExerciseWeightLogs: (id: string) => void;
+
+    setDayExercisesData: (dayId: string, workoutDay: WorkoutDay) => void;
+    invalidateDayExercises: (dayId: string) => void;
 
     // Limpia todo (e.g., al hacer logout)
     clearAll: () => void;
@@ -120,6 +135,12 @@ export const useDataCacheStore = create<DataCacheState>()((set, get) => ({
 
     workoutCompletions: {},
     loadedWorkoutCompletions: {},
+
+    exerciseWeightLogs: {},
+    loadedExerciseWeightLogs: {},
+
+    dayExercises: {},
+    loadedDayExercises: {},
 
     // ── Students actions ───────────────────────────────────────────────────────
     setStudents: (students) => set({ students }),
@@ -173,6 +194,22 @@ export const useDataCacheStore = create<DataCacheState>()((set, get) => ({
         loadedWorkoutCompletions: { ...s.loadedWorkoutCompletions, [id]: false }
     })),
 
+    setExerciseWeightLogsData: (id, groups) => set((s) => ({
+        exerciseWeightLogs: { ...s.exerciseWeightLogs, [id]: groups },
+        loadedExerciseWeightLogs: { ...s.loadedExerciseWeightLogs, [id]: true }
+    })),
+    invalidateExerciseWeightLogs: (id) => set((s) => ({
+        loadedExerciseWeightLogs: { ...s.loadedExerciseWeightLogs, [id]: false }
+    })),
+
+    setDayExercisesData: (dayId, workoutDay) => set((s) => ({
+        dayExercises: { ...s.dayExercises, [dayId]: workoutDay },
+        loadedDayExercises: { ...s.loadedDayExercises, [dayId]: true }
+    })),
+    invalidateDayExercises: (dayId) => set((s) => ({
+        loadedDayExercises: { ...s.loadedDayExercises, [dayId]: false }
+    })),
+
     // ── Clear all (logout) ─────────────────────────────────────────────────────
     clearAll: () =>
         set({
@@ -192,6 +229,10 @@ export const useDataCacheStore = create<DataCacheState>()((set, get) => ({
             loadedStudentConstancias: {},
             workoutCompletions: {},
             loadedWorkoutCompletions: {},
+            exerciseWeightLogs: {},
+            loadedExerciseWeightLogs: {},
+            dayExercises: {},
+            loadedDayExercises: {},
         }),
 
     // ── Internal fetchers ──────────────────────────────────────────────────────

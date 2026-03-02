@@ -34,10 +34,33 @@ export default function TrainingHome() {
   const availableDays = assignment?.availableDays ?? [];
   const daysPerWeek = assignment?.daysPerWeek ?? 0;
 
-  // Build a Set of completed day numbers for this assignment
+  // Build a Set of completed day numbers for this assignment.
+  // Only count completions whose LOCAL calendar date is >= the plan's startDate.
+  // We use local date extraction (getFullYear/getMonth/getDate) because:
+  //   - completed_at is stored in UTC in Supabase (e.g. "2026-03-02T01:26:16Z")
+  //   - In Argentina (UTC-3) that's "2026-03-01 22:26" → local date "2026-03-01"
+  //   - start_date is already a local date "2026-03-02"
+  //   - "2026-03-01" < "2026-03-02" → correctly excluded ✓
+  const toLocalDateStr = (iso: string) => {
+    const d = new Date(iso);
+    return (
+      d.getFullYear() +
+      "-" +
+      String(d.getMonth() + 1).padStart(2, "0") +
+      "-" +
+      String(d.getDate()).padStart(2, "0")
+    );
+  };
+
   const completedDayNumbers = new Set(
     completions
-      .filter((c) => c.assignmentId === assignment?.assignmentId)
+      .filter((c) => {
+        if (c.assignmentId !== assignment?.assignmentId) return false;
+        if (!assignment?.startDate) return true;
+        const startDay = assignment.startDate.slice(0, 10);
+        const completedLocalDay = toLocalDateStr(c.completedAt);
+        return completedLocalDay >= startDay;
+      })
       .map((c) => c.dayNumber),
   );
 

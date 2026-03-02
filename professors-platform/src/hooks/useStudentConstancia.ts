@@ -20,6 +20,7 @@ export interface PlanConstancia {
   startDate: string;
   endDate: string;
   status: string;
+  daysPerWeek: number;
   sessions: TrainingSession[];
 }
 
@@ -80,10 +81,10 @@ export function useStudentConstancia(studentId: string | undefined) {
       return;
     }
 
-    if (isLoaded && !force) return;
-
+    // SWR: always revalidate. Only show blocking spinner on first load.
     setIsFetching(true);
     setError(null);
+    void force;
 
     try {
       // Fetch all assignments for this student with completions
@@ -96,7 +97,9 @@ export function useStudentConstancia(studentId: string | undefined) {
           end_date,
           status,
           training_plans (
-            title
+            title,
+            days_per_week,
+            total_days
           )
         `,
         )
@@ -142,7 +145,7 @@ export function useStudentConstancia(studentId: string | undefined) {
       const result: PlanConstancia[] = assignments.map((a) => {
         const tp = Array.isArray(a.training_plans)
           ? a.training_plans[0]
-          : (a.training_plans as { title?: string } | null);
+          : (a.training_plans as { title?: string; days_per_week?: number; total_days?: number } | null);
 
         return {
           assignmentId: a.id,
@@ -150,6 +153,7 @@ export function useStudentConstancia(studentId: string | undefined) {
           startDate: a.start_date,
           endDate: a.end_date,
           status: a.status,
+          daysPerWeek: tp?.total_days ?? tp?.days_per_week ?? 3,
           sessions: completionsByAssignment[a.id] ?? [],
         };
       });

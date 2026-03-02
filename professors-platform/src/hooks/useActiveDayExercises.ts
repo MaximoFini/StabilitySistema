@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
+import { useDataCacheStore } from "@/store/dataCacheStore";
 import type {
   WorkoutDay,
   Exercise,
@@ -25,54 +26,50 @@ function parsePauseToSeconds(pause: string | null | undefined): number {
   return 60;
 }
 
-
 export function useActiveDayExercises(
   dayId: string | null,
 ): UseActiveDayExercisesReturn {
-  const [workoutDay, setWorkoutDay] = useState<WorkoutDay | null>(null);
-  const [loading, setLoading] = useState(false);
+  const dayExercises = useDataCacheStore((s) => s.dayExercises);
+  const loadedDayExercises = useDataCacheStore((s) => s.loadedDayExercises);
+  const setDayExercisesData = useDataCacheStore((s) => s.setDayExercisesData);
+
+  // Track in-flight requests to avoid duplicate fetches for the same dayId
+  const fetchingRef = useRef<Set<string>>(new Set());
   const [error, setError] = useState<string | null>(null);
 
-  useEffect(() => {
-    if (!dayId) {
-      setWorkoutDay(null);
-      return;
-    }
+  const fetchDay = useCallback(
+    async (id: string) => {
+      // Dedup: skip if already fetching this dayId
+      if (fetchingRef.current.has(id)) return;
+      fetchingRef.current.add(id);
+      setError(null);
 
-    let cancelled = false;
-    setLoading(true);
-    setError(null);
-
-    async function load() {
       try {
-        // Single query with join — day metadata + exercises in one round-trip
-        const { data: dayData, error: dayErr } = await supabase
-          .from("training_plan_days")
-          .select(
-            "id, day_number, day_name"
-          )
-          .eq("id", dayId!)
-          .single();
+        const [{ data: dayData, error: dayErr }, { data: exercises, error: exErr }] =
+          await Promise.all([
+            supabase
+              .from("training_plan_days")
+              .select("id, day_number, day_name")
+              .eq("id", id)
+              .single(),
+            supabase
+              .from("training_plan_exercises")
+              .select(
+                "id, exercise_name, series, reps, pause, stage_name, notes, coach_instructions, video_url, display_order, write_weight, carga",
+              )
+              .eq("day_id", id)
+              .order("display_order", { ascending: true }),
+          ]);
 
         if (dayErr || !dayData) {
-          if (!cancelled) setError(dayErr?.message ?? "Día no encontrado");
+          setError(dayErr?.message ?? "Día no encontrado");
           return;
         }
-
-        const { data: exercises, error: exErr } = await supabase
-          .from("training_plan_exercises")
-          .select(
-            "id, exercise_name, series, reps, pause, stage_name, notes, coach_instructions, video_url, display_order, write_weight, carga",
-          )
-          .eq("day_id", dayId!)
-          .order("display_order", { ascending: true });
-
         if (exErr) {
-          if (!cancelled) setError(exErr.message);
+          setError(exErr.message);
           return;
         }
 
-        // Transform exercises to the WorkoutDay format
         const mappedExercises: Exercise[] = (exercises ?? []).map(
           (ex: {
             id: string;
@@ -116,30 +113,46 @@ export function useActiveDayExercises(
           },
         );
 
-        // Rough duration estimate
         const durationMinutes = Math.max(mappedExercises.length * 4, 20);
 
-        if (!cancelled) {
-          setWorkoutDay({
-            id: dayData.day_number,
-            name: dayData.day_name,
-            durationMinutes,
-            exercises: mappedExercises,
-          });
-        }
+        setDayExercisesData(id, {
+          id: dayData.day_number,
+          name: dayData.day_name,
+          durationMinutes,
+          exercises: mappedExercises,
+        });
       } catch (err) {
-        if (!cancelled)
-          setError(err instanceof Error ? err.message : "Error inesperado");
+        setError(err instanceof Error ? err.message : "Error inesperado");
       } finally {
-        if (!cancelled) setLoading(false);
+        fetchingRef.current.delete(id);
       }
-    }
+    },
+    [setDayExercisesData],
+  );
 
-    load();
-    return () => {
-      cancelled = true;
-    };
+  useEffect(() => {
+    if (!dayId) return;
+
+    const isLoaded = !!loadedDayExercises[dayId];
+
+    if (isLoaded) {
+      // SWR: cache hit → return immediately, revalidate silently in background
+      fetchDay(dayId);
+    } else {
+      // Cache miss → fetch (will show loading skeleton)
+      fetchDay(dayId);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dayId]);
+
+  if (!dayId) return { workoutDay: null, loading: false, error: null };
+
+  const isLoaded = !!loadedDayExercises[dayId];
+  const isFetching = fetchingRef.current.has(dayId);
+  const workoutDay = dayExercises[dayId] ?? null;
+
+  // Only show skeleton on first load (no cached data yet)
+  const loading = !isLoaded && isFetching;
 
   return { workoutDay, loading, error };
 }
