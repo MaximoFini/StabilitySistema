@@ -4,18 +4,13 @@ import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
 import { useAuthStore } from "@/features/auth/store/authStore"
 import { useTrainingStore, type LibraryExercise } from "@/features/training/store/trainingStore"
+import { useCategories } from "@/hooks/useCategories"
 import CategoryManager from "./CategoryManager"
-
-interface Category {
-    id: string
-    name: string
-    color: string
-}
 
 export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
     const { professor } = useAuthStore()
     const { globalExercises, isGlobalExercisesLoading, refreshGlobalExercises } = useTrainingStore()
-    const [categories, setCategories] = useState<Category[]>([])
+    const { categories } = useCategories()
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
     const [filter, setFilter] = useState<string>("Todos")
@@ -30,29 +25,12 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
         notes: ''
     })
 
+    // Set default category when categories load if not set
     useEffect(() => {
-        fetchCategories()
-    }, [])
-
-    const fetchCategories = async () => {
-        try {
-            const { data, error } = await supabase
-                .from('exercise_categories')
-                .select('*')
-                .order('name', { ascending: true })
-
-            if (error) throw error
-            setCategories(data || [])
-
-            // Set default category if available
-            if (data && data.length > 0 && !formData.category_id) {
-                setFormData(prev => ({ ...prev, category_id: data[0].id }))
-            }
-        } catch (error) {
-            console.error('Error fetching categories:', error)
-            toast.error('Error al cargar las categorías')
+        if (categories.length > 0 && !formData.category_id) {
+            setFormData(prev => ({ ...prev, category_id: categories[0].id }))
         }
-    }
+    }, [categories, formData.category_id])
 
     // Filter Logic
     const filteredExercises = globalExercises.filter(ex => {
@@ -321,13 +299,9 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
                 </table>
             </div>
 
-            {/* Category Manager Modal */}
             <CategoryManager
                 isOpen={isCategoryModalOpen}
                 onClose={() => setIsCategoryModalOpen(false)}
-                onCategoryCreated={() => {
-                    fetchCategories()
-                }}
             />
 
             {/* Create Modal */}

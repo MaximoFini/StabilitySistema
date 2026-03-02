@@ -63,6 +63,8 @@ interface AuthState {
   updateActivity: () => void;
   initializeAuth: () => Promise<void>;
   completeStudentProfile: (data: StudentProfileData) => Promise<void>;
+  resetPassword: (email: string) => Promise<{ error: string | null }>;
+  updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
 }
 
 // Inactivity timeout (disabled - session persists until manual logout)
@@ -636,6 +638,30 @@ export const useAuthStore = create<AuthState>()(
           } finally {
             // Siempre resetear isLoading, incluso si hay error
             set({ isLoading: false });
+          }
+        },
+
+        resetPassword: async (email: string) => {
+          try {
+            const { error } = await supabase.auth.resetPasswordForEmail(email, {
+              redirectTo: window.location.origin + '/actualizar-password',
+            });
+            if (error) return { error: error.message };
+            return { error: null };
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Error al enviar el correo';
+            return { error: msg };
+          }
+        },
+
+        updatePassword: async (newPassword: string) => {
+          try {
+            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            if (error) return { error: error.message };
+            return { error: null };
+          } catch (err) {
+            const msg = err instanceof Error ? err.message : 'Error al actualizar la contraseña';
+            return { error: msg };
           }
         },
 

@@ -1,6 +1,7 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "../lib/supabase";
 import { useAuthStore } from "../features/auth/store/authStore";
+import { useDataCacheStore } from "../store/dataCacheStore";
 import type { PlanExercise } from "../lib/types";
 import type { Professor } from "../features/auth/store/authStore";
 
@@ -44,63 +45,37 @@ interface AuthState {
   professor: Professor | null;
 }
 
+const formatLocalDate = (date: Date): string => {
+  const yyyy = date.getFullYear();
+  const mm = String(date.getMonth() + 1).padStart(2, '0');
+  const dd = String(date.getDate()).padStart(2, '0');
+  return `${yyyy}-${mm}-${dd}`;
+};
+
 export function useTrainingPlans() {
-  const [plans, setPlans] = useState<TrainingPlanSummary[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
   const professor = useAuthStore((state: AuthState) => state.professor);
 
-  const loadPlans = useCallback(async () => {
-    if (!professor) return;
-
-    try {
-      setLoading(true);
-      setError(null);
-
-      // Fetch plans with assignment counts
-      const { data: plansData, error: fetchError } = await supabase
-        .from("training_plans")
-        .select(
-          `
-          *,
-          training_plan_assignments(count)
-        `,
-        )
-        .eq("coach_id", professor.id)
-        .eq("is_archived", false)
-        .order("created_at", { ascending: false });
-
-      if (fetchError) throw fetchError;
-
-      // Transform the data to include assignedCount
-      interface PlanWithAssignments extends Omit<
-        TrainingPlanSummary,
-        "assignedCount"
-      > {
-        training_plan_assignments?: Array<{ count: number }>;
-      }
-
-      const transformedPlans: TrainingPlanSummary[] = (plansData || []).map(
-        (plan: PlanWithAssignments) => ({
-          ...plan,
-          assignedCount: plan.training_plan_assignments?.[0]?.count || 0,
-        }),
-      );
-
-      setPlans(transformedPlans);
-    } catch (err) {
-      console.error("Error loading training plans:", err);
-      setError(err instanceof Error ? err.message : "Error desconocido");
-    } finally {
-      setLoading(false);
-    }
-  }, [professor]);
+  // Read from shared cache store
+  const plans = useDataCacheStore((s) => s.plans);
+  const isLoaded = useDataCacheStore((s) => s.isPlansLoaded);
+  const isLoading = useDataCacheStore((s) => s.isPlansLoading);
+  const fetchPlans = useDataCacheStore((s) => s.fetchPlans);
+  const reloadPlans = useDataCacheStore((s) => s.reloadPlans);
 
   useEffect(() => {
-    if (professor) {
-      loadPlans();
-    }
-  }, [professor, loadPlans]);
+    if (!professor) return;
+    fetchPlans(professor.id);
+  }, [professor, fetchPlans, isLoaded]);
+
+  /** Invalida la caché y re-fetcha. Llamar tras cualquier mutación. */
+  const invalidateAndReload = (professorId: string) => {
+    reloadPlans();
+    fetchPlans(professorId);
+  };
+
+  // Keep a stable reference for the mutator functions below
+  const professorId = professor?.id ?? "";
+  const loading = isLoading && !isLoaded;
 
   const savePlan = async (planData: SavePlanData) => {
     if (!professor) {
@@ -137,8 +112,8 @@ export function useTrainingPlans() {
             coach_id: professor.id,
             title: planData.title,
             description: planData.description || null,
-            start_date: planData.startDate.toISOString().split("T")[0],
-            end_date: planData.endDate.toISOString().split("T")[0],
+            start_date: formatLocalDate(planData.startDate),
+            end_date: formatLocalDate(planData.endDate),
             total_days: totalDays,
             days_per_week: daysPerWeek,
             total_weeks: totalWeeks,
@@ -212,8 +187,8 @@ export function useTrainingPlans() {
         if (exercisesError) throw exercisesError;
       }
 
-      // Reload plans to get updated list
-      await loadPlans();
+      // Invalidate cache so the list refreshes
+      invalidateAndReload(professorId);
 
       return { success: true, planId: insertedPlan.id };
     } catch (err) {
@@ -258,8 +233,8 @@ export function useTrainingPlans() {
         .update({
           title: planData.title,
           description: planData.description || null,
-          start_date: planData.startDate.toISOString().split("T")[0],
-          end_date: planData.endDate.toISOString().split("T")[0],
+          start_date: formatLocalDate(planData.startDate),
+          end_date: formatLocalDate(planData.endDate),
           total_days: totalDays,
           days_per_week: daysPerWeek,
           total_weeks: totalWeeks,
@@ -269,6 +244,19 @@ export function useTrainingPlans() {
         .eq("coach_id", professor.id);
 
       if (planError) throw planError;
+
+      // Sincronizar fechas en las asignaciones de este plan
+      const { error: cascadeError } = await supabase
+        .from("training_plan_assignments")
+        .update({
+          start_date: formatLocalDate(planData.startDate),
+          end_date: formatLocalDate(planData.endDate),
+        })
+        .eq("plan_id", planId);
+
+      if (cascadeError) {
+        console.warn("Could not sync training plan assignments:", cascadeError);
+      }
 
       // 2. Fetch existing days from DB
       const { data: existingDays, error: fetchDaysError } = await supabase
@@ -451,7 +439,7 @@ export function useTrainingPlans() {
         }
       }
 
-      await loadPlans();
+      invalidateAndReload(professorId);
       return { success: true, planId };
     } catch (err) {
       console.error("Error updating training plan:", err);
@@ -473,8 +461,7 @@ export function useTrainingPlans() {
 
       if (updateError) throw updateError;
 
-      // Reload plans
-      await loadPlans();
+      invalidateAndReload(professorId);
 
       return { success: true };
     } catch (err) {
@@ -595,8 +582,7 @@ export function useTrainingPlans() {
         if (exercisesError) throw exercisesError;
       }
 
-      // 6. Reload plans to show the duplicate
-      await loadPlans();
+      invalidateAndReload(professorId);
 
       return { success: true, planId: newPlan.id };
     } catch (err) {
@@ -642,8 +628,8 @@ export function useTrainingPlans() {
         plan_id: planId,
         student_id: studentId,
         coach_id: professor.id,
-        start_date: startDate.toISOString().split("T")[0],
-        end_date: endDate.toISOString().split("T")[0],
+        start_date: formatLocalDate(startDate),
+        end_date: formatLocalDate(endDate),
         status: "active",
         current_day_number: 1,
         completed_days: 0,
@@ -772,7 +758,7 @@ export function useTrainingPlans() {
 
       if (deleteError) throw deleteError;
 
-      await loadPlans(); // Refresh counts
+      invalidateAndReload(professorId); // Refresh counts
       return { success: true };
     } catch (err) {
       console.error("Error unassigning student:", err);
@@ -786,7 +772,7 @@ export function useTrainingPlans() {
   return {
     plans,
     loading,
-    error,
+    error: null,
     savePlan,
     updatePlan,
     deletePlan,
@@ -794,7 +780,7 @@ export function useTrainingPlans() {
     assignPlanToStudents,
     getAssignedStudents,
     unassignStudent,
-    reload: loadPlans,
+    reload: () => invalidateAndReload(professorId),
   };
 }
 

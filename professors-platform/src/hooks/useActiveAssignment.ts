@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/features/auth/store/authStore";
+import { useDataCacheStore } from "@/store/dataCacheStore";
 
 export interface AvailableDay {
   id: string;
@@ -37,18 +38,27 @@ interface UseActiveAssignmentReturn {
 
 export function useActiveAssignment(): UseActiveAssignmentReturn {
   const professor = useAuthStore((s) => s.professor);
-  const [assignment, setAssignment] = useState<ActiveAssignment | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const activeAssignments = useDataCacheStore((s) => s.activeAssignments);
+  const loadedActiveAssignments = useDataCacheStore((s) => s.loadedActiveAssignments);
+  const setActiveAssignmentData = useDataCacheStore((s) => s.setActiveAssignmentData);
+  const invalidateActiveAssignment = useDataCacheStore((s) => s.invalidateActiveAssignment);
+
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetch = useCallback(async () => {
-    if (!professor?.id) {
-      setLoading(false);
-      setAssignment(null);
+  const studentId = professor?.id;
+  const isLoaded = studentId ? !!loadedActiveAssignments[studentId] : false;
+
+  const fetch = useCallback(async (forceFetch = false) => {
+    if (!studentId) {
+      setIsFetching(false);
       return;
     }
 
-    setLoading(true);
+    if (isLoaded && !forceFetch) return; // Cache hit
+
+    setIsFetching(true);
     setError(null);
 
     try {
@@ -92,8 +102,8 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
 
       if (assignmentErr || !assignmentData) {
         // No active assignment — not an error
-        setAssignment(null);
-        setLoading(false);
+        setActiveAssignmentData(studentId, null);
+        setIsFetching(false);
         return;
       }
 
@@ -103,8 +113,8 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
         const endDate = new Date(assignmentData.end_date + "T23:59:59");
         const now = new Date();
         if (endDate < now) {
-          setAssignment(null);
-          setLoading(false);
+          setActiveAssignmentData(studentId, null);
+          setIsFetching(false);
           return;
         }
       }
@@ -163,14 +173,14 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
       }
 
       if (!dayData) {
-        setAssignment(null);
-        setLoading(false);
+        setActiveAssignmentData(studentId, null);
+        setIsFetching(false);
         return;
       }
 
       const exerciseCount = dayData.training_plan_exercises?.length ?? 0;
 
-      setAssignment({
+      setActiveAssignmentData(studentId, {
         assignmentId: assignmentData.id,
         planId: assignmentData.plan_id,
         planTitle,
@@ -189,14 +199,26 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
       });
     } catch (err) {
       setError(err instanceof Error ? err.message : "Error inesperado");
+      console.error("[useActiveAssignment]", err);
     } finally {
-      setLoading(false);
+      setIsFetching(false);
     }
-  }, [professor?.id]);
+  }, [studentId, isLoaded, setActiveAssignmentData]);
 
   useEffect(() => {
     fetch();
   }, [fetch]);
 
-  return { assignment, loading, error, refetch: fetch };
+  const assignment = studentId ? activeAssignments[studentId] || null : null;
+  const loading = isFetching && !isLoaded;
+
+  return {
+    assignment,
+    loading,
+    error,
+    refetch: () => {
+      if (studentId) invalidateActiveAssignment(studentId);
+      fetch(true);
+    },
+  };
 }

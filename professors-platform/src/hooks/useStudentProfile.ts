@@ -1,5 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { supabase } from "../lib/supabase";
+import { useDataCacheStore } from "../store/dataCacheStore";
 
 // ── Types ──────────────────────────────────────────────────────────────────
 
@@ -42,8 +43,6 @@ export interface AssignedPlan {
   startDate: string;
   endDate: string;
   status: string;
-  currentDayNumber: number;
-  completedDays: number;
   assignedAt: string;
 }
 
@@ -98,15 +97,23 @@ export function calculateAge(birthDate: string): number {
 // ── Hook ───────────────────────────────────────────────────────────────────
 
 export function useStudentProfile(studentId: string | undefined) {
-  const [student, setStudent] = useState<StudentProfile | null>(null);
-  const [plans, setPlans] = useState<AssignedPlan[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+  const profileCache = useDataCacheStore((s) => s.studentProfiles);
+  const plansCache = useDataCacheStore((s) => s.studentAssignedPlans);
+  const loadedCache = useDataCacheStore((s) => s.loadedStudentProfiles);
+  const setStudentProfileData = useDataCacheStore((s) => s.setStudentProfileData);
+  const invalidateStudentProfile = useDataCacheStore((s) => s.invalidateStudentProfile);
+
+  const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const load = useCallback(async () => {
+  const isLoaded = studentId ? !!loadedCache[studentId] : false;
+
+  const load = useCallback(async (forceFetch = false) => {
     if (!studentId) return;
 
-    setIsLoading(true);
+    if (isLoaded && !forceFetch) return; // Cache hit. No hacemos nada localmente.
+
+    setIsFetching(true);
     setError(null);
 
     try {
@@ -174,7 +181,9 @@ export function useStudentProfile(studentId: string | undefined) {
         isArchived: (sp?.is_archived as boolean) ?? false,
       };
 
-      setStudent(studentProfile);
+      // NO seteamos local state de "student", es responsabilidad del cacheStore:
+      // Lo dejaremos flotar a través del hook return
+      const finalProfile = studentProfile;
 
       // Fetch assigned plans
       const { data: assignmentsData, error: assignError } = await supabase
@@ -186,8 +195,6 @@ export function useStudentProfile(studentId: string | undefined) {
           start_date,
           end_date,
           status,
-          current_day_number,
-          completed_days,
           assigned_at,
           training_plans (
             title,
@@ -202,43 +209,59 @@ export function useStudentProfile(studentId: string | undefined) {
         .eq("student_id", studentId)
         .order("assigned_at", { ascending: false });
 
-      if (assignError) {
-        console.warn("Could not load plans:", assignError);
-      } else if (assignmentsData) {
+      if (assignError) throw assignError;
+
+      if (assignmentsData) {
         const mapped: AssignedPlan[] = assignmentsData.map(
-          (a: Record<string, unknown>) => {
-            const tp = a.training_plans as Record<string, unknown> | null;
+          (a: any) => {
+            const tpRaw = a.training_plans;
+            const tp = Array.isArray(tpRaw) ? tpRaw[0] : tpRaw;
+            const totalDays = (tp?.total_days as number) ?? 0;
+
             return {
               id: a.id as string,
               planId: a.plan_id as string,
               planTitle: (tp?.title as string) || "Plan sin nombre",
               planType: (tp?.plan_type as string) ?? null,
               difficultyLevel: (tp?.difficulty_level as string) ?? null,
-              totalDays: (tp?.total_days as number) ?? 0,
-              daysPerWeek: (tp?.days_per_week as number) ?? (tp?.total_days as number) ?? 0,
+              totalDays: totalDays,
+              daysPerWeek: (tp?.days_per_week as number) ?? totalDays,
               totalWeeks: (tp?.total_weeks as number) ?? 0,
               startDate: a.start_date as string,
               endDate: a.end_date as string,
               status: (a.status as string) ?? "active",
-              currentDayNumber: (a.current_day_number as number) ?? 1,
-              completedDays: (a.completed_days as number) ?? 0,
               assignedAt: a.assigned_at as string,
             };
-          },
+          }
         );
-        setPlans(mapped);
+        setStudentProfileData(studentId, finalProfile, mapped);
+      } else {
+        setStudentProfileData(studentId, finalProfile, []);
       }
     } catch (err) {
       console.error("[useStudentProfile] Error:", err);
       setError(err instanceof Error ? err.message : "Error al cargar perfil");
     } finally {
-      setIsLoading(false);
+      setIsFetching(false);
     }
-  }, [studentId]);
+  }, [studentId, isLoaded, setStudentProfileData]);
 
   useEffect(() => {
     load();
   }, [load]);
 
-  return { student, plans, isLoading, error, reload: load };
+  const student = studentId ? profileCache[studentId] || null : null;
+  const plans = studentId ? plansCache[studentId] || [] : [];
+  const isLoading = isFetching && !isLoaded;
+
+  return {
+    student,
+    plans,
+    isLoading,
+    error,
+    reload: () => {
+      if (studentId) invalidateStudentProfile(studentId);
+      load(true);
+    },
+  };
 }

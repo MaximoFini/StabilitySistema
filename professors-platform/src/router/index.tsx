@@ -13,6 +13,8 @@ const StudentRegister = lazy(() => import("@/features/auth/StudentRegister"));
 const StudentProfileSetup = lazy(
   () => import("@/features/auth/StudentProfileSetup"),
 );
+const ForgotPassword = lazy(() => import("@/features/auth/ForgotPassword"));
+const ResetPassword = lazy(() => import("@/features/auth/ResetPassword"));
 const StudentsList = lazy(() => import("@/features/students/StudentsList"));
 const BusinessMetrics = lazy(
   () => import("@/features/metrics/BusinessMetrics"),
@@ -184,6 +186,14 @@ export const router = createBrowserRouter([
   {
     path: "/register/complete-profile",
     element: <RequireAuth>{withSuspense(StudentProfileSetup)}</RequireAuth>,
+  },
+  {
+    path: "/recuperar-password",
+    element: withSuspense(ForgotPassword),
+  },
+  {
+    path: "/actualizar-password",
+    element: withSuspense(ResetPassword),
   },
   // ── Catch-all route (redirige a login) ─────────────────────────────────
   {

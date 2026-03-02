@@ -168,8 +168,8 @@ export default function NewPlan() {
 
     // Set plan metadata
     setPlanTitle(loadedPlan.title);
-    setStartDate(new Date(loadedPlan.start_date));
-    setEndDate(new Date(loadedPlan.end_date));
+    setStartDate(new Date(loadedPlan.start_date + "T00:00:00"));
+    setEndDate(new Date(loadedPlan.end_date + "T00:00:00"));
 
     // Build days from loaded plan
     interface LoadedDay {

@@ -391,10 +391,7 @@ function HistorialTab({ plans }: { plans: AssignedPlan[] }) {
                 : displayStatus === "paused"
                   ? "bg-yellow-50 text-yellow-700 border-yellow-200"
                   : "bg-gray-50 text-gray-700 border-gray-200";
-          const progress =
-            plan.totalDays > 0
-              ? Math.round((plan.completedDays / plan.totalDays) * 100)
-              : 0;
+
 
           return (
             <div
@@ -422,33 +419,20 @@ function HistorialTab({ plans }: { plans: AssignedPlan[] }) {
                   </span>
                 </div>
               </div>
-              <div className="mb-3">
-                <div className="flex justify-between text-xs text-gray-500 mb-1">
-                  <span>
-                    Día {plan.currentDayNumber} de {plan.totalDays}
-                  </span>
-                  <span>{progress}%</span>
-                </div>
-                <div className="w-full h-2 bg-gray-100 dark:bg-gray-700 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-primary rounded-full transition-all duration-500"
-                    style={{ width: `${progress}%` }}
-                  />
-                </div>
-              </div>
+
               <div className="flex items-center gap-4 text-xs text-gray-500">
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">
                     calendar_today
                   </span>
-                  {new Date(plan.startDate).toLocaleDateString("es-AR")}
+                  {new Date(plan.startDate + "T00:00:00").toLocaleDateString("es-AR")}
                 </span>
                 <span>→</span>
                 <span className="flex items-center gap-1">
                   <span className="material-symbols-outlined text-[14px]">
                     event
                   </span>
-                  {new Date(plan.endDate).toLocaleDateString("es-AR")}
+                  {new Date(plan.endDate + "T00:00:00").toLocaleDateString("es-AR")}
                 </span>
               </div>
             </div>
@@ -625,8 +609,8 @@ function ConstanciaTab({ studentId }: { studentId: string }) {
                   </span>
                 </div>
                 <p className="text-xs text-gray-500 mt-0.5">
-                  {new Date(plan.startDate).toLocaleDateString("es-AR")} →{" "}
-                  {new Date(plan.endDate).toLocaleDateString("es-AR")} •{" "}
+                  {new Date(plan.startDate + "T00:00:00").toLocaleDateString("es-AR")} →{" "}
+                  {new Date(plan.endDate + "T00:00:00").toLocaleDateString("es-AR")} •{" "}
                   {plan.sessions.length} sesión
                   {plan.sessions.length !== 1 ? "es" : ""}
                 </p>
