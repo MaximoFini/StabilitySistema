@@ -6,7 +6,7 @@ import { useActiveDayExercises } from "@/hooks/useActiveDayExercises";
 import { useWorkoutCompletions } from "@/hooks/useWorkoutCompletions";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
-import { Dumbbell, CalendarX2 } from "lucide-react";
+import { Dumbbell, CalendarX2, CheckCircle2 } from "lucide-react";
 
 // Decorative gradient overlay for the hero image
 const gradientOverlay =
@@ -94,6 +94,15 @@ export default function TrainingHome() {
   const completedThisMonth = thisMonthCompletions.length;
 
   const isLoading = assignmentLoading || (!!assignment && dayLoading);
+
+  // Check if the currently displayed day is already completed
+  const currentDisplayDayNumber =
+    availableDays.find((d) => d.id === dayIdToLoad)?.dayNumber ??
+    assignment?.currentDayNumber ??
+    null;
+  const isCurrentDayCompleted =
+    currentDisplayDayNumber !== null &&
+    completedDayNumbers.has(currentDisplayDayNumber ?? -1);
 
   const firstName = professor?.firstName ?? "Atleta";
   const today = new Date();
@@ -225,16 +234,23 @@ export default function TrainingHome() {
               </div>
             </div>
 
-            {/* CTA button */}
-            <button
-              onClick={handleStart}
-              className="w-full flex items-center justify-center gap-2 bg-white text-primary font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-black/20 hover:bg-blue-50 active:scale-[0.98] transition-all min-h-[48px]"
-            >
-              <span className="material-symbols-outlined text-[18px] filled">
-                play_arrow
-              </span>
-              COMENZAR RUTINA
-            </button>
+            {/* CTA button — hidden when day is already completed */}
+            {isCurrentDayCompleted ? (
+              <div className="w-full flex items-center justify-center gap-2 bg-emerald-500/90 text-white font-bold text-sm py-3.5 rounded-xl min-h-[48px]">
+                <CheckCircle2 size={18} strokeWidth={2.5} />
+                DÍA COMPLETADO
+              </div>
+            ) : (
+              <button
+                onClick={handleStart}
+                className="w-full flex items-center justify-center gap-2 bg-white text-primary font-bold text-sm py-3.5 rounded-xl shadow-lg shadow-black/20 hover:bg-blue-50 active:scale-[0.98] transition-all min-h-[48px]"
+              >
+                <span className="material-symbols-outlined text-[18px] filled">
+                  play_arrow
+                </span>
+                COMENZAR RUTINA
+              </button>
+            )}
           </div>
         </div>
       )}
@@ -266,42 +282,51 @@ export default function TrainingHome() {
               return (
                 <button
                   key={day.id}
-                  onClick={() => setSelectedDayId(day.id)}
+                  onClick={() => !isCompleted && setSelectedDayId(day.id)}
+                  disabled={isCompleted}
                   className={cn(
                     "flex flex-col items-center gap-2 px-4 py-3 rounded-xl border-2 transition-all shrink-0 min-w-[100px]",
-                    isSelected || isSuggested
-                      ? "bg-primary/5 border-primary"
-                      : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600",
+                    isCompleted
+                      ? "bg-emerald-50 dark:bg-emerald-900/20 border-emerald-200 dark:border-emerald-800 cursor-not-allowed opacity-80"
+                      : isSelected || isSuggested
+                        ? "bg-primary/5 border-primary"
+                        : "bg-slate-50 dark:bg-slate-800 border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600",
                   )}
                 >
                   <div className="flex items-center gap-1.5">
                     <span
                       className={cn(
                         "text-xs font-bold",
-                        isSelected || isSuggested
-                          ? "text-primary"
-                          : "text-slate-600 dark:text-slate-400",
+                        isCompleted
+                          ? "text-emerald-600 dark:text-emerald-400"
+                          : isSelected || isSuggested
+                            ? "text-primary"
+                            : "text-slate-600 dark:text-slate-400",
                       )}
                     >
                       DÍA {day.dayNumber}
                     </span>
                     {isCompleted && (
-                      <span className="material-symbols-outlined text-[14px] text-emerald-500 filled">
-                        check_circle
-                      </span>
+                      <CheckCircle2
+                        size={14}
+                        className="text-emerald-500"
+                        strokeWidth={2.5}
+                      />
                     )}
                   </div>
                   <span
                     className={cn(
                       "text-[11px] text-center leading-tight line-clamp-2",
-                      isSelected || isSuggested
-                        ? "text-slate-900 dark:text-white font-medium"
-                        : "text-slate-500 dark:text-slate-400",
+                      isCompleted
+                        ? "text-emerald-600/80 dark:text-emerald-400/80 font-medium"
+                        : isSelected || isSuggested
+                          ? "text-slate-900 dark:text-white font-medium"
+                          : "text-slate-500 dark:text-slate-400",
                     )}
                   >
-                    {day.dayName}
+                    {isCompleted ? "Completado" : day.dayName}
                   </span>
-                  {isSuggested && !selectedDayId && (
+                  {isSuggested && !selectedDayId && !isCompleted && (
                     <span className="text-[9px] text-primary font-bold uppercase tracking-wider">
                       Sugerido
                     </span>
