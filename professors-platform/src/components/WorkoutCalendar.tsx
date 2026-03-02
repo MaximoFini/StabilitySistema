@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback } from "react";
-import { supabase } from "@/lib/supabase";
+import { useState } from "react";
+import { useStudentConstancia } from "@/hooks/useStudentConstancia";
+import { useWorkoutCompletions } from "@/hooks/useWorkoutCompletions";
 
 const WEEK_DAYS = ["L", "M", "M", "J", "V", "S", "D"];
 
@@ -7,91 +8,21 @@ interface WorkoutCalendarProps {
   studentId: string;
 }
 
-interface WorkoutCompletion {
-  id: string;
-  completedAt: string;
-}
-
-interface PlanAssignment {
-  id: string;
-  startDate: string;
-  endDate: string;
-  daysPerWeek: number;
-}
-
 export default function WorkoutCalendar({ studentId }: WorkoutCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
-  const [completions, setCompletions] = useState<WorkoutCompletion[]>([]);
-  const [assignments, setAssignments] = useState<PlanAssignment[]>([]);
-  const [loading, setLoading] = useState(true);
 
-  const fetchData = useCallback(async () => {
-    if (!studentId) {
-      setLoading(false);
-      return;
-    }
+  // Use precisely the hooks we updated with SWR!
+  const { completions, loading: loadingCompletions } = useWorkoutCompletions();
+  const { plans, isLoading: loadingPlans } = useStudentConstancia(studentId);
 
-    setLoading(true);
-    try {
-      // Fetch completions
-      const { data: completionsData, error: completionsError } = await supabase
-        .from("workout_completions")
-        .select("id, completed_at")
-        .eq("student_id", studentId)
-        .order("completed_at", { ascending: false });
+  // Transform plan constancia back into assignments structure that the calendar needs
+  const assignments = plans.map(p => ({
+    startDate: p.startDate,
+    endDate: p.endDate,
+    daysPerWeek: p.daysPerWeek
+  }));
 
-      if (completionsError) throw completionsError;
-
-      setCompletions(
-        (completionsData ?? []).map((row) => ({
-          id: row.id,
-          completedAt: row.completed_at,
-        })),
-      );
-
-      // Fetch active/paused assignments with their plans
-      const { data: assignmentsData, error: assignmentsError } = await supabase
-        .from("training_plan_assignments")
-        .select(
-          `
-          id,
-          start_date,
-          end_date,
-          status,
-          training_plans (
-            days_per_week,
-            total_days
-          )
-        `
-        )
-        .eq("student_id", studentId)
-        .in("status", ["active", "paused"]);
-
-      if (assignmentsError) throw assignmentsError;
-
-      setAssignments(
-        (assignmentsData ?? []).map((row: any) => {
-          const plan = Array.isArray(row.training_plans)
-            ? row.training_plans[0]
-            : row.training_plans;
-          return {
-            id: row.id,
-            startDate: row.start_date,
-            endDate: row.end_date,
-            daysPerWeek: plan?.total_days ?? plan?.days_per_week ?? 3,
-          };
-        })
-      );
-    } catch (err) {
-      console.error("Error fetching calendar data:", err);
-    } finally {
-      setLoading(false);
-    }
-  }, [studentId]);
-
-  useEffect(() => {
-    fetchData();
-  }, [fetchData]);
+  const loading = loadingCompletions || loadingPlans;
 
   const prevMonth = () =>
     setCurrentMonth((d) => new Date(d.getFullYear(), d.getMonth() - 1, 1));
@@ -275,10 +206,10 @@ export default function WorkoutCalendar({ studentId }: WorkoutCalendarProps) {
                 </span>
               </div>
               <span className={`text-2xl font-bold ${attendance.percentage >= 80
-                  ? "text-emerald-500"
-                  : attendance.percentage >= 60
-                    ? "text-amber-500"
-                    : "text-red-500"
+                ? "text-emerald-500"
+                : attendance.percentage >= 60
+                  ? "text-amber-500"
+                  : "text-red-500"
                 }`}>
                 {attendance.percentage}%
               </span>
@@ -288,10 +219,10 @@ export default function WorkoutCalendar({ studentId }: WorkoutCalendarProps) {
             <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
               <div
                 className={`h-full transition-all duration-500 rounded-full ${attendance.percentage >= 80
-                    ? "bg-emerald-500"
-                    : attendance.percentage >= 60
-                      ? "bg-amber-500"
-                      : "bg-red-500"
+                  ? "bg-emerald-500"
+                  : attendance.percentage >= 60
+                    ? "bg-amber-500"
+                    : "bg-red-500"
                   }`}
                 style={{ width: `${attendance.percentage}%` }}
               />

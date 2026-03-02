@@ -56,10 +56,12 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
       return;
     }
 
-    if (isLoaded && !forceFetch) return; // Cache hit
-
+    // SWR: always fetch. On cache hit (!forceFetch && isLoaded), we run
+    // the request in background — loading stays false (no skeleton shown).
+    // Only show the blocking spinner when there is NO cached data yet.
     setIsFetching(true);
     setError(null);
+    void forceFetch; // parameter kept for the public refetch() API
 
     try {
       // ── Today's date in local timezone (YYYY-MM-DD) for end_date filter ──
@@ -93,7 +95,7 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
         // Q2: All completions for this student (independent)
         supabase
           .from("workout_completions")
-          .select("day_number, assignment_id")
+          .select("day_number, assignment_id, completed_at")
           .eq("student_id", professor.id),
       ]);
 
@@ -157,10 +159,34 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
         };
       });
 
-      // ── Find next pending day ─────────────────────────────────
+      // ── Find next pending day ──────────────────────────────────────
+      // Only count completions whose LOCAL calendar date >= start_date.
+      // completed_at is stored in UTC; we extract the local date on the device
+      // so that e.g. a completion at 01:26 UTC = 22:26 local (UTC-3) on March 1
+      // is correctly treated as "March 1" and excluded when start_date is "March 2".
+      const toLocalDateStr = (iso: string) => {
+        const d = new Date(iso);
+        return (
+          d.getFullYear() +
+          "-" +
+          String(d.getMonth() + 1).padStart(2, "0") +
+          "-" +
+          String(d.getDate()).padStart(2, "0")
+        );
+      };
+
+      const assignmentStartDay = assignmentData.start_date
+        ? assignmentData.start_date.slice(0, 10)
+        : null;
+
       const completedDayNumbers = new Set(
         (completionsData ?? [])
-          .filter((c) => c.assignment_id === assignmentData.id)
+          .filter((c) => {
+            if (c.assignment_id !== assignmentData.id) return false;
+            if (!assignmentStartDay) return true;
+            const completedLocalDay = toLocalDateStr(c.completed_at ?? "");
+            return completedLocalDay >= assignmentStartDay;
+          })
           .map((c) => c.day_number)
       );
 

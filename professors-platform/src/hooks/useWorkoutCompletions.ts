@@ -55,9 +55,11 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
       return;
     }
 
-    if (isLoaded && !force) return;
-
-    setIsFetching(true);
+    if (isLoaded && !force) {
+      setIsFetching(true); // SWR: fetch in background
+    } else {
+      setIsFetching(true);
+    }
     setError(null);
 
     try {
@@ -157,10 +159,10 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
 
         console.log("✅ Workout completion guardado exitosamente");
 
-        // Step 2 — read current assignment to get completed_days
+        // Step 2 — read current assignment metadata (including start_date)
         const { data: assignmentData, error: readErr } = await supabase
           .from("training_plan_assignments")
-          .select("completed_days, plan_id, training_plans(total_days)")
+          .select("completed_days, start_date, plan_id, training_plans(total_days)")
           .eq("id", params.assignmentId)
           .single();
 
@@ -171,13 +173,46 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
           };
         }
 
+        // Step 2b — count unique valid completed days (>= start_date) from workout_completions.
+        // This is the source of truth for completed_days; we never blindly do +1.
+        // Using start_date as a lower bound ensures that if the coach moves the start date
+        // forward, old completions are excluded and the counter resets cleanly.
+        const startDateISO = assignmentData.start_date
+          ? assignmentData.start_date.slice(0, 10)
+          : null;
+
+        const completionsQuery = supabase
+          .from("workout_completions")
+          .select("day_number")
+          .eq("assignment_id", params.assignmentId)
+          .eq("student_id", professor.id);
+
+        // Use LOCAL midnight of start_date as the UTC lower bound for Supabase.
+        // new Date("YYYY-MM-DDT00:00:00") without Z is parsed as LOCAL time,
+        // so .toISOString() gives the correct UTC equivalent (e.g. for UTC-3:
+        // local midnight 2026-03-02 00:00 → 2026-03-02T03:00:00.000Z).
+        // This correctly excludes a completion at 2026-03-02T01:26Z (= March 1 local).
+        const startTimestampUTC = startDateISO
+          ? new Date(startDateISO + "T00:00:00").toISOString()
+          : null;
+
+        const { data: allCompletions } = startTimestampUTC
+          ? await completionsQuery.gte("completed_at", startTimestampUTC)
+          : await completionsQuery;
+
+        // Count unique day_numbers that have been completed (including the one just inserted)
+        const uniqueCompletedDays = new Set(
+          (allCompletions ?? []).map((c) => c.day_number),
+        );
+        const newCompletedDays = uniqueCompletedDays.size;
+
+        // Derive totalDays from the plan info returned in the assignment query
         const planInfo = (
           Array.isArray(assignmentData.training_plans)
             ? assignmentData.training_plans[0]
             : assignmentData.training_plans
         ) as { total_days: number } | null;
         const totalDays = planInfo?.total_days ?? 0;
-        const newCompletedDays = (assignmentData.completed_days ?? 0) + 1;
 
         // Check if all days are now completed
         const newStatus: "active" | "completed" =

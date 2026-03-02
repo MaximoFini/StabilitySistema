@@ -111,10 +111,10 @@ export function useStudentProfile(studentId: string | undefined) {
   const load = useCallback(async (forceFetch = false) => {
     if (!studentId) return;
 
-    if (isLoaded && !forceFetch) return; // Cache hit. No hacemos nada localmente.
-
+    // SWR: always revalidate. Blocking spinner only shows when cache is empty.
     setIsFetching(true);
     setError(null);
+    void forceFetch;
 
     try {
       // Fetch profile + student_profiles in one query

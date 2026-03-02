@@ -1,5 +1,6 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { supabase } from "@/lib/supabase";
+import { useDataCacheStore } from "@/store/dataCacheStore";
 
 export interface SetDetail {
   set_number: number;
@@ -32,16 +33,29 @@ export interface ExerciseRmNote {
 }
 
 export function useExerciseWeightLogs(studentId: string | undefined) {
-  const [groups, setGroups] = useState<ExerciseGroup[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [isFetching, setIsFetching] = useState(false);
 
-  useEffect(() => {
+  const exerciseWeightLogs = useDataCacheStore((s) => s.exerciseWeightLogs);
+  const loadedExerciseWeightLogs = useDataCacheStore((s) => s.loadedExerciseWeightLogs);
+  const setExerciseWeightLogsData = useDataCacheStore((s) => s.setExerciseWeightLogsData);
+  const invalidateExerciseWeightLogs = useDataCacheStore((s) => s.invalidateExerciseWeightLogs);
+
+  const isLoaded = studentId ? !!loadedExerciseWeightLogs[studentId] : false;
+
+  const load = useCallback(async (force = false) => {
     if (!studentId) {
+      setIsFetching(false);
       return;
     }
 
-    const load = async () => {
-      setLoading(true);
+    if (isLoaded && !force) {
+      // SWR: fetch in background unless explicitly forced
+      setIsFetching(true);
+    } else {
+      setIsFetching(true);
+    }
+
+    try {
       const { data, error } = await supabase
         .from("exercise_weight_logs")
         .select(
@@ -64,7 +78,6 @@ export function useExerciseWeightLogs(studentId: string | undefined) {
 
       if (error || !data) {
         console.error("Error loading exercise weight logs:", error);
-        setLoading(false);
         return;
       }
 
@@ -123,12 +136,27 @@ export function useExerciseWeightLogs(studentId: string | undefined) {
         }))
         .sort((a, b) => a.exercise_name.localeCompare(b.exercise_name));
 
-      setGroups(sortedGroups);
-      setLoading(false);
-    };
+      setExerciseWeightLogsData(studentId, sortedGroups);
+    } catch (err) {
+      console.error("Error in useExerciseWeightLogs:", err);
+    } finally {
+      setIsFetching(false);
+    }
+  }, [studentId, isLoaded, setExerciseWeightLogsData]);
 
-    load();
-  }, [studentId]);
+  useEffect(() => {
+    load(false);
+  }, [load]);
 
-  return { groups, loading };
+  const groups = studentId ? exerciseWeightLogs[studentId] || [] : [];
+  const loading = isFetching && !isLoaded;
+
+  return {
+    groups,
+    loading,
+    refetch: () => {
+      if (studentId) invalidateExerciseWeightLogs(studentId);
+      load(true);
+    }
+  };
 }
