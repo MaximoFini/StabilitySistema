@@ -1,5 +1,23 @@
 import { create } from "zustand";
+import { supabase } from "@/lib/supabase";
 import type { WorkoutDay, SeriesLog } from "../types";
+
+export interface Category {
+  id: string;
+  name: string;
+  color: string;
+}
+
+export interface LibraryExercise {
+  id: string;
+  name: string;
+  video_url: string | null;
+  notes: string | null;
+  category_id: string;
+  category?: Category;
+  created_by?: string;
+  created_at?: string;
+}
 
 // ─── Static placeholder data (until Supabase integration) ────────────────
 
@@ -97,6 +115,10 @@ interface TrainingState {
   assignmentId: string | null;
   currentDayNumber: number;
 
+  globalExercises: LibraryExercise[];
+  isGlobalExercisesLoaded: boolean;
+  isGlobalExercisesLoading: boolean;
+
   // Actions
   startWorkout: (day?: WorkoutDay) => void;
   setAssignmentContext: (assignmentId: string, dayNumber: number) => void;
@@ -114,6 +136,8 @@ interface TrainingState {
   setMoodComment: (value: string) => void;
   completeWorkout: () => void;
   resetTraining: () => void;
+  fetchGlobalExercises: () => Promise<void>;
+  refreshGlobalExercises: () => Promise<void>;
 }
 
 export const useTrainingStore = create<TrainingState>((set, get) => ({
@@ -129,6 +153,10 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
   isWorkoutComplete: false,
   assignmentId: null,
   currentDayNumber: 1,
+
+  globalExercises: [],
+  isGlobalExercisesLoaded: false,
+  isGlobalExercisesLoading: false,
 
   startWorkout: (day = MOCK_PLAN) => {
     // NOTE: initialMood is intentionally NOT reset here — it was set before
@@ -240,5 +268,48 @@ export const useTrainingStore = create<TrainingState>((set, get) => ({
       assignmentId: null,
       currentDayNumber: 1,
     });
+  },
+
+  fetchGlobalExercises: async () => {
+    const { isGlobalExercisesLoaded, isGlobalExercisesLoading } = get();
+    if (isGlobalExercisesLoaded || isGlobalExercisesLoading) return;
+
+    set({ isGlobalExercisesLoading: true });
+    try {
+      const { data, error } = await supabase
+        .from("exercises")
+        .select("*, category:exercise_categories(id, name, color)")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      set({
+        globalExercises: data || [],
+        isGlobalExercisesLoaded: true,
+      });
+    } catch (error) {
+      console.error("Error loading global exercises:", error);
+    } finally {
+      set({ isGlobalExercisesLoading: false });
+    }
+  },
+
+  refreshGlobalExercises: async () => {
+    set({ isGlobalExercisesLoading: true });
+    try {
+      const { data, error } = await supabase
+        .from("exercises")
+        .select("*, category:exercise_categories(id, name, color)")
+        .order("name", { ascending: true });
+
+      if (error) throw error;
+      set({
+        globalExercises: data || [],
+        isGlobalExercisesLoaded: true,
+      });
+    } catch (error) {
+      console.error("Error refreshing global exercises:", error);
+    } finally {
+      set({ isGlobalExercisesLoading: false });
+    }
   },
 }));

@@ -1,55 +1,59 @@
 <!doctype html>
 <html lang="es">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <link
-      href="https://fonts.googleapis.com/icon?family=Material+Icons"
-      rel="stylesheet"
-    />
-    <link
-      rel="stylesheet"
-      href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap"
-      rel="stylesheet"
-    />
-    <link
-      href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap"
-      rel="stylesheet"
-    />
-    <title>Stability Sistema</title>
 
-    <!-- Estilos del spinner nativo (visible ANTES de que React cargue el JS) -->
-    <style>
-      body { margin: 0; background-color: #09090b; }
-      .pantalla-carga { display: flex; justify-content: center; align-items: center; height: 100vh; width: 100vw; }
-      .spinner {
-        width: 40px;
-        height: 40px;
-        border: 3px solid rgba(255, 255, 255, 0.1);
-        border-left-color: #ffffff;
-        border-radius: 50%;
-        animation: girar 0.8s linear infinite;
+<head>
+  <meta charset="UTF-8" />
+  <link rel="icon" type="image/png" href="/logo-stability.png" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
+  <link rel="stylesheet"
+    href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
+  <link href="https://fonts.googleapis.com/css2?family=Lexend:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
+  <title>Stability Sistema</title>
+
+  <!-- Estilos del spinner nativo (visible ANTES de que React cargue el JS) -->
+  <style>
+    body {
+      margin: 0;
+      background-color: #09090b;
+    }
+
+    .pantalla-carga {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+      width: 100vw;
+    }
+
+    .spinner {
+      width: 40px;
+      height: 40px;
+      border: 3px solid rgba(255, 255, 255, 0.1);
+      border-left-color: #ffffff;
+      border-radius: 50%;
+      animation: girar 0.8s linear infinite;
+    }
+
+    @keyframes girar {
+      to {
+        transform: rotate(360deg);
       }
-      @keyframes girar { to { transform: rotate(360deg); } }
-    </style>
-  </head>
+    }
+  </style>
+</head>
 
-  <body>
-    <div id="root">
-      <!-- Spinner visible solo durante la carga inicial del JS bundle.
+<body>
+  <div id="root">
+    <!-- Spinner visible solo durante la carga inicial del JS bundle.
            React lo reemplaza automáticamente al montar la app. -->
-      <div class="pantalla-carga">
-        <div class="spinner"></div>
-      </div>
+    <div class="pantalla-carga">
+      <div class="spinner"></div>
     </div>
-    <script type="module" src="/src/main.tsx"></script>
-  </body>
+  </div>
+  <script type="module" src="/src/main.tsx"></script>
+</body>
+
 </html>

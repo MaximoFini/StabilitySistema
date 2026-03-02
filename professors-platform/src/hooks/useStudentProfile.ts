@@ -215,7 +215,7 @@ export function useStudentProfile(studentId: string | undefined) {
               planType: (tp?.plan_type as string) ?? null,
               difficultyLevel: (tp?.difficulty_level as string) ?? null,
               totalDays: (tp?.total_days as number) ?? 0,
-              daysPerWeek: (tp?.days_per_week as number) ?? 0,
+              daysPerWeek: (tp?.total_days as number) ?? (tp?.days_per_week as number) ?? 0,
               totalWeeks: (tp?.total_weeks as number) ?? 0,
               startDate: a.start_date as string,
               endDate: a.end_date as string,

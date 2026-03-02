@@ -3,6 +3,7 @@ import { toast } from "sonner"
 import { cn } from "@/lib/utils"
 import { supabase } from "@/lib/supabase"
 import { useAuthStore } from "@/features/auth/store/authStore"
+import { useTrainingStore, type LibraryExercise } from "@/features/training/store/trainingStore"
 import CategoryManager from "./CategoryManager"
 
 interface Category {
@@ -11,26 +12,15 @@ interface Category {
     color: string
 }
 
-interface Exercise {
-    id: string
-    name: string
-    video_url: string | null
-    notes: string | null
-    category_id: string
-    category?: Category
-    created_by: string
-    created_at: string
-}
-
 export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
     const { professor } = useAuthStore()
-    const [exercises, setExercises] = useState<Exercise[]>([])
+    const { globalExercises, isGlobalExercisesLoading, refreshGlobalExercises } = useTrainingStore()
     const [categories, setCategories] = useState<Category[]>([])
     const [isModalOpen, setIsModalOpen] = useState(false)
     const [isCategoryModalOpen, setIsCategoryModalOpen] = useState(false)
     const [filter, setFilter] = useState<string>("Todos")
-    const [isLoading, setIsLoading] = useState(false)
-    const [editingExercise, setEditingExercise] = useState<Exercise | null>(null)
+    const [isMutationLoading, setIsMutationLoading] = useState(false)
+    const [editingExercise, setEditingExercise] = useState<LibraryExercise | null>(null)
 
     // Form state
     const [formData, setFormData] = useState({
@@ -42,7 +32,6 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
 
     useEffect(() => {
         fetchCategories()
-        fetchExercises()
     }, [])
 
     const fetchCategories = async () => {
@@ -65,35 +54,14 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
         }
     }
 
-    const fetchExercises = async () => {
-        setIsLoading(true)
-        try {
-            const { data, error } = await supabase
-                .from('exercises')
-                .select(`
-                    *,
-                    category:exercise_categories(id, name, color)
-                `)
-                .order('name', { ascending: true })
-
-            if (error) throw error
-            setExercises(data || [])
-        } catch (error) {
-            console.error('Error fetching exercises:', error)
-            toast.error('Error al cargar los ejercicios')
-        } finally {
-            setIsLoading(false)
-        }
-    }
-
     // Filter Logic
-    const filteredExercises = exercises.filter(ex => {
+    const filteredExercises = globalExercises.filter(ex => {
         const matchesSearch = ex.name.toLowerCase().includes(searchQuery.toLowerCase())
         const matchesFilter = filter === "Todos" || ex.category_id === filter
         return matchesSearch && matchesFilter
     })
 
-    const handleEdit = (exercise: Exercise) => {
+    const handleEdit = (exercise: LibraryExercise) => {
         setEditingExercise(exercise)
         setFormData({
             name: exercise.name,
@@ -122,7 +90,7 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
             return
         }
 
-        setIsLoading(true)
+        setIsMutationLoading(true)
         try {
             const { error } = await supabase
                 .from('exercises')
@@ -139,12 +107,13 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
             toast.success("Ejercicio creado exitosamente")
             setFormData({ name: '', category_id: categories[0]?.id || '', video_url: '', notes: '' })
             setIsModalOpen(false)
-            fetchExercises()
+            refreshGlobalExercises()
         } catch (error) {
             console.error('Error creating exercise:', error)
             toast.error('Error al crear el ejercicio')
         } finally {
-            setIsLoading(false)
+            setIsMutationLoading(true)
+            setIsMutationLoading(false)
         }
     }
 
@@ -158,7 +127,7 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
             return
         }
 
-        setIsLoading(true)
+        setIsMutationLoading(true)
         try {
             const { error } = await supabase
                 .from('exercises')
@@ -176,12 +145,13 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
             setFormData({ name: '', category_id: categories[0]?.id || '', video_url: '', notes: '' })
             setEditingExercise(null)
             setIsModalOpen(false)
-            fetchExercises()
+            refreshGlobalExercises()
         } catch (error) {
             console.error('Error updating exercise:', error)
             toast.error('Error al actualizar el ejercicio')
         } finally {
-            setIsLoading(false)
+            setIsMutationLoading(true)
+            setIsMutationLoading(false)
         }
     }
 
@@ -198,7 +168,7 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
 
             if (error) throw error
             toast.success('Ejercicio eliminado')
-            fetchExercises()
+            refreshGlobalExercises()
         } catch (error) {
             console.error('Error deleting exercise:', error)
             toast.error('Error al eliminar el ejercicio')
@@ -276,7 +246,7 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
                         </tr>
                     </thead>
                     <tbody className="divide-y divide-slate-100 dark:divide-slate-700">
-                        {isLoading && exercises.length === 0 ? (
+                        {isGlobalExercisesLoading && globalExercises.length === 0 ? (
                             <tr>
                                 <td colSpan={5} className="px-4 py-12 text-center text-slate-500">
                                     Cargando ejercicios...
@@ -440,7 +410,7 @@ export default function ExerciseList({ searchQuery }: { searchQuery: string }) {
                                 </button>
                                 <button
                                     type="submit"
-                                    disabled={isLoading}
+                                    disabled={isMutationLoading}
                                     className="px-4 py-2 text-sm font-medium text-white bg-primary hover:bg-primary-dark rounded-lg disabled:opacity-50"
                                 >
                                     {editingExercise ? 'Actualizar Ejercicio' : 'Crear Ejercicio'}

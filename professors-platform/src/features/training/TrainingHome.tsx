@@ -6,6 +6,7 @@ import { useActiveDayExercises } from "@/hooks/useActiveDayExercises";
 import { useWorkoutCompletions } from "@/hooks/useWorkoutCompletions";
 import { cn } from "@/lib/utils";
 import { useState } from "react";
+import { Dumbbell, CalendarX2 } from "lucide-react";
 
 // Decorative gradient overlay for the hero image
 const gradientOverlay =
@@ -150,20 +151,32 @@ export default function TrainingHome() {
         /* Skeleton */
         <div className="rounded-2xl bg-slate-200 dark:bg-slate-800 animate-pulse min-h-[220px]" />
       ) : !assignment ? (
-        /* Empty state — no plan assigned yet */
-        <div className="flex flex-col items-center justify-center gap-3 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm min-h-[220px] px-6 py-8 text-center">
-          <div className="w-14 h-14 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
-            <span className="material-symbols-outlined text-[30px] text-slate-400 dark:text-slate-500">
-              fitness_center
-            </span>
+        /* ── Empty state — no active plan ──────────────────────────────── */
+        <div className="flex flex-col items-center justify-center gap-4 rounded-2xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 shadow-sm min-h-[220px] px-6 py-10 text-center">
+          {/* Icon bubble */}
+          <div className="w-16 h-16 rounded-2xl bg-slate-100 dark:bg-slate-800 flex items-center justify-center ring-4 ring-slate-50 dark:ring-slate-700/50">
+            <Dumbbell
+              className="text-slate-400 dark:text-slate-500"
+              size={28}
+              strokeWidth={1.8}
+            />
           </div>
-          <div>
+
+          {/* Copy */}
+          <div className="space-y-1">
             <p className="text-sm font-semibold text-slate-900 dark:text-white">
-              Sin plan asignado
+              No tenés ningún plan asignado actualmente
             </p>
-            <p className="text-xs text-slate-500 dark:text-slate-400 mt-1 max-w-[220px] mx-auto">
-              Tu profe aún no te asignó un plan. ¡Pronto comenzamos!
+            <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[240px] mx-auto leading-relaxed">
+              Tu entrenador todavía no te asignó un plan vigente.
+              ¡En breve comenzamos! 💪
             </p>
+          </div>
+
+          {/* Subtle decorative rule */}
+          <div className="flex items-center gap-2 mt-1 text-[11px] text-slate-400 dark:text-slate-600 font-medium">
+            <CalendarX2 size={13} strokeWidth={2} />
+            <span>Sin plan vigente</span>
           </div>
         </div>
       ) : (

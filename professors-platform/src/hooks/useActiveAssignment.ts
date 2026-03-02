@@ -52,9 +52,17 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
     setError(null);
 
     try {
+      // ── Today's date in local timezone (YYYY-MM-DD) for end_date filter ──
+      const todayISO = new Date(
+        Date.now() - new Date().getTimezoneOffset() * 60_000
+      )
+        .toISOString()
+        .slice(0, 10);
+
       // ── Fire BOTH queries in parallel ─────────────────────────
       const [assignmentResult, completionsResult] = await Promise.all([
         // Q1: Assignment + plan + days + exercise counts (single joined query)
+        //     Only return assignments whose end_date >= today (not expired)
         supabase
           .from("training_plan_assignments")
           .select(
@@ -67,6 +75,7 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
           )
           .eq("student_id", professor.id)
           .eq("status", "active")
+          .gte("end_date", todayISO)
           .order("assigned_at", { ascending: false })
           .limit(1)
           .single(),
@@ -88,6 +97,18 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
         return;
       }
 
+      // ── Frontend guard: double-check end_date hasn't expired ──────────
+      // (Handles edge cases with timezone offsets or cached data)
+      if (assignmentData.end_date) {
+        const endDate = new Date(assignmentData.end_date + "T23:59:59");
+        const now = new Date();
+        if (endDate < now) {
+          setAssignment(null);
+          setLoading(false);
+          return;
+        }
+      }
+
       // ── Parse plan info ───────────────────────────────────────
       const planInfo = (
         Array.isArray(assignmentData.training_plans)
@@ -107,7 +128,7 @@ export function useActiveAssignment(): UseActiveAssignmentReturn {
 
       const planTitle = planInfo?.title ?? "Plan sin título";
       const totalDays = planInfo?.total_days ?? 0;
-      const daysPerWeek = planInfo?.days_per_week ?? 0;
+      const daysPerWeek = planInfo?.total_days ?? planInfo?.days_per_week ?? 0;
 
       // ── Parse days + exercise counts ──────────────────────────
       const rawDays = planInfo?.training_plan_days ?? [];

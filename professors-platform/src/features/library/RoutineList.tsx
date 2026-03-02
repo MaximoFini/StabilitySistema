@@ -233,7 +233,7 @@ export default function RoutineList({ searchQuery }: { searchQuery: string }) {
                 <span className="material-symbols-outlined text-[14px]">
                   calendar_today
                 </span>
-                {plan.days_per_week} Días/Sem
+                {plan.total_days} Días/Sem
               </span>
             </div>
 

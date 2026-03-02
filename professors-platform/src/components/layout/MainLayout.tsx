@@ -1,12 +1,19 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Outlet } from "react-router-dom";
 import { Menu } from "lucide-react";
 import { Sidebar } from "./Sidebar";
 import { useAuthStore } from "@/features/auth/store/authStore";
+import { useTrainingStore } from "@/features/training/store/trainingStore";
 
 export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const { professor } = useAuthStore();
+  const { fetchGlobalExercises } = useTrainingStore();
+
+  useEffect(() => {
+    // Pre-load exercises into Zustand global store when app mounts
+    fetchGlobalExercises();
+  }, [fetchGlobalExercises]);
 
   return (
     <div className="flex h-screen overflow-hidden bg-background font-sans text-foreground antialiased">
