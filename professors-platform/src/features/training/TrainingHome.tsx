@@ -24,6 +24,8 @@ export default function TrainingHome() {
   // Selected day state (null = use the suggested next day)
   const [selectedDayId, setSelectedDayId] = useState<string | null>(null);
 
+
+
   // Determine which day to load: manual selection or suggested next day
   const dayIdToLoad = selectedDayId ?? assignment?.currentDayId ?? null;
 
@@ -162,8 +164,13 @@ export default function TrainingHome() {
           </h1>
         </div>
 
-        {/* Avatar */}
-        <div className="w-11 h-11 rounded-full bg-gradient-to-br from-[#0056b2] to-[#1a1a5e] flex items-center justify-center shrink-0 shadow-md shadow-blue-200 dark:shadow-blue-900/40">
+        {/* Avatar — click to go to profile */}
+        <button
+          onClick={() => navigate("/entrenamiento/perfil")}
+          className="w-11 h-11 rounded-full bg-gradient-to-br from-[#0056b2] to-[#1a1a5e] flex items-center justify-center shrink-0 shadow-md shadow-blue-200 dark:shadow-blue-900/40 transition-transform hover:scale-105 active:scale-95 cursor-pointer"
+          type="button"
+          title="Ir a mi perfil"
+        >
           {professor?.profileImage ? (
             <img
               src={professor.profileImage}
@@ -175,7 +182,7 @@ export default function TrainingHome() {
               person
             </span>
           )}
-        </div>
+        </button>
       </div>
 
       {/* ── Hero workout card ─────────────────────────────────────── */}
@@ -200,8 +207,8 @@ export default function TrainingHome() {
               No tenés ningún plan asignado actualmente
             </p>
             <p className="text-xs text-slate-500 dark:text-slate-400 max-w-[240px] mx-auto leading-relaxed">
-              Tu entrenador todavía no te asignó un plan vigente.
-              ¡En breve comenzamos! 💪
+              Tu entrenador todavía no te asignó un plan vigente. ¡En breve
+              comenzamos! 💪
             </p>
           </div>
 
@@ -221,8 +228,6 @@ export default function TrainingHome() {
               ', url("https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=600&q=80") center/cover no-repeat',
           }}
         >
-
-
           {/* Content */}
           <div className="relative p-5 pt-12 text-white space-y-3">
             <div>
@@ -361,7 +366,9 @@ export default function TrainingHome() {
         </div>
       )}
 
-      {/* ── Metrics row ──────────────────────────────────────────── */}
+
+
+      {/* Metrics row */}
       <div className="grid grid-cols-1 gap-3">
         <div className="flex items-center gap-3 rounded-xl bg-white dark:bg-slate-900 border border-slate-100 dark:border-slate-800 p-4 shadow-sm">
           <div className="w-10 h-10 rounded-xl flex items-center justify-center shrink-0 bg-blue-50 dark:bg-blue-900/30">
@@ -426,6 +433,8 @@ export default function TrainingHome() {
           })}
         </div>
       </div>
+
+
     </div>
   );
 }

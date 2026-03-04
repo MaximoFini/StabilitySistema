@@ -34,7 +34,7 @@ export interface StudentProfileData {
   height: number;
   weight: number;
   activityLevel: "sedentary" | "light" | "moderate" | "active" | "very_active";
-  primaryGoal: "aesthetic" | "sports" | "health" | "rehabilitation";
+  primaryGoal: "aesthetic" | "sports" | "health" | "readaptation";
   trainingExperience: "none" | "beginner" | "intermediate" | "advanced";
   sports: string;
   previousInjuries?: string;
@@ -50,10 +50,7 @@ interface AuthState {
   tokenExpiry: number | null;
 
   // Actions
-  login: (
-    email: string,
-    password: string,
-  ) => Promise<void>;
+  login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
   clearError: () => void;
@@ -148,9 +145,7 @@ const userToProfessor = async (user: User): Promise<Professor | null> => {
       role: profile.role as "student" | "coach",
       createdAt: profile.created_at,
       profileImage:
-        studentProfile?.profile_image_url ||
-        profile.profile_image ||
-        undefined,
+        studentProfile?.profile_image_url || profile.profile_image || undefined,
       hasCompletedProfile,
     };
   } catch (error) {
@@ -406,7 +401,10 @@ export const useAuthStore = create<AuthState>()(
               );
             }
 
-            console.log("User created, awaiting email confirmation:", authData.user.id);
+            console.log(
+              "User created, awaiting email confirmation:",
+              authData.user.id,
+            );
 
             // NOTE: Do NOT set isAuthenticated or professor here.
             // The user must confirm their email first.
@@ -644,23 +642,29 @@ export const useAuthStore = create<AuthState>()(
         resetPassword: async (email: string) => {
           try {
             const { error } = await supabase.auth.resetPasswordForEmail(email, {
-              redirectTo: window.location.origin + '/actualizar-password',
+              redirectTo: window.location.origin + "/actualizar-password",
             });
             if (error) return { error: error.message };
             return { error: null };
           } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Error al enviar el correo';
+            const msg =
+              err instanceof Error ? err.message : "Error al enviar el correo";
             return { error: msg };
           }
         },
 
         updatePassword: async (newPassword: string) => {
           try {
-            const { error } = await supabase.auth.updateUser({ password: newPassword });
+            const { error } = await supabase.auth.updateUser({
+              password: newPassword,
+            });
             if (error) return { error: error.message };
             return { error: null };
           } catch (err) {
-            const msg = err instanceof Error ? err.message : 'Error al actualizar la contraseña';
+            const msg =
+              err instanceof Error
+                ? err.message
+                : "Error al actualizar la contraseña";
             return { error: msg };
           }
         },

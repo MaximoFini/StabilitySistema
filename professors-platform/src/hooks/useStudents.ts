@@ -84,7 +84,7 @@ export const getPrimaryGoalDisplay = (goal: string): string => {
     aesthetic: "Estética",
     sports: "Deporte",
     health: "Salud",
-    rehabilitation: "Rehabilitación",
+    readaptation: "Readaptación",
   };
   return goals[goal] || "Sin especificar";
 };

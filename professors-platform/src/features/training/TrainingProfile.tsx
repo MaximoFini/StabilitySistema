@@ -1,6 +1,7 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { useAuthStore } from "@/features/auth/store/authStore";
 import { supabase } from "@/lib/supabase";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { cn, formatDateLocal } from "@/lib/utils";
 
@@ -10,7 +11,7 @@ interface StudentProfileData {
   birth_date: string;
   gender: "male" | "female" | "other";
   activity_level: "sedentary" | "light" | "moderate" | "active" | "very_active";
-  primary_goal: "aesthetic" | "sports" | "health" | "rehabilitation";
+  primary_goal: "aesthetic" | "sports" | "health" | "readaptation";
   training_experience: "none" | "beginner" | "intermediate" | "advanced";
   sports: string;
   previous_injuries?: string;
@@ -52,6 +53,20 @@ export default function TrainingProfile() {
   const [expandedSection, setExpandedSection] = useState<Section>(null);
   const [editingSection, setEditingSection] = useState<Section>(null);
   const [formData, setFormData] = useState<Partial<StudentProfileData>>({});
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleImageClick = () => {
+    fileInputRef.current?.click();
+  };
+
+  const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (!file) return;
+
+    // TODO: Subir imagen a Supabase Storage y actualizar el perfil
+    console.log("Archivo seleccionado:", file);
+    toast.info("Función de subida de imagen en desarrollo");
+  };
 
   useEffect(() => {
     loadProfileData();
@@ -159,7 +174,7 @@ export default function TrainingProfile() {
       aesthetic: "Estética",
       sports: "Deportivo",
       health: "Salud",
-      rehabilitation: "Rehabilitación",
+      readaptation: "Readaptación",
     };
     return translations[goal as keyof typeof translations] || goal;
   };
@@ -206,12 +221,27 @@ export default function TrainingProfile() {
                 backgroundImage: professor?.profileImage
                   ? `url("${professor.profileImage}")`
                   : `url("https://ui-avatars.com/api/?name=${professor?.firstName}+${professor?.lastName}&size=256&background=0056B2&color=fff&bold=true")`,
-                backgroundSize: 'cover',
-                backgroundPosition: 'center',
+                backgroundSize: "cover",
+                backgroundPosition: "center",
               }}
             />
             {/* Pulsing ring effect */}
             <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping opacity-20" />
+
+            <button
+              onClick={handleImageClick}
+              className="absolute bottom-0 left-0 z-20 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center shadow-md shadow-primary/20 hover:bg-primary-hover hover:scale-105 active:scale-95 transition-all outline-none border-2 border-background-light dark:border-background-dark"
+              aria-label="Cambiar foto de perfil"
+            >
+              <Pencil size={14} />
+            </button>
+            <input
+              type="file"
+              accept="image/*"
+              hidden
+              ref={fileInputRef}
+              onChange={handleImageChange}
+            />
           </div>
 
           <div className="mt-5 text-center">
@@ -352,10 +382,14 @@ export default function TrainingProfile() {
                       {/* Phone */}
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px] text-primary filled">call</span>
+                          <span className="material-symbols-outlined text-[18px] text-primary filled">
+                            call
+                          </span>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Teléfono</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                            Teléfono
+                          </p>
                           <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                             {profileData?.phone || "—"}
                           </p>
@@ -365,10 +399,14 @@ export default function TrainingProfile() {
                       {/* Instagram */}
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px] text-primary filled">alternate_email</span>
+                          <span className="material-symbols-outlined text-[18px] text-primary filled">
+                            alternate_email
+                          </span>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Instagram</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                            Instagram
+                          </p>
                           <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                             {profileData?.instagram || "—"}
                           </p>
@@ -378,10 +416,14 @@ export default function TrainingProfile() {
                       {/* Birthday */}
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px] text-primary filled">cake</span>
+                          <span className="material-symbols-outlined text-[18px] text-primary filled">
+                            cake
+                          </span>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nacimiento</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                            Nacimiento
+                          </p>
                           <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
                             {formatDateLocal(profileData?.birth_date)}
                           </p>
@@ -391,12 +433,18 @@ export default function TrainingProfile() {
                       {/* Gender */}
                       <div className="flex items-start gap-3">
                         <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center shrink-0">
-                          <span className="material-symbols-outlined text-[18px] text-primary filled">wc</span>
+                          <span className="material-symbols-outlined text-[18px] text-primary filled">
+                            wc
+                          </span>
                         </div>
                         <div>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Género</p>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                            Género
+                          </p>
                           <p className="text-sm font-bold text-slate-900 dark:text-white leading-tight">
-                            {profileData?.gender ? translateGender(profileData.gender) : "—"}
+                            {profileData?.gender
+                              ? translateGender(profileData.gender)
+                              : "—"}
                           </p>
                         </div>
                       </div>
@@ -406,7 +454,9 @@ export default function TrainingProfile() {
                       onClick={() => handleEdit("personal")}
                       className="w-full mt-8 flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
                     >
-                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      <span className="material-symbols-outlined text-[18px]">
+                        edit
+                      </span>
                       EDITAR INFORMACIÓN
                     </button>
                   </div>
@@ -502,21 +552,31 @@ export default function TrainingProfile() {
                   <div className="pt-2 space-y-4">
                     <div className="p-4 bg-slate-50/50 dark:bg-slate-900/20 rounded-2xl border border-slate-100 dark:border-slate-800/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="material-symbols-outlined text-primary text-[18px] filled">warning</span>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Lesiones Previas</p>
+                        <span className="material-symbols-outlined text-primary text-[18px] filled">
+                          warning
+                        </span>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Lesiones Previas
+                        </p>
                       </div>
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {profileData?.previous_injuries || "No se han registrado lesiones."}
+                        {profileData?.previous_injuries ||
+                          "No se han registrado lesiones."}
                       </p>
                     </div>
 
                     <div className="p-4 bg-slate-50/50 dark:bg-slate-900/20 rounded-2xl border border-slate-100 dark:border-slate-800/30">
                       <div className="flex items-center gap-2 mb-2">
-                        <span className="material-symbols-outlined text-primary text-[18px] filled">medical_information</span>
-                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Condiciones Médicas</p>
+                        <span className="material-symbols-outlined text-primary text-[18px] filled">
+                          medical_information
+                        </span>
+                        <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                          Condiciones Médicas
+                        </p>
                       </div>
                       <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                        {profileData?.medical_conditions || "Sin condiciones médicas reportadas."}
+                        {profileData?.medical_conditions ||
+                          "Sin condiciones médicas reportadas."}
                       </p>
                     </div>
 
@@ -524,7 +584,9 @@ export default function TrainingProfile() {
                       onClick={() => handleEdit("medical")}
                       className="w-full mt-4 flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
                     >
-                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      <span className="material-symbols-outlined text-[18px]">
+                        edit
+                      </span>
                       EDITAR INFORMACIÓN MÉDICA
                     </button>
                   </div>
@@ -608,7 +670,7 @@ export default function TrainingProfile() {
                           <option value="aesthetic">Estética</option>
                           <option value="sports">Deportivo</option>
                           <option value="health">Salud</option>
-                          <option value="rehabilitation">Rehabilitación</option>
+                          <option value="readaptation">Readaptación</option>
                         </select>
                       </div>
                       <div>
@@ -668,12 +730,20 @@ export default function TrainingProfile() {
                       <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                            <span className="material-symbols-outlined text-[20px] filled">bolt</span>
+                            <span className="material-symbols-outlined text-[20px] filled">
+                              bolt
+                            </span>
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Nivel Actividad</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                              Nivel Actividad
+                            </p>
                             <p className="text-sm font-bold text-slate-900 dark:text-white">
-                              {profileData?.activity_level ? translateActivityLevel(profileData.activity_level) : "—"}
+                              {profileData?.activity_level
+                                ? translateActivityLevel(
+                                  profileData.activity_level,
+                                )
+                                : "—"}
                             </p>
                           </div>
                         </div>
@@ -682,12 +752,18 @@ export default function TrainingProfile() {
                       <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                            <span className="material-symbols-outlined text-[20px] filled">target</span>
+                            <span className="material-symbols-outlined text-[20px] filled">
+                              target
+                            </span>
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Objetivo</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                              Objetivo
+                            </p>
                             <p className="text-sm font-bold text-slate-900 dark:text-white">
-                              {profileData?.primary_goal ? translateGoal(profileData.primary_goal) : "—"}
+                              {profileData?.primary_goal
+                                ? translateGoal(profileData.primary_goal)
+                                : "—"}
                             </p>
                           </div>
                         </div>
@@ -696,12 +772,20 @@ export default function TrainingProfile() {
                       <div className="flex items-center justify-between p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center gap-3">
                           <div className="w-10 h-10 rounded-xl bg-primary/10 flex items-center justify-center text-primary">
-                            <span className="material-symbols-outlined text-[20px] filled">military_tech</span>
+                            <span className="material-symbols-outlined text-[20px] filled">
+                              military_tech
+                            </span>
                           </div>
                           <div>
-                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">Experiencia</p>
+                            <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider mb-0.5">
+                              Experiencia
+                            </p>
                             <p className="text-sm font-bold text-slate-900 dark:text-white">
-                              {profileData?.training_experience ? translateExperience(profileData.training_experience) : "—"}
+                              {profileData?.training_experience
+                                ? translateExperience(
+                                  profileData.training_experience,
+                                )
+                                : "—"}
                             </p>
                           </div>
                         </div>
@@ -709,11 +793,16 @@ export default function TrainingProfile() {
 
                       <div className="p-4 bg-slate-50 dark:bg-slate-800/30 rounded-2xl border border-slate-100 dark:border-slate-700/50">
                         <div className="flex items-center gap-2 mb-2">
-                          <span className="material-symbols-outlined text-primary text-[18px] filled">sports_basketball</span>
-                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">Deportes Practicados</p>
+                          <span className="material-symbols-outlined text-primary text-[18px] filled">
+                            sports_basketball
+                          </span>
+                          <p className="text-[10px] font-bold text-slate-400 uppercase tracking-wider">
+                            Deportes Practicados
+                          </p>
                         </div>
                         <p className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                          {profileData?.sports || "No se especificaron deportes."}
+                          {profileData?.sports ||
+                            "No se especificaron deportes."}
                         </p>
                       </div>
                     </div>
@@ -722,7 +811,9 @@ export default function TrainingProfile() {
                       onClick={() => handleEdit("training")}
                       className="w-full mt-6 flex items-center justify-center gap-2 py-3 rounded-xl border border-slate-100 dark:border-slate-800 text-xs font-bold text-primary hover:bg-primary/5 active:scale-[0.98] transition-all"
                     >
-                      <span className="material-symbols-outlined text-[18px]">edit</span>
+                      <span className="material-symbols-outlined text-[18px]">
+                        edit
+                      </span>
                       EDITAR ENTRENAMIENTO
                     </button>
                   </div>

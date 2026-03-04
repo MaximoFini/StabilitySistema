@@ -456,7 +456,7 @@ export default function StudentProfileSetup() {
                   <option value="aesthetic">Estético</option>
                   <option value="sports">Deportivo</option>
                   <option value="health">Salud</option>
-                  <option value="rehabilitation">Rehabilitación</option>
+                  <option value="readaptation">Readaptación</option>
                 </select>
                 {step5Form.formState.errors.primaryGoal && (
                   <span className="text-xs text-red-500">
