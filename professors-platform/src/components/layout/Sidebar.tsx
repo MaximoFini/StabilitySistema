@@ -46,17 +46,30 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
   const sidebarContent = (
     <div className="flex h-full flex-col">
       {/* Header */}
-      <div className={cn(
-        "flex h-16 items-center px-6 border-b border-gray-100 dark:border-slate-800 shrink-0",
-        isCollapsed ? "justify-center px-2" : "justify-between"
-      )}>
-        {!isCollapsed ? (
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-black text-primary tracking-wider">STABILITY</span>
-          </div>
-        ) : (
-          <img src="/image.png" alt="Logo" className="h-8 w-auto object-contain" />
+      <div
+        className={cn(
+          "flex h-16 items-center px-6 border-b border-gray-100 dark:border-slate-800 shrink-0",
+          isCollapsed ? "justify-center px-2" : "justify-between",
         )}
+      >
+        <Link
+          to="/inicio"
+          onClick={onClose}
+          className="flex items-center gap-2 lg:focus-visible:outline-none lg:focus-visible:ring-2 lg:focus-visible:ring-primary lg:focus-visible:ring-offset-1 rounded transition-colors"
+          title={isCollapsed ? "Ir a Alumnos" : undefined}
+        >
+          {!isCollapsed ? (
+            <span className="text-xl font-black text-primary tracking-wider">
+              STABILITY
+            </span>
+          ) : (
+            <img
+              src="/image.png"
+              alt="Logo Stability"
+              className="h-8 w-auto object-contain"
+            />
+          )}
+        </Link>
         {/* Close button — only visible on mobile */}
         <button
           onClick={onClose}
@@ -66,8 +79,6 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
           <X size={18} />
         </button>
       </div>
-
-
 
       {/* Navigation */}
       <nav className="flex-1 space-y-0.5 p-3 overflow-y-auto">
@@ -108,14 +119,16 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
           onClick={() => setIsCollapsed(!isCollapsed)}
           className={cn(
             "hidden lg:flex items-center gap-3 w-full px-3 py-2 text-sm font-medium rounded-lg text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-800 transition-all group",
-            isCollapsed && "justify-center px-0"
+            isCollapsed && "justify-center px-0",
           )}
           title={isCollapsed ? "Expandir" : undefined}
         >
           <span className="material-symbols-outlined text-[22px] group-hover:text-primary transition-colors">
             {isCollapsed ? "chevron_right" : "chevron_left"}
           </span>
-          {!isCollapsed && <span className="group-hover:text-primary">Colapsar</span>}
+          {!isCollapsed && (
+            <span className="group-hover:text-primary">Colapsar</span>
+          )}
         </button>
 
         {!isCollapsed ? (

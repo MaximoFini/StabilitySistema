@@ -12,14 +12,15 @@ export default function WorkoutCalendar({ studentId }: WorkoutCalendarProps) {
   const [currentMonth, setCurrentMonth] = useState(() => new Date());
 
   // Use precisely the hooks we updated with SWR!
-  const { completions, loading: loadingCompletions } = useWorkoutCompletions();
+  const { completions, loading: loadingCompletions } =
+    useWorkoutCompletions(studentId);
   const { plans, isLoading: loadingPlans } = useStudentConstancia(studentId);
 
   // Transform plan constancia back into assignments structure that the calendar needs
-  const assignments = plans.map(p => ({
+  const assignments = plans.map((p) => ({
     startDate: p.startDate,
     endDate: p.endDate,
-    daysPerWeek: p.daysPerWeek
+    daysPerWeek: p.daysPerWeek,
   }));
 
   const loading = loadingCompletions || loadingPlans;
@@ -43,71 +44,60 @@ export default function WorkoutCalendar({ studentId }: WorkoutCalendarProps) {
   const firstDayOfMonth = (new Date(year, month, 1).getDay() + 6) % 7; // Monday-first
 
   const todayStr = new Date().toISOString().slice(0, 10);
-  const today = new Date();
 
   // Build a Set of 'YYYY-MM-DD' strings for completed dates
   const completedDates: Set<string> = new Set(
     completions.map((c) => c.completedAt.slice(0, 10)),
   );
 
-  const completionsThisMonth = completions.filter((c) => {
-    const d = new Date(c.completedAt);
-    return d.getFullYear() === year && d.getMonth() === month;
-  }).length;
+  // Calculate expected workouts and attendance percentage for the CURRENT WEEK (Monday-Sunday)
+  const calculateWeekAttendance = () => {
+    const now = new Date();
 
-  // Calculate expected workouts and attendance percentage for this month
-  const calculateMonthAttendance = () => {
-    const monthStart = new Date(year, month, 1);
-    const monthEnd = new Date(year, month + 1, 0); // Last day of month
+    // Get Monday of current week
+    const startOfWeek = new Date(now);
+    const dayOfWeek = now.getDay(); // 0 = Sunday, 1 = Monday, ...
+    const diff = dayOfWeek === 0 ? -6 : 1 - dayOfWeek; // If Sunday, go back 6 days
+    startOfWeek.setDate(now.getDate() + diff);
+    startOfWeek.setHours(0, 0, 0, 0);
 
-    // If month is in the future, return 0
-    if (monthStart > today) {
-      return { expected: 0, completed: completionsThisMonth, percentage: 0 };
-    }
+    // Get Sunday end
+    const endOfWeek = new Date(startOfWeek);
+    endOfWeek.setDate(startOfWeek.getDate() + 6);
+    endOfWeek.setHours(23, 59, 59, 999);
 
-    // Calculate up to today or end of month, whichever is earlier
-    const endDate = today < monthEnd ? today : monthEnd;
+    // Filter completions in this week
+    const thisWeekCompletions = completions.filter((c) => {
+      const completedDate = new Date(c.completedAt);
+      return completedDate >= startOfWeek && completedDate <= endOfWeek;
+    });
 
-    let totalExpectedDays = 0;
-
-    // For each assignment, calculate expected days in this month
+    // Find active assignment for this week
+    let expectedDays = 0;
     for (const assignment of assignments) {
       const assignStart = new Date(assignment.startDate);
       const assignEnd = new Date(assignment.endDate);
 
-      // Check if assignment overlaps with this month
-      if (assignEnd < monthStart || assignStart > endDate) {
-        continue; // No overlap
+      // Check if assignment is active this week
+      if (assignEnd >= startOfWeek && assignStart <= endOfWeek) {
+        expectedDays = assignment.daysPerWeek;
+        break; // Use first active assignment
       }
-
-      // Calculate overlap dates
-      const overlapStart = assignStart > monthStart ? assignStart : monthStart;
-      const overlapEnd = assignEnd < endDate ? assignEnd : endDate;
-
-      // Calculate days in overlap period
-      const overlapDays = Math.floor(
-        (overlapEnd.getTime() - overlapStart.getTime()) / (1000 * 60 * 60 * 24)
-      ) + 1;
-
-      // Calculate expected workouts based on days_per_week
-      const weeksInOverlap = overlapDays / 7;
-      const expectedForThisAssignment = Math.round(weeksInOverlap * assignment.daysPerWeek);
-
-      totalExpectedDays += expectedForThisAssignment;
     }
 
-    const percentage = totalExpectedDays > 0
-      ? Math.round((completionsThisMonth / totalExpectedDays) * 100)
-      : 0;
+    const percentage =
+      expectedDays > 0
+        ? Math.round((thisWeekCompletions.length / expectedDays) * 100)
+        : 0;
 
     return {
-      expected: totalExpectedDays,
-      completed: completionsThisMonth,
+      expected: expectedDays,
+      completed: thisWeekCompletions.length,
       percentage: Math.min(percentage, 100), // Cap at 100%
     };
   };
 
-  const attendance = calculateMonthAttendance();
+  const attendance = calculateWeekAttendance();
 
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl p-5 shadow-sm border border-slate-100 dark:border-slate-700">
@@ -152,43 +142,43 @@ export default function WorkoutCalendar({ studentId }: WorkoutCalendarProps) {
         {/* Day cells */}
         {loading
           ? Array.from({ length: daysInMonth }).map((_, i) => (
-            <div key={i} className="flex items-center justify-center">
-              <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 animate-pulse" />
-            </div>
-          ))
-          : Array.from({ length: daysInMonth }, (_, i) => {
-            const day = i + 1;
-            const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
-            const isToday = dateStr === todayStr;
-            const isCompleted = completedDates.has(dateStr);
-
-            if (isToday) {
-              return (
-                <div key={day} className="flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-medium shadow-md shadow-emerald-200 dark:shadow-none">
-                    {day}
-                  </div>
-                </div>
-              );
-            }
-            if (isCompleted) {
-              return (
-                <div key={day} className="flex items-center justify-center">
-                  <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium shadow-md shadow-blue-200 dark:shadow-none">
-                    {day}
-                  </div>
-                </div>
-              );
-            }
-            return (
-              <div
-                key={day}
-                className="text-sm font-medium text-text-main dark:text-white py-1 flex items-center justify-center"
-              >
-                {day}
+              <div key={i} className="flex items-center justify-center">
+                <div className="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 animate-pulse" />
               </div>
-            );
-          })}
+            ))
+          : Array.from({ length: daysInMonth }, (_, i) => {
+              const day = i + 1;
+              const dateStr = `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+              const isToday = dateStr === todayStr;
+              const isCompleted = completedDates.has(dateStr);
+
+              if (isToday) {
+                return (
+                  <div key={day} className="flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-emerald-500 text-white flex items-center justify-center text-sm font-medium shadow-md shadow-emerald-200 dark:shadow-none">
+                      {day}
+                    </div>
+                  </div>
+                );
+              }
+              if (isCompleted) {
+                return (
+                  <div key={day} className="flex items-center justify-center">
+                    <div className="w-8 h-8 rounded-full bg-primary text-white flex items-center justify-center text-sm font-medium shadow-md shadow-blue-200 dark:shadow-none">
+                      {day}
+                    </div>
+                  </div>
+                );
+              }
+              return (
+                <div
+                  key={day}
+                  className="text-sm font-medium text-text-main dark:text-white py-1 flex items-center justify-center"
+                >
+                  {day}
+                </div>
+              );
+            })}
       </div>
 
       {/* Attendance Stats */}
@@ -202,15 +192,18 @@ export default function WorkoutCalendar({ studentId }: WorkoutCalendarProps) {
                   trending_up
                 </span>
                 <span className="text-sm font-medium text-text-main dark:text-slate-300">
-                  Constancia del mes
+                  Constancia de la semana
                 </span>
               </div>
-              <span className={`text-2xl font-bold ${attendance.percentage >= 80
-                ? "text-emerald-500"
-                : attendance.percentage >= 60
-                  ? "text-amber-500"
-                  : "text-red-500"
-                }`}>
+              <span
+                className={`text-2xl font-bold ${
+                  attendance.percentage >= 80
+                    ? "text-emerald-500"
+                    : attendance.percentage >= 60
+                      ? "text-amber-500"
+                      : "text-red-500"
+                }`}
+              >
                 {attendance.percentage}%
               </span>
             </div>
@@ -218,12 +211,13 @@ export default function WorkoutCalendar({ studentId }: WorkoutCalendarProps) {
             {/* Progress bar */}
             <div className="w-full bg-slate-100 dark:bg-slate-700 rounded-full h-2.5 overflow-hidden">
               <div
-                className={`h-full transition-all duration-500 rounded-full ${attendance.percentage >= 80
-                  ? "bg-emerald-500"
-                  : attendance.percentage >= 60
-                    ? "bg-amber-500"
-                    : "bg-red-500"
-                  }`}
+                className={`h-full transition-all duration-500 rounded-full ${
+                  attendance.percentage >= 80
+                    ? "bg-emerald-500"
+                    : attendance.percentage >= 60
+                      ? "bg-amber-500"
+                      : "bg-red-500"
+                }`}
                 style={{ width: `${attendance.percentage}%` }}
               />
             </div>
@@ -233,7 +227,7 @@ export default function WorkoutCalendar({ studentId }: WorkoutCalendarProps) {
               <span className="font-semibold text-text-main dark:text-slate-300">
                 {attendance.completed} de {attendance.expected}
               </span>{" "}
-              entrenamientos completados
+              entrenamientos completados esta semana
             </p>
           </>
         ) : (
@@ -242,7 +236,7 @@ export default function WorkoutCalendar({ studentId }: WorkoutCalendarProps) {
               info
             </span>
             <p className="text-sm text-text-muted dark:text-slate-400">
-              Sin plan activo en este mes
+              Sin plan activo esta semana
             </p>
           </div>
         )}

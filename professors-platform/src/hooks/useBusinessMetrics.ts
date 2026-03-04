@@ -15,7 +15,7 @@ export interface GenderEntry {
   label: string;
   count: number;
   percent: number;
-  color: string;  // tailwind class for legend dot
+  color: string; // tailwind class for legend dot
   stroke: string; // hex for SVG stroke
   dashArray: string;
   dashOffset: string;
@@ -23,15 +23,15 @@ export interface GenderEntry {
 
 /** Un punto del historial mensual de altas de alumnos */
 export interface MonthlyRegistration {
-  month: string;  // etiqueta corta, ej: "Ago", "Sep"
-  count: number;  // alumnos dados de alta en ese mes (sin importar si luego archivados)
+  month: string; // etiqueta corta, ej: "Ago", "Sep"
+  count: number; // alumnos dados de alta en ese mes (sin importar si luego archivados)
 }
 
 export interface BusinessMetrics {
   // Cards
   activeStudents: number;
-  newThisMonth: number;          // alumnos creados este mes (independiente de archivado)
-  growthPercent: number | null;  // vs mes anterior; null = sin dato de comparación
+  newThisMonth: number; // alumnos creados este mes (independiente de archivado)
+  growthPercent: number | null; // vs mes anterior; null = sin dato de comparación
   averageAge: number | null;
   retentionPercent: number | null;
   // Historial de altas: últimos 6 meses (el último elemento = mes actual)
@@ -50,10 +50,13 @@ const GOAL_MAP: Record<string, { label: string; color: string }> = {
   aesthetic: { label: "Estética / Hipertrofia", color: "#2563EB" },
   sports: { label: "Rendimiento Deportivo", color: "#10B981" },
   health: { label: "Salud General", color: "#06B6D4" },
-  rehabilitation: { label: "Rehabilitación", color: "#8B5CF6" },
+  readaptation: { label: "Readaptación", color: "#8B5CF6" },
 };
 
-const GENDER_MAP: Record<string, { label: string; color: string; stroke: string }> = {
+const GENDER_MAP: Record<
+  string,
+  { label: string; color: string; stroke: string }
+> = {
   male: { label: "Hombres", color: "bg-secondary", stroke: "#3B82F6" },
   female: { label: "Mujeres", color: "bg-primary", stroke: "#60A5FA" },
   other: { label: "Otro / N/E", color: "bg-gray-400", stroke: "#9CA3AF" },
@@ -62,8 +65,20 @@ const GENDER_MAP: Record<string, { label: string; color: string; stroke: string 
 const CIRCUMFERENCE = 2 * Math.PI * 40; // r=40
 
 // Nombres cortos de meses en español
-const MONTH_LABELS = ["Ene", "Feb", "Mar", "Abr", "May", "Jun",
-  "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"];
+const MONTH_LABELS = [
+  "Ene",
+  "Feb",
+  "Mar",
+  "Abr",
+  "May",
+  "Jun",
+  "Jul",
+  "Ago",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dic",
+];
 
 // --- Helpers ---
 
@@ -72,13 +87,14 @@ function getAge(birthDate: string): number {
   const now = new Date();
   let age = now.getFullYear() - birth.getFullYear();
   const monthDiff = now.getMonth() - birth.getMonth();
-  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate())) age--;
+  if (monthDiff < 0 || (monthDiff === 0 && now.getDate() < birth.getDate()))
+    age--;
   return age;
 }
 
 function buildGenderDistribution(
   genderCounts: Record<string, number>,
-  total: number
+  total: number,
 ): GenderEntry[] {
   const result: GenderEntry[] = [];
   let cumulative = 0;
@@ -92,7 +108,11 @@ function buildGenderDistribution(
     const count = genderCounts[key];
     const percent = total > 0 ? (count / total) * 100 : 0;
     const segmentLength = (percent / 100) * CIRCUMFERENCE;
-    const info = GENDER_MAP[key] ?? { label: "Otro / N/E", color: "bg-gray-400", stroke: "#9CA3AF" };
+    const info = GENDER_MAP[key] ?? {
+      label: "Otro / N/E",
+      color: "bg-gray-400",
+      stroke: "#9CA3AF",
+    };
     result.push({
       label: info.label,
       count,
@@ -133,7 +153,8 @@ const useMetricsStore = create<MetricsStore>((set, get) => ({
       // Traemos TODOS los alumnos (activos + archivados) con archived_at para retención
       const { data: students, error: fetchError } = await supabase
         .from("profiles")
-        .select(`
+        .select(
+          `
           id,
           created_at,
           student_profiles!inner (
@@ -143,7 +164,8 @@ const useMetricsStore = create<MetricsStore>((set, get) => ({
             is_archived,
             archived_at
           )
-        `)
+        `,
+        )
         .eq("role", "student");
 
       if (fetchError) throw fetchError;
@@ -154,7 +176,14 @@ const useMetricsStore = create<MetricsStore>((set, get) => ({
       const now = new Date();
       const thisMonthStart = new Date(now.getFullYear(), now.getMonth(), 1);
       const lastMonthStart = new Date(now.getFullYear(), now.getMonth() - 1, 1);
-      const lastMonthEnd = new Date(now.getFullYear(), now.getMonth(), 0, 23, 59, 59);
+      const lastMonthEnd = new Date(
+        now.getFullYear(),
+        now.getMonth(),
+        0,
+        23,
+        59,
+        59,
+      );
 
       // ── Contadores ─────────────────────────────────────────────────────────
       let activeStudentsCount = 0;
@@ -181,7 +210,7 @@ const useMetricsStore = create<MetricsStore>((set, get) => ({
           archived_at: string | null;
         };
         const sp: SpRow | null = Array.isArray(p.student_profiles)
-          ? (p.student_profiles[0] as SpRow ?? null)
+          ? ((p.student_profiles[0] as SpRow) ?? null)
           : (p.student_profiles as SpRow | null);
 
         const isArchived = sp?.is_archived ?? false;
@@ -201,7 +230,8 @@ const useMetricsStore = create<MetricsStore>((set, get) => ({
 
         // ── "Nuevos" se cuenta por fecha de alta sin importar archivado ──────
         if (createdAt >= thisMonthStart) newThisMonthTotal++;
-        if (createdAt >= lastMonthStart && createdAt <= lastMonthEnd) newLastMonthTotal++;
+        if (createdAt >= lastMonthStart && createdAt <= lastMonthEnd)
+          newLastMonthTotal++;
 
         // ── Historial de los últimos 6 meses ─────────────────────────────────
         // Para cada mes M en el rango [hace 5 meses, mes actual], contamos
@@ -238,9 +268,11 @@ const useMetricsStore = create<MetricsStore>((set, get) => ({
       // ── Growth Percent ───────────────────────────────────────────────────
       let growthPercent: number | null = null;
       if (newLastMonthTotal > 0) {
-        growthPercent = Math.round(
-          ((newThisMonthTotal - newLastMonthTotal) / newLastMonthTotal) * 1000
-        ) / 10;
+        growthPercent =
+          Math.round(
+            ((newThisMonthTotal - newLastMonthTotal) / newLastMonthTotal) *
+              1000,
+          ) / 10;
       } else if (newThisMonthTotal > 0) {
         growthPercent = null; // Sin dato de comparación
       } else {
@@ -254,38 +286,56 @@ const useMetricsStore = create<MetricsStore>((set, get) => ({
 
       let retentionPercent: number | null = null;
       if (S > 0) {
-        retentionPercent = Math.max(0, Math.min(100, Math.round(((E - N) / S) * 100)));
+        retentionPercent = Math.max(
+          0,
+          Math.min(100, Math.round(((E - N) / S) * 100)),
+        );
       } else if (E > 0) {
         retentionPercent = 100;
       }
 
       // ── Promedio de Edad ─────────────────────────────────────────────────
-      const averageAge = ages.length > 0
-        ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length)
-        : null;
+      const averageAge =
+        ages.length > 0
+          ? Math.round(ages.reduce((a, b) => a + b, 0) / ages.length)
+          : null;
 
       // ── Goal distribution ────────────────────────────────────────────────
-      const goalOrder = ["aesthetic", "sports", "health", "rehabilitation", "unknown"];
+      const goalOrder = [
+        "aesthetic",
+        "sports",
+        "health",
+        "readaptation",
+        "unknown",
+      ];
       const goalDistribution = goalOrder
         .filter((k) => (goalCounts[k] || 0) > 0)
         .map((k) => ({
           key: k,
           label: k === "unknown" ? "Sin objetivo" : (GOAL_MAP[k]?.label ?? k),
           count: goalCounts[k],
-          color: k === "unknown" ? "#94A3B8" : (GOAL_MAP[k]?.color ?? "#64748B"),
+          color:
+            k === "unknown" ? "#94A3B8" : (GOAL_MAP[k]?.color ?? "#64748B"),
         }));
 
-      const maxGoalCount = goalDistribution.reduce((max, g) => Math.max(max, g.count), 1);
+      const maxGoalCount = goalDistribution.reduce(
+        (max, g) => Math.max(max, g.count),
+        1,
+      );
 
       // ── Gender distribution ──────────────────────────────────────────────
       const totalStudentsForGender = activeStudentsCount;
-      const genderDistributionResult = buildGenderDistribution(genderCounts, totalStudentsForGender);
+      const genderDistributionResult = buildGenderDistribution(
+        genderCounts,
+        totalStudentsForGender,
+      );
 
       // ── Historial mensual (array de MonthlyRegistration) ─────────────────
-      const monthlyRegistrations: MonthlyRegistration[] = registrationsByMonth.map((count, offset) => {
-        const monthIndex = ((now.getMonth() - (5 - offset)) % 12 + 12) % 12;
-        return { month: MONTH_LABELS[monthIndex], count };
-      });
+      const monthlyRegistrations: MonthlyRegistration[] =
+        registrationsByMonth.map((count, offset) => {
+          const monthIndex = (((now.getMonth() - (5 - offset)) % 12) + 12) % 12;
+          return { month: MONTH_LABELS[monthIndex], count };
+        });
 
       set({
         metrics: {
@@ -304,7 +354,9 @@ const useMetricsStore = create<MetricsStore>((set, get) => ({
       });
     } catch (err) {
       console.error("[useBusinessMetrics] Error loading metrics:", err);
-      set({ error: err instanceof Error ? err.message : "Error al cargar métricas" });
+      set({
+        error: err instanceof Error ? err.message : "Error al cargar métricas",
+      });
     } finally {
       set({ isLoading: false });
     }

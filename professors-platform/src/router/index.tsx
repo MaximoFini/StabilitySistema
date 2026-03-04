@@ -1,5 +1,6 @@
 import { lazy, Suspense } from "react";
 import { createBrowserRouter, Navigate } from "react-router-dom";
+import { GlobalError } from "@/components/GlobalError";
 import { RequireAuth } from "@/components/layout/RequireAuth";
 import { RequireRole } from "@/components/layout/RequireRole";
 import { RequireCompletedProfile } from "@/components/layout/RequireCompletedProfile";
@@ -62,6 +63,7 @@ export const router = createBrowserRouter([
   // ── Coach routes (sidebar layout) ──────────────────────────────────────
   {
     path: "/",
+    errorElement: <GlobalError />,
     element: (
       <RequireAuth>
         <RequireRole role="coach">
@@ -102,6 +104,7 @@ export const router = createBrowserRouter([
   // ── Student training routes (mobile layout with bottom nav) ─────────────
   {
     path: "/entrenamiento",
+    errorElement: <GlobalError />,
     element: (
       <RequireAuth>
         <RequireRole role="student">
@@ -122,6 +125,7 @@ export const router = createBrowserRouter([
   // Mood check before workout
   {
     path: "/entrenamiento/mood/:dayId",
+    errorElement: <GlobalError />,
     element: (
       <RequireAuth>
         <RequireRole role="student">
@@ -135,6 +139,7 @@ export const router = createBrowserRouter([
   // Workout flow — full-screen, no bottom nav
   {
     path: "/entrenamiento/dia/:dayId",
+    errorElement: <GlobalError />,
     element: (
       <RequireAuth>
         <RequireRole role="student">
@@ -147,6 +152,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/entrenamiento/dia/:dayId/ejercicio/:exerciseNum",
+    errorElement: <GlobalError />,
     element: (
       <RequireAuth>
         <RequireRole role="student">
@@ -159,6 +165,7 @@ export const router = createBrowserRouter([
   },
   {
     path: "/entrenamiento/completado",
+    errorElement: <GlobalError />,
     element: (
       <RequireAuth>
         <RequireRole role="student">
@@ -173,26 +180,32 @@ export const router = createBrowserRouter([
   // ── Auth routes ────────────────────────────────────────────────────────
   {
     path: "/login",
+    errorElement: <GlobalError />,
     element: withSuspense(Login),
   },
   {
     path: "/register",
+    errorElement: <GlobalError />,
     element: withSuspense(RegisterPage),
   },
   {
     path: "/register/student",
+    errorElement: <GlobalError />,
     element: withSuspense(StudentRegister),
   },
   {
     path: "/register/complete-profile",
+    errorElement: <GlobalError />,
     element: <RequireAuth>{withSuspense(StudentProfileSetup)}</RequireAuth>,
   },
   {
     path: "/recuperar-password",
+    errorElement: <GlobalError />,
     element: withSuspense(ForgotPassword),
   },
   {
     path: "/actualizar-password",
+    errorElement: <GlobalError />,
     element: withSuspense(ResetPassword),
   },
   // ── Catch-all route (redirige a login) ─────────────────────────────────

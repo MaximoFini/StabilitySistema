@@ -52,7 +52,7 @@ export const GOAL_LABELS: Record<string, string> = {
   aesthetic: "Estética",
   sports: "Rendimiento Deportivo",
   health: "Salud General",
-  rehabilitation: "Rehabilitación",
+  readaptation: "Readaptación",
 };
 
 export const EXPERIENCE_LABELS: Record<string, string> = {
@@ -100,28 +100,33 @@ export function useStudentProfile(studentId: string | undefined) {
   const profileCache = useDataCacheStore((s) => s.studentProfiles);
   const plansCache = useDataCacheStore((s) => s.studentAssignedPlans);
   const loadedCache = useDataCacheStore((s) => s.loadedStudentProfiles);
-  const setStudentProfileData = useDataCacheStore((s) => s.setStudentProfileData);
-  const invalidateStudentProfile = useDataCacheStore((s) => s.invalidateStudentProfile);
+  const setStudentProfileData = useDataCacheStore(
+    (s) => s.setStudentProfileData,
+  );
+  const invalidateStudentProfile = useDataCacheStore(
+    (s) => s.invalidateStudentProfile,
+  );
 
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const isLoaded = studentId ? !!loadedCache[studentId] : false;
 
-  const load = useCallback(async (forceFetch = false) => {
-    if (!studentId) return;
+  const load = useCallback(
+    async (forceFetch = false) => {
+      if (!studentId) return;
 
-    // SWR: always revalidate. Blocking spinner only shows when cache is empty.
-    setIsFetching(true);
-    setError(null);
-    void forceFetch;
+      // SWR: always revalidate. Blocking spinner only shows when cache is empty.
+      setIsFetching(true);
+      setError(null);
+      void forceFetch;
 
-    try {
-      // Fetch profile + student_profiles in one query
-      const { data: profileData, error: profileError } = await supabase
-        .from("profiles")
-        .select(
-          `
+      try {
+        // Fetch profile + student_profiles in one query
+        const { data: profileData, error: profileError } = await supabase
+          .from("profiles")
+          .select(
+            `
           id,
           first_name,
           last_name,
@@ -145,51 +150,51 @@ export function useStudentProfile(studentId: string | undefined) {
             is_archived
           )
         `,
-        )
-        .eq("id", studentId)
-        .single();
+          )
+          .eq("id", studentId)
+          .single();
 
-      if (profileError) throw profileError;
-      if (!profileData) throw new Error("Alumno no encontrado");
+        if (profileError) throw profileError;
+        if (!profileData) throw new Error("Alumno no encontrado");
 
-      // Extract student_profiles (supabase returns as array or object)
-      const sp = Array.isArray(profileData.student_profiles)
-        ? profileData.student_profiles[0]
-        : (profileData.student_profiles as Record<string, unknown> | null);
+        // Extract student_profiles (supabase returns as array or object)
+        const sp = Array.isArray(profileData.student_profiles)
+          ? profileData.student_profiles[0]
+          : (profileData.student_profiles as Record<string, unknown> | null);
 
-      const studentProfile: StudentProfile = {
-        id: profileData.id,
-        firstName: profileData.first_name,
-        lastName: profileData.last_name,
-        fullName: `${profileData.first_name} ${profileData.last_name}`,
-        email: profileData.email,
-        createdAt: profileData.created_at,
-        profileImage: profileData.profile_image,
-        phone: (sp?.phone as string) ?? null,
-        instagram: (sp?.instagram as string) ?? null,
-        profileImageUrl: (sp?.profile_image_url as string) ?? null,
-        birthDate: (sp?.birth_date as string) ?? null,
-        gender: (sp?.gender as string) ?? null,
-        heightCm: (sp?.height_cm as number) ?? null,
-        weightKg: (sp?.weight_kg as number) ?? null,
-        activityLevel: (sp?.activity_level as string) ?? null,
-        primaryGoal: (sp?.primary_goal as string) ?? null,
-        trainingExperience: (sp?.training_experience as string) ?? null,
-        sports: (sp?.sports as string) ?? null,
-        previousInjuries: (sp?.previous_injuries as string) ?? null,
-        medicalConditions: (sp?.medical_conditions as string) ?? null,
-        isArchived: (sp?.is_archived as boolean) ?? false,
-      };
+        const studentProfile: StudentProfile = {
+          id: profileData.id,
+          firstName: profileData.first_name,
+          lastName: profileData.last_name,
+          fullName: `${profileData.first_name} ${profileData.last_name}`,
+          email: profileData.email,
+          createdAt: profileData.created_at,
+          profileImage: profileData.profile_image,
+          phone: (sp?.phone as string) ?? null,
+          instagram: (sp?.instagram as string) ?? null,
+          profileImageUrl: (sp?.profile_image_url as string) ?? null,
+          birthDate: (sp?.birth_date as string) ?? null,
+          gender: (sp?.gender as string) ?? null,
+          heightCm: (sp?.height_cm as number) ?? null,
+          weightKg: (sp?.weight_kg as number) ?? null,
+          activityLevel: (sp?.activity_level as string) ?? null,
+          primaryGoal: (sp?.primary_goal as string) ?? null,
+          trainingExperience: (sp?.training_experience as string) ?? null,
+          sports: (sp?.sports as string) ?? null,
+          previousInjuries: (sp?.previous_injuries as string) ?? null,
+          medicalConditions: (sp?.medical_conditions as string) ?? null,
+          isArchived: (sp?.is_archived as boolean) ?? false,
+        };
 
-      // NO seteamos local state de "student", es responsabilidad del cacheStore:
-      // Lo dejaremos flotar a través del hook return
-      const finalProfile = studentProfile;
+        // NO seteamos local state de "student", es responsabilidad del cacheStore:
+        // Lo dejaremos flotar a través del hook return
+        const finalProfile = studentProfile;
 
-      // Fetch assigned plans
-      const { data: assignmentsData, error: assignError } = await supabase
-        .from("training_plan_assignments")
-        .select(
-          `
+        // Fetch assigned plans
+        const { data: assignmentsData, error: assignError } = await supabase
+          .from("training_plan_assignments")
+          .select(
+            `
           id,
           plan_id,
           start_date,
@@ -205,15 +210,14 @@ export function useStudentProfile(studentId: string | undefined) {
             total_weeks
           )
         `,
-        )
-        .eq("student_id", studentId)
-        .order("assigned_at", { ascending: false });
+          )
+          .eq("student_id", studentId)
+          .order("assigned_at", { ascending: false });
 
-      if (assignError) throw assignError;
+        if (assignError) throw assignError;
 
-      if (assignmentsData) {
-        const mapped: AssignedPlan[] = assignmentsData.map(
-          (a: any) => {
+        if (assignmentsData) {
+          const mapped: AssignedPlan[] = assignmentsData.map((a: any) => {
             const tpRaw = a.training_plans;
             const tp = Array.isArray(tpRaw) ? tpRaw[0] : tpRaw;
             const totalDays = (tp?.total_days as number) ?? 0;
@@ -232,19 +236,20 @@ export function useStudentProfile(studentId: string | undefined) {
               status: (a.status as string) ?? "active",
               assignedAt: a.assigned_at as string,
             };
-          }
-        );
-        setStudentProfileData(studentId, finalProfile, mapped);
-      } else {
-        setStudentProfileData(studentId, finalProfile, []);
+          });
+          setStudentProfileData(studentId, finalProfile, mapped);
+        } else {
+          setStudentProfileData(studentId, finalProfile, []);
+        }
+      } catch (err) {
+        console.error("[useStudentProfile] Error:", err);
+        setError(err instanceof Error ? err.message : "Error al cargar perfil");
+      } finally {
+        setIsFetching(false);
       }
-    } catch (err) {
-      console.error("[useStudentProfile] Error:", err);
-      setError(err instanceof Error ? err.message : "Error al cargar perfil");
-    } finally {
-      setIsFetching(false);
-    }
-  }, [studentId, isLoaded, setStudentProfileData]);
+    },
+    [studentId, isLoaded, setStudentProfileData],
+  );
 
   useEffect(() => {
     load();

@@ -17,8 +17,8 @@ export interface SaveCompletionParams {
   assignmentId: string;
   dayNumber: number;
   rpe: number | null;
-  initialMood: string | null;   // happy/neutral/sad — antes de entrenar
-  mood: string | null;          // excellent/normal/tired/pain — al finalizar
+  initialMood: string | null; // happy/neutral/sad — antes de entrenar
+  mood: string | null; // excellent/normal/tired/pain — al finalizar
   moodComment?: string | null;
   totalSetsDone: number;
   seriesLog: SeriesLog;
@@ -35,64 +35,76 @@ interface UseWorkoutCompletionsReturn {
   refetch: () => void;
 }
 
-export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
+export function useWorkoutCompletions(
+  explicitStudentId?: string,
+): UseWorkoutCompletionsReturn {
   const professor = useAuthStore((s) => s.professor);
 
   const workoutCompletions = useDataCacheStore((s) => s.workoutCompletions);
-  const loadedWorkoutCompletions = useDataCacheStore((s) => s.loadedWorkoutCompletions);
-  const setWorkoutCompletionsData = useDataCacheStore((s) => s.setWorkoutCompletionsData);
-  const invalidateWorkoutCompletions = useDataCacheStore((s) => s.invalidateWorkoutCompletions);
+  const loadedWorkoutCompletions = useDataCacheStore(
+    (s) => s.loadedWorkoutCompletions,
+  );
+  const setWorkoutCompletionsData = useDataCacheStore(
+    (s) => s.setWorkoutCompletionsData,
+  );
+  const invalidateWorkoutCompletions = useDataCacheStore(
+    (s) => s.invalidateWorkoutCompletions,
+  );
 
   const [isFetching, setIsFetching] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const studentId = professor?.id;
+  // Use explicit studentId if provided, otherwise use logged-in user's ID
+  const studentId = explicitStudentId || professor?.id;
   const isLoaded = studentId ? !!loadedWorkoutCompletions[studentId] : false;
 
-  const fetch = useCallback(async (force = false) => {
-    if (!studentId) {
-      setIsFetching(false);
-      return;
-    }
-
-    if (isLoaded && !force) {
-      setIsFetching(true); // SWR: fetch in background
-    } else {
-      setIsFetching(true);
-    }
-    setError(null);
-
-    try {
-      const { data, error: fetchErr } = await supabase
-        .from("workout_completions")
-        .select(
-          "id, assignment_id, day_number, completed_at, rpe, total_sets_done",
-        )
-        .eq("student_id", professor.id)
-        .order("completed_at", { ascending: false });
-
-      if (fetchErr) {
-        setError(fetchErr.message);
+  const fetch = useCallback(
+    async (force = false) => {
+      if (!studentId) {
+        setIsFetching(false);
         return;
       }
 
-      setWorkoutCompletionsData(
-        studentId,
-        (data ?? []).map((row) => ({
-          id: row.id,
-          assignmentId: row.assignment_id,
-          dayNumber: row.day_number,
-          completedAt: row.completed_at,
-          rpe: row.rpe,
-          totalSetsDone: row.total_sets_done,
-        })),
-      );
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Error inesperado");
-    } finally {
-      setIsFetching(false);
-    }
-  }, [studentId, isLoaded, setWorkoutCompletionsData]);
+      if (isLoaded && !force) {
+        setIsFetching(true); // SWR: fetch in background
+      } else {
+        setIsFetching(true);
+      }
+      setError(null);
+
+      try {
+        const { data, error: fetchErr } = await supabase
+          .from("workout_completions")
+          .select(
+            "id, assignment_id, day_number, completed_at, rpe, total_sets_done",
+          )
+          .eq("student_id", studentId)
+          .order("completed_at", { ascending: false });
+
+        if (fetchErr) {
+          setError(fetchErr.message);
+          return;
+        }
+
+        setWorkoutCompletionsData(
+          studentId,
+          (data ?? []).map((row) => ({
+            id: row.id,
+            assignmentId: row.assignment_id,
+            dayNumber: row.day_number,
+            completedAt: row.completed_at,
+            rpe: row.rpe,
+            totalSetsDone: row.total_sets_done,
+          })),
+        );
+      } catch (err) {
+        setError(err instanceof Error ? err.message : "Error inesperado");
+      } finally {
+        setIsFetching(false);
+      }
+    },
+    [studentId, isLoaded, setWorkoutCompletionsData, professor],
+  );
 
   useEffect(() => {
     fetch();
@@ -162,7 +174,9 @@ export function useWorkoutCompletions(): UseWorkoutCompletionsReturn {
         // Step 2 — read current assignment metadata (including start_date)
         const { data: assignmentData, error: readErr } = await supabase
           .from("training_plan_assignments")
-          .select("completed_days, start_date, plan_id, training_plans(total_days)")
+          .select(
+            "completed_days, start_date, plan_id, training_plans(total_days)",
+          )
           .eq("id", params.assignmentId)
           .single();
 

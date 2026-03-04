@@ -92,7 +92,7 @@ export const step5Schema = z.object({
     },
   ),
   primaryGoal: z.enum(
-    ["aesthetic", "sports", "health", "rehabilitation"] as const,
+    ["aesthetic", "sports", "health", "readaptation"] as const,
     {
       error: "Selecciona un objetivo",
     },
