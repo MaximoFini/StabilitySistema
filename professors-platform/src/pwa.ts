@@ -1,27 +1,27 @@
 import { registerSW } from "virtual:pwa-register";
 
-// Registra el Service Worker automáticamente.
-// Con registerType: 'autoUpdate', el SW se actualiza en segundo plano
-// sin necesidad de confirmación del usuario.
-registerSW({
+console.log("[PWA] Iniciando registro del Service Worker...");
+
+const updateSW = registerSW({
   immediate: true,
   onNeedRefresh() {
-    // Opcional: aquí podrías mostrar un toast/banner
-    // invitando al usuario a recargar para obtener la nueva versión.
-    console.info("[PWA] Nueva versión disponible.");
+    console.info("[PWA] Nueva versión disponible - recargando...");
     window.location.reload();
   },
   onOfflineReady() {
-    console.info("[PWA] App lista para funcionar offline.");
+    console.info("[PWA] ✅ App lista para funcionar offline.");
   },
-  onRegisteredSW(_swUrl, registration) {
+  onRegistered(registration) {
+    console.log("[PWA] ✅ Service Worker registrado exitosamente");
     if (registration) {
       setInterval(() => {
         registration.update();
-      }, 30 * 1000); // Chequear cada 30 segundos
+      }, 60 * 1000); // Chequear cada minuto
     }
   },
   onRegisterError(error) {
-    console.error("[PWA] Error registrando SW:", error);
+    console.error("[PWA] ❌ Error al registrar SW:", error);
   },
 });
+
+console.log("[PWA] registerSW ejecutado, updateSW:", typeof updateSW);
