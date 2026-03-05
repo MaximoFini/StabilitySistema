@@ -68,7 +68,7 @@ export default function StudentRegister() {
                     <span className="material-symbols-outlined text-[24px]">arrow_back</span>
                 </button>
                 <h2 className="text-text-main dark:text-white text-lg font-bold leading-tight tracking-[-0.015em] text-center">
-                    Stability Entrenamiento
+                    Sistema Stability
                 </h2>
                 <div className="size-10"></div> {/* Spacer for centering */}
             </header>
