@@ -1,5 +1,9 @@
+import { useEffect, useState } from "react";
 import { Navigate, useLocation } from "react-router-dom";
 import { useAuthStore } from "@/features/auth/store/authStore";
+
+// Timeout máximo para evitar pantalla de carga infinita (5 segundos)
+const AUTH_TIMEOUT_MS = 5000;
 
 function AuthLoadingScreen() {
   return (
@@ -16,6 +20,35 @@ export function RequireAuth({ children }: { children: React.ReactNode }) {
   const professor = useAuthStore((state) => state.professor);
   const isInitializing = useAuthStore((state) => state.isInitializing);
   const location = useLocation();
+  const [hasTimedOut, setHasTimedOut] = useState(false);
+
+  // Timeout de seguridad: si isInitializing tarda más de AUTH_TIMEOUT_MS,
+  // asumimos que algo falló y redirigimos a login
+  useEffect(() => {
+    if (!isInitializing) {
+      setHasTimedOut(false);
+      return;
+    }
+
+    const timer = setTimeout(() => {
+      if (isInitializing) {
+        console.warn(
+          "[RequireAuth] Auth initialization timed out after",
+          AUTH_TIMEOUT_MS,
+          "ms",
+        );
+        setHasTimedOut(true);
+      }
+    }, AUTH_TIMEOUT_MS);
+
+    return () => clearTimeout(timer);
+  }, [isInitializing]);
+
+  // Si ocurre timeout, redirigir a login para evitar pantalla blanca
+  if (hasTimedOut && isInitializing) {
+    console.warn("[RequireAuth] Redirecting to login due to timeout");
+    return <Navigate to="/login" state={{ from: location }} replace />;
+  }
 
   // Esperar mientras se inicializa la autenticación
   if (isInitializing) {
