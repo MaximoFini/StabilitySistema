@@ -45,6 +45,7 @@ interface AuthState {
   professor: Professor | null;
   isAuthenticated: boolean;
   isLoading: boolean;
+  isInitializing: boolean;
   error: string | null;
   lastActivity: number | null;
   tokenExpiry: number | null;
@@ -182,11 +183,13 @@ export const useAuthStore = create<AuthState>()(
         professor: null,
         isAuthenticated: false,
         isLoading: false,
+        isInitializing: true,
         error: null,
         lastActivity: null,
         tokenExpiry: null,
 
         initializeAuth: async () => {
+          set({ isInitializing: true });
           try {
             const {
               data: { session },
@@ -229,6 +232,8 @@ export const useAuthStore = create<AuthState>()(
               get().updateActivity();
             }
 
+            set({ isInitializing: false });
+
             // Listen for auth changes (e.g., token expiration, sign out from another tab)
             supabase.auth.onAuthStateChange(async (event, session) => {
               console.log("Auth state changed:", event);
@@ -265,6 +270,14 @@ export const useAuthStore = create<AuthState>()(
             });
           } catch (error) {
             console.error("Error initializing auth:", error);
+            // En caso de error, limpiar estado para evitar pantalla blanca
+            set({
+              professor: null,
+              isAuthenticated: false,
+              isInitializing: false,
+              lastActivity: null,
+              tokenExpiry: null,
+            });
           }
         },
 
