@@ -47,10 +47,42 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{js,css,html,png,svg,ico,woff2}"],
+        // IMPORTANTE: Solo precachear assets estáticos (imágenes, iconos, fuentes)
+        // JS/CSS/HTML van por runtimeCaching para evitar pantalla blanca
+        globPatterns: ["**/*.{png,svg,ico,woff2}"],
         cleanupOutdatedCaches: true,
         clientsClaim: false,
+        skipWaiting: true,
+        // Ignorar parámetros de query en URLs
+        ignoreURLParametersMatching: [/.*/],
         runtimeCaching: [
+          // HTML - siempre ir a la red primero para obtener la versión más reciente
+          {
+            urlPattern: /\.html$/,
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "html-cache",
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 24 * 60 * 60, // 24 horas
+              },
+              networkTimeoutSeconds: 10,
+            },
+          },
+          // Root path (/) - NetworkFirst para la página principal
+          {
+            urlPattern: ({ request }) => request.mode === "navigate",
+            handler: "NetworkFirst",
+            options: {
+              cacheName: "pages-cache",
+              expiration: {
+                maxEntries: 10,
+                maxAgeSeconds: 24 * 60 * 60, // 24 horas
+              },
+              networkTimeoutSeconds: 10,
+            },
+          },
+          // JS/CSS - StaleWhileRevalidate (usar cache pero actualizar en segundo plano)
           {
             urlPattern: /\.(?:js|css)$/,
             handler: "StaleWhileRevalidate",
