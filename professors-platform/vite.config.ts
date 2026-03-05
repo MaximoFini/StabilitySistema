@@ -9,6 +9,10 @@ export default defineConfig(({ mode }) => ({
     react(),
     VitePWA({
       registerType: "autoUpdate",
+      devOptions: {
+        enabled: true,
+        type: "module",
+      },
       includeAssets: [
         "logo-stability.png",
         "pwa-192x192.png",
@@ -43,22 +47,10 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        globPatterns: ["**/*.{png,svg,ico,woff2}"],
+        globPatterns: ["**/*.{js,css,html,png,svg,ico,woff2}"],
         cleanupOutdatedCaches: true,
         clientsClaim: false,
         runtimeCaching: [
-          {
-            urlPattern: /^https:\/\/.+\.html$/,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "html-cache",
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 24 * 60 * 60, // 24 horas
-              },
-              networkTimeoutSeconds: 10,
-            },
-          },
           {
             urlPattern: /\.(?:js|css)$/,
             handler: "StaleWhileRevalidate",
