@@ -60,7 +60,7 @@ export function Sidebar({ className, isOpen = false, onClose }: SidebarProps) {
         >
           {!isCollapsed ? (
             <span className="text-xl font-black text-primary tracking-wider">
-              STABILITY
+              SISTEMA STABILITY
             </span>
           ) : (
             <img

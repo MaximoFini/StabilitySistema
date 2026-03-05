@@ -47,53 +47,32 @@ export default defineConfig(({ mode }) => ({
         ],
       },
       workbox: {
-        // IMPORTANTE: Solo precachear assets estáticos (imágenes, iconos, fuentes)
-        // JS/CSS/HTML van por runtimeCaching para evitar pantalla blanca
-        globPatterns: ["**/*.{png,svg,ico,woff2}"],
+        // Solo precachear assets estáticos e index.html (necesario para navigateFallback)
+        globPatterns: ["**/*.{png,svg,ico,woff2}", "index.html"],
         cleanupOutdatedCaches: true,
-        clientsClaim: false,
+        // Ambos en true: nuevo SW toma control inmediatamente
+        clientsClaim: true,
         skipWaiting: true,
-        // Ignorar parámetros de query en URLs
-        ignoreURLParametersMatching: [/.*/],
+        // CRÍTICO para SPA: todas las navegaciones devuelven index.html
+        navigateFallback: "index.html",
+        // No interceptar requests a Supabase ni API
+        navigateFallbackDenylist: [/^\/api/, /supabase\.co/, /\.well-known/],
         runtimeCaching: [
-          // HTML - siempre ir a la red primero para obtener la versión más reciente
-          {
-            urlPattern: /\.html$/,
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "html-cache",
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 24 * 60 * 60, // 24 horas
-              },
-              networkTimeoutSeconds: 10,
-            },
-          },
-          // Root path (/) - NetworkFirst para la página principal
-          {
-            urlPattern: ({ request }) => request.mode === "navigate",
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "pages-cache",
-              expiration: {
-                maxEntries: 10,
-                maxAgeSeconds: 24 * 60 * 60, // 24 horas
-              },
-              networkTimeoutSeconds: 10,
-            },
-          },
-          // JS/CSS - StaleWhileRevalidate (usar cache pero actualizar en segundo plano)
+          // JS/CSS → NetworkFirst: siempre intentar versión fresca
+          // Evita servir JS viejo que no coincide con el HTML actual
           {
             urlPattern: /\.(?:js|css)$/,
-            handler: "StaleWhileRevalidate",
+            handler: "NetworkFirst",
             options: {
               cacheName: "static-resources",
+              networkTimeoutSeconds: 5,
               expiration: {
                 maxEntries: 60,
                 maxAgeSeconds: 7 * 24 * 60 * 60, // 7 días
               },
             },
           },
+          // Supabase API → NetworkOnly: nunca cachear datos
           {
             urlPattern: ({ url }) => url.origin.includes(".supabase.co"),
             handler: "NetworkOnly",
@@ -101,6 +80,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: "api-cache",
             },
           },
+          // Imágenes → CacheFirst: cachear agresivamente
           {
             urlPattern: /\.(?:png|jpg|jpeg|svg|gif|webp)$/,
             handler: "CacheFirst",
@@ -112,6 +92,7 @@ export default defineConfig(({ mode }) => ({
               },
             },
           },
+          // Google Fonts stylesheets
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com/,
             handler: "StaleWhileRevalidate",
@@ -119,6 +100,7 @@ export default defineConfig(({ mode }) => ({
               cacheName: "google-fonts-stylesheets",
             },
           },
+          // Google Fonts webfonts
           {
             urlPattern: /^https:\/\/fonts\.gstatic\.com/,
             handler: "CacheFirst",
