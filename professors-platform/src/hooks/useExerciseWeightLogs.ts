@@ -49,18 +49,16 @@ export function useExerciseWeightLogs(studentId: string | undefined) {
   const isLoaded = studentId ? !!loadedExerciseWeightLogs[studentId] : false;
 
   const load = useCallback(
-    async (force = false) => {
+    async (_force = false) => {
       if (!studentId) {
         setIsFetching(false);
         return;
       }
 
-      if (isLoaded && !force) {
-        // SWR: fetch in background unless explicitly forced
-        setIsFetching(true);
-      } else {
-        setIsFetching(true);
-      }
+      // Leer isLoaded directamente del store para evitar dependencia reactiva
+      void useDataCacheStore.getState().loadedExerciseWeightLogs[studentId];
+      // SWR: siempre fetch; loading se controla con isFetching && !isLoaded
+      setIsFetching(true);
 
       try {
         const { data, error } = await supabase
@@ -160,12 +158,13 @@ export function useExerciseWeightLogs(studentId: string | undefined) {
         setIsFetching(false);
       }
     },
-    [studentId, isLoaded, setExerciseWeightLogsData],
+    [studentId, setExerciseWeightLogsData],
   );
 
   useEffect(() => {
     load(false);
-  }, [load]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId]);
 
   const groups = studentId ? exerciseWeightLogs[studentId] || [] : [];
   const loading = isFetching && !isLoaded;

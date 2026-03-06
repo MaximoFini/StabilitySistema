@@ -65,7 +65,10 @@ export function useWorkoutCompletions(
         return;
       }
 
-      if (isLoaded && !force) {
+      // Leer isLoaded directamente del store para evitar dependencia reactiva
+      const currentIsLoaded = useDataCacheStore.getState().loadedWorkoutCompletions[studentId];
+      
+      if (currentIsLoaded && !force) {
         setIsFetching(true); // SWR: fetch in background
       } else {
         setIsFetching(true);
@@ -103,12 +106,13 @@ export function useWorkoutCompletions(
         setIsFetching(false);
       }
     },
-    [studentId, isLoaded, setWorkoutCompletionsData, professor],
+    [studentId, setWorkoutCompletionsData],
   );
 
   useEffect(() => {
     fetch();
-  }, [fetch]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId]);
 
   const saveCompletion = useCallback(
     async (

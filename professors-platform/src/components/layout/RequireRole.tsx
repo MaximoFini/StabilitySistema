@@ -14,8 +14,11 @@ export function RequireRole({ role, children }: RequireRoleProps) {
     }
 
     if (professor.role !== role) {
-        // Redirect to appropriate dashboard based on actual role
-        return <Navigate to="/" replace />
+        // Redirect to the correct home based on the user's actual role
+        // IMPORTANT: never redirect to "/" here — coaches route lives at "/" and
+        // would cause an infinite loop if a student lands on it.
+        const home = professor.role === "coach" ? "/inicio" : "/entrenamiento";
+        return <Navigate to={home} replace />
     }
 
     return <>{children}</>

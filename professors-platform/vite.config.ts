@@ -125,4 +125,66 @@ export default defineConfig(({ mode }) => ({
   esbuild: {
     drop: mode === "production" ? (["console", "debugger"] as const) : [],
   },
+  build: {
+    // Inject <link rel="modulepreload"> for critical chunks in production HTML
+    modulePreload: { polyfill: true },
+    rollupOptions: {
+      output: {
+        manualChunks(id) {
+          // React core — always loaded, keep small and isolated
+          if (
+            id.includes("node_modules/react/") ||
+            id.includes("node_modules/react-dom/") ||
+            id.includes("node_modules/react-is/") ||
+            id.includes("node_modules/scheduler/")
+          ) {
+            return "vendor-react";
+          }
+          // Supabase — always loaded (auth init)
+          if (id.includes("node_modules/@supabase/")) {
+            return "vendor-supabase";
+          }
+          // Router
+          if (id.includes("node_modules/react-router")) {
+            return "vendor-router";
+          }
+          // Forms + validation — login/register pages
+          if (
+            id.includes("node_modules/react-hook-form/") ||
+            id.includes("node_modules/@hookform/") ||
+            id.includes("node_modules/zod/")
+          ) {
+            return "vendor-forms";
+          }
+          // Charts — only BusinessMetrics page
+          if (id.includes("node_modules/recharts/")) {
+            return "vendor-charts";
+          }
+          // PDF / canvas export — only Library page
+          if (
+            id.includes("node_modules/jspdf/") ||
+            id.includes("node_modules/html2canvas/")
+          ) {
+            return "vendor-pdf";
+          }
+          // DnD — only NewPlan page
+          if (id.includes("node_modules/@dnd-kit/")) {
+            return "vendor-dnd";
+          }
+          // UI utilities (lucide, radix, class utils, sonner, zustand)
+          if (
+            id.includes("node_modules/lucide-react/") ||
+            id.includes("node_modules/@radix-ui/") ||
+            id.includes("node_modules/clsx/") ||
+            id.includes("node_modules/tailwind-merge/") ||
+            id.includes("node_modules/class-variance-authority/") ||
+            id.includes("node_modules/sonner/") ||
+            id.includes("node_modules/zustand/")
+          ) {
+            return "vendor-ui";
+          }
+        },
+      },
+    },
+  },
 }));
