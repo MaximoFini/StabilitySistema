@@ -26,7 +26,7 @@ const updateSW = registerSW({
   },
 
   onRegisterError(_error) {
-    // Si falla el registro del SW, limpiar caches para recuperar
+    // Si falla el registro del SW, limpiar caches para recuperar 
     if ("caches" in window) {
       caches
         .keys()
