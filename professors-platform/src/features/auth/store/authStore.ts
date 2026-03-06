@@ -193,21 +193,6 @@ export const useAuthStore = create<AuthState>()(
 
         initializeAuth: async () => {
           set({ isInitializing: true });
-<<<<<<< HEAD
-=======
-          
-
-          // Timeout de seguridad: si getSession() o userToProfessor() cuelgan,
-          // finalizamos la inicialización igualmente para evitar pantalla blanca
-          const safetyTimeout = setTimeout(() => {
-            const state = get();
-            if (state.isInitializing) {
-              console.warn("Auth initialization timed out");
-              set({ isInitializing: false });
-            }
-          }, 8000);
-
->>>>>>> f263993979dedd7d0ace06230bd79fb35d4d0c5a
           try {
             const {
               data: { session },
