@@ -1,6 +1,7 @@
 import { useState, useEffect, useCallback, useRef } from "react";
 import { supabase } from "@/lib/supabase";
 import { useDataCacheStore } from "@/store/dataCacheStore";
+import { useTrainingStore } from "@/features/training/store/trainingStore";
 import type {
   WorkoutDay,
   Exercise,
@@ -32,6 +33,9 @@ export function useActiveDayExercises(
   const dayExercises = useDataCacheStore((s) => s.dayExercises);
   const loadedDayExercises = useDataCacheStore((s) => s.loadedDayExercises);
   const setDayExercisesData = useDataCacheStore((s) => s.setDayExercisesData);
+  // Access the global exercise library (already loaded in memory) to resolve
+  // the most up-to-date video_url for each exercise by name.
+  const globalExercises = useTrainingStore((s) => s.globalExercises);
 
   // Track in-flight requests to avoid duplicate fetches for the same dayId
   const fetchingRef = useRef<Set<string>>(new Set());
@@ -39,6 +43,11 @@ export function useActiveDayExercises(
 
   const fetchDay = useCallback(
     async (id: string) => {
+      // Build a lookup map: lowercase exercise name → live video_url from library
+      const libraryVideoMap = new Map<string, string | null>();
+      for (const libEx of globalExercises) {
+        libraryVideoMap.set(libEx.name.toLowerCase(), libEx.video_url ?? null);
+      }
       // Dedup: skip if already fetching this dayId
       if (fetchingRef.current.has(id)) return;
       fetchingRef.current.add(id);
@@ -105,7 +114,14 @@ export function useActiveDayExercises(
               category: ex.stage_name ?? "",
               sets,
               restSeconds: parsePauseToSeconds(ex.pause),
-              videoUrl: ex.video_url ?? undefined,
+              // Prefer the live video_url from the library (matched by name).
+              // Falls back to the URL stored in the plan if the exercise is not
+              // found in the library (e.g. it was renamed or deleted).
+              videoUrl: (
+                libraryVideoMap.has(ex.exercise_name.toLowerCase())
+                  ? libraryVideoMap.get(ex.exercise_name.toLowerCase())
+                  : ex.video_url
+              ) ?? undefined,
               instructions: instructionParts.join(" — ") || undefined,
               writeWeight: ex.write_weight ?? false,
               carga: ex.carga ?? undefined,
@@ -127,7 +143,7 @@ export function useActiveDayExercises(
         fetchingRef.current.delete(id);
       }
     },
-    [setDayExercisesData],
+    [setDayExercisesData, globalExercises],
   );
 
   useEffect(() => {

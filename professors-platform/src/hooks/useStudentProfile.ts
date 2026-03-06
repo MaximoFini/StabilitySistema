@@ -248,12 +248,13 @@ export function useStudentProfile(studentId: string | undefined) {
         setIsFetching(false);
       }
     },
-    [studentId, isLoaded, setStudentProfileData],
+    [studentId, setStudentProfileData],
   );
 
   useEffect(() => {
     load();
-  }, [load]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [studentId]);
 
   const student = studentId ? profileCache[studentId] || null : null;
   const plans = studentId ? plansCache[studentId] || [] : [];

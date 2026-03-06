@@ -12,27 +12,33 @@
   <link rel="apple-touch-icon" href="/pwa-192x192.png" />
 
   <!-- SEO & Social Media -->
-  <title>Sistema Stability - Plataforma para Entrenadores</title>
+  <title>Sistema Stability</title>
   <meta name="description"
-    content="Sistema Stability: La plataforma definitiva para entrenadores. Gestiona alumnos, rutinas y planes de entrenamiento de forma profesional y eficiente." />
+    content="Stability: Gestion de alumnos, rutinas y planes de entrenamiento de forma profesional y eficiente." />
   <meta name="keywords" content="entrenamiento, fitness, software entrenadores, gestión alumnos, rutinas" />
-  <meta name="author" content="Sistema Stability" />
+  <meta name="author" content="Stability" />
 
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website" />
   <meta property="og:url" content="https://stabilitysistema.com/" />
-  <meta property="og:title" content="Sistema Stability - Plataforma para Entrenadores" />
+  <meta property="og:title" content="Stability - Plataforma para Entrenadores" />
   <meta property="og:description"
-    content="Sistema Stability: La plataforma definitiva para entrenadores. Gestiona alumnos, rutinas y planes de entrenamiento de forma profesional y eficiente." />
+    content="Stability: Gestion de alumnos, rutinas y planes de entrenamiento de forma profesional y eficiente." />
   <meta property="og:image" content="/logo-stability.png" />
 
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image" />
   <meta property="twitter:url" content="https://stabilitysistema.com/" />
-  <meta property="twitter:title" content="Sistema Stability - Plataforma para Entrenadores" />
+  <meta property="twitter:title" content="Stability - Plataforma para Entrenadores" />
   <meta property="twitter:description"
-    content="Sistema Stability: La plataforma definitiva para entrenadores. Gestiona alumnos, rutinas y planes de entrenamiento de forma profesional y eficiente." />
+    content="Stability: Gestion de alumnos, rutinas y planes de entrenamiento de forma profesional y eficiente." />
   <meta property="twitter:image" content="/logo-stability.png" />
+
+  <!-- Resource hints: open connections before they're needed -->
+  <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <!-- Preload splash logo at highest priority so it's ready instantly -->
+  <link rel="preload" href="/logo-stability.png" as="image" type="image/png" />
 
   <link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet" />
   <link rel="stylesheet"
@@ -41,33 +47,133 @@
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet" />
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@700&display=swap" rel="stylesheet" />
 
-  <!-- Estilos del spinner nativo (visible ANTES de que React cargue el JS) -->
+  <!-- Estilos del splash screen nativo (visible ANTES de que React cargue el JS) -->
   <style>
-    body {
+    * {
+      box-sizing: border-box;
       margin: 0;
-      background-color: #09090b;
+      padding: 0;
     }
 
-    .pantalla-carga {
+    body {
+      margin: 0;
+      background-color: #0b1d3a;
+    }
+
+    .splash {
       display: flex;
+      flex-direction: column;
       justify-content: center;
       align-items: center;
       height: 100vh;
       width: 100vw;
+      background: linear-gradient(135deg, #0b1d3a 0%, #0d2654 50%, #0b1d3a 100%);
+      gap: 0;
     }
 
-    .spinner {
-      width: 40px;
-      height: 40px;
-      border: 3px solid rgba(255, 255, 255, 0.1);
-      border-left-color: #ffffff;
+    /* Logo container */
+    .splash-logo-wrap {
+      background: rgba(255, 255, 255, 0.97);
+      border-radius: 20px;
+      padding: 20px 24px;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 8px 40px rgba(0, 0, 0, 0.35);
+      animation: splashFadeIn 0.5s ease-out both;
+    }
+
+    .splash-logo-wrap img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    /* Wordmark */
+    .splash-wordmark {
+      margin-top: 24px;
+      font-family: 'Palatino Linotype', 'Palatino', 'Book Antiqua', Georgia, serif;
+      font-size: 2rem;
+      font-weight: 400;
+      letter-spacing: 0.22em;
+      color: #ffffff;
+      text-shadow: 0 2px 20px rgba(0, 0, 0, 0.4);
+      animation: splashFadeIn 0.5s 0.15s ease-out both;
+    }
+
+    /* Divider */
+    .splash-divider {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin-top: 10px;
+      animation: splashFadeIn 0.5s 0.25s ease-out both;
+    }
+
+    .splash-divider-line {
+      width: 48px;
+      height: 1px;
+      background: rgba(255, 255, 255, 0.35);
+    }
+
+    .splash-divider-dot {
+      width: 5px;
+      height: 5px;
       border-radius: 50%;
-      animation: girar 0.8s linear infinite;
+      background: rgba(255, 255, 255, 0.45);
     }
 
-    @keyframes girar {
+    /* Subtitle */
+    .splash-sub {
+      font-family: 'Gill Sans', 'Gill Sans MT', Calibri, 'Trebuchet MS', sans-serif;
+      font-size: 0.62rem;
+      letter-spacing: 0.38em;
+      text-transform: uppercase;
+      color: rgba(255, 255, 255, 0.55);
+      margin-top: 8px;
+      animation: splashFadeIn 0.5s 0.3s ease-out both;
+    }
+
+    /* Progress bar */
+    .splash-bar-track {
+      width: 120px;
+      height: 2px;
+      background: rgba(255, 255, 255, 0.12);
+      border-radius: 99px;
+      margin-top: 40px;
+      overflow: hidden;
+      animation: splashFadeIn 0.5s 0.4s ease-out both;
+    }
+
+    .splash-bar-fill {
+      height: 100%;
+      width: 40%;
+      background: rgba(255, 255, 255, 0.7);
+      border-radius: 99px;
+      animation: barSlide 1.4s ease-in-out infinite;
+    }
+
+    @keyframes barSlide {
+      0% {
+        transform: translateX(-100%);
+      }
+
+      100% {
+        transform: translateX(340%);
+      }
+    }
+
+    @keyframes splashFadeIn {
+      from {
+        opacity: 0;
+        transform: translateY(10px);
+      }
+
       to {
-        transform: rotate(360deg);
+        opacity: 1;
+        transform: translateY(0);
       }
     }
   </style>
@@ -75,10 +181,22 @@
 
 <body>
   <div id="root">
-    <!-- Spinner visible solo durante la carga inicial del JS bundle.
+    <!-- Splash screen visible solo durante la carga inicial del JS bundle.
            React lo reemplaza automáticamente al montar la app. -->
-    <div class="pantalla-carga" id="pantalla-carga-inicial">
-      <div class="spinner"></div>
+    <div class="splash" id="pantalla-carga-inicial">
+      <div class="splash-logo-wrap">
+        <img src="/logo-stability.png" alt="Stability" />
+      </div>
+      <div class="splash-wordmark">STABILITY</div>
+      <div class="splash-divider">
+        <div class="splash-divider-line"></div>
+        <div class="splash-divider-dot"></div>
+        <div class="splash-divider-line"></div>
+      </div>
+      <div class="splash-sub">Entrenamiento y Salud</div>
+      <div class="splash-bar-track">
+        <div class="splash-bar-fill"></div>
+      </div>
     </div>
   </div>
   <script type="module" src="/src/main.tsx"></script>

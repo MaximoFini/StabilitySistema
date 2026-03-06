@@ -11,6 +11,17 @@ function App() {
 
   useEffect(() => {
     initializeAuth();
+
+    // Prefetch the most-visited route chunks while the user sees the splash/login.
+    // Uses a delay so prefetch never competes with the initial React + Supabase bundles.
+    // Fire-and-forget: errors are intentionally swallowed.
+    const prefetchTimer = setTimeout(() => {
+      import("@/features/auth/Login").catch(() => { });
+      import("@/features/students/StudentsList").catch(() => { });
+      import("@/features/training/TrainingHome").catch(() => { });
+    }, 1500);
+
+    return () => clearTimeout(prefetchTimer);
   }, [initializeAuth]);
 
   return (
