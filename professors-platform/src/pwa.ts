@@ -46,10 +46,21 @@ const updateSW = registerSW({
       }, 60 * 1000);
     }
   },
+<<<<<<< HEAD
   onRegisterError(error) {
     console.error("[PWA] ❌ Error al registrar SW:", error);
     // Si hay error en el registro, limpiar caches para intentar recuperar
     clearAllCaches();
+=======
+
+  onRegisterError(_error) {
+    // Si falla el registro del SW, limpiar caches para recuperar 
+    if ("caches" in window) {
+      caches
+        .keys()
+        .then((names) => Promise.all(names.map((n) => caches.delete(n))));
+    }
+>>>>>>> f263993979dedd7d0ace06230bd79fb35d4d0c5a
   },
 });
 

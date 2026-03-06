@@ -49,8 +49,8 @@ interface AuthState {
   error: string | null;
   lastActivity: number | null;
   tokenExpiry: number | null;
+  hasHydrated: boolean;
 
-  // Actions
   login: (email: string, password: string) => Promise<void>;
   register: (data: RegisterData) => Promise<void>;
   logout: () => Promise<void>;
@@ -63,6 +63,7 @@ interface AuthState {
   completeStudentProfile: (data: StudentProfileData) => Promise<void>;
   resetPassword: (email: string) => Promise<{ error: string | null }>;
   updatePassword: (newPassword: string) => Promise<{ error: string | null }>;
+  setHasHydrated: (state: boolean) => void;
 }
 
 // Inactivity timeout (disabled - session persists until manual logout)
@@ -158,7 +159,6 @@ const userToProfessor = async (user: User): Promise<Professor | null> => {
 export const useAuthStore = create<AuthState>()(
   persist(
     (set, get) => {
-      // Setup activity listeners
       const setupActivityListeners = () => {
         const events = ["mousedown", "keypress", "scroll", "touchstart"];
 
@@ -168,6 +168,7 @@ export const useAuthStore = create<AuthState>()(
             state.updateActivity();
           }
         };
+        
 
         events.forEach((event) => {
           window.addEventListener(event, handleActivity, { passive: true });
@@ -180,6 +181,8 @@ export const useAuthStore = create<AuthState>()(
       }
 
       return {
+        hasHydrated: false, 
+        setHasHydrated: (state) => set({ hasHydrated: state }),
         professor: null,
         isAuthenticated: false,
         isLoading: false,
@@ -190,6 +193,21 @@ export const useAuthStore = create<AuthState>()(
 
         initializeAuth: async () => {
           set({ isInitializing: true });
+<<<<<<< HEAD
+=======
+          
+
+          // Timeout de seguridad: si getSession() o userToProfessor() cuelgan,
+          // finalizamos la inicialización igualmente para evitar pantalla blanca
+          const safetyTimeout = setTimeout(() => {
+            const state = get();
+            if (state.isInitializing) {
+              console.warn("Auth initialization timed out");
+              set({ isInitializing: false });
+            }
+          }, 8000);
+
+>>>>>>> f263993979dedd7d0ace06230bd79fb35d4d0c5a
           try {
             const {
               data: { session },
@@ -203,6 +221,7 @@ export const useAuthStore = create<AuthState>()(
                 lastActivity: null,
                 tokenExpiry: null,
               });
+              
             } else {
               // Hay sesión activa
               const currentState = get();
@@ -309,8 +328,6 @@ export const useAuthStore = create<AuthState>()(
                 status: error.status,
                 code: error.code,
               });
-
-              // Detectar tipo de error específico
               let errorMessage = "Credenciales inválidas";
 
               if (
@@ -690,7 +707,9 @@ export const useAuthStore = create<AuthState>()(
     {
       name: "auth-storage",
       storage: createJSONStorage(() => localStorage),
-      // Always persist authentication state
+      onRehydrateStorage: () => (state) => {
+        state?.setHasHydrated(true);
+      },
       partialize: (state) => ({
         professor: state.professor,
         isAuthenticated: state.isAuthenticated,
