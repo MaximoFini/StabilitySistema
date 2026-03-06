@@ -33,7 +33,7 @@ export default function MainLayout() {
       {/* Main content column */}
       <main className="flex-1 flex flex-col overflow-hidden min-w-0">
         {/* Mobile top header — hidden on desktop */}
-        <header className="flex items-center gap-3 px-4 h-14 border-b bg-white dark:bg-slate-900 lg:hidden shrink-0 safe-area-pt">
+        <header className="flex items-center gap-3 px-4 h-14 border-b bg-white dark:bg-slate-900 lg:hidden shrink-0">
           <button
             onClick={() => setSidebarOpen(true)}
             className="p-2 -ml-1 rounded-lg text-slate-500 hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"

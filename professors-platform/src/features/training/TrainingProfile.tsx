@@ -1,8 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useAuthStore } from "@/features/auth/store/authStore";
 import { supabase } from "@/lib/supabase";
-import { uploadProfileImage } from "@/lib/supabase-storage";
-import { Pencil, Loader2 } from "lucide-react";
+import { Pencil } from "lucide-react";
 import { toast } from "sonner";
 import { cn, formatDateLocal } from "@/lib/utils";
 
@@ -54,69 +53,19 @@ export default function TrainingProfile() {
   const [expandedSection, setExpandedSection] = useState<Section>(null);
   const [editingSection, setEditingSection] = useState<Section>(null);
   const [formData, setFormData] = useState<Partial<StudentProfileData>>({});
-  const [isUploadingImage, setIsUploadingImage] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const handleImageClick = () => {
-    if (isUploadingImage) return;
     fileInputRef.current?.click();
   };
 
   const handleImageChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    // Limpiar el input para permitir seleccionar el mismo archivo de nuevo
-    event.target.value = "";
     if (!file) return;
 
-    // Validar que sea una imagen
-    if (!file.type.startsWith("image/")) {
-      toast.error("El archivo debe ser una imagen (JPG, PNG, WebP, etc.)");
-      return;
-    }
-
-    // Validar tamaño máximo: 5MB
-    const MAX_SIZE_MB = 5;
-    if (file.size > MAX_SIZE_MB * 1024 * 1024) {
-      toast.error(`La imagen no puede superar los ${MAX_SIZE_MB}MB`);
-      return;
-    }
-
-    setIsUploadingImage(true);
-
-    try {
-      const {
-        data: { user },
-      } = await supabase.auth.getUser();
-      if (!user) throw new Error("Usuario no autenticado");
-
-      // 1. Subir al bucket "profile-images" con nombre único
-      const publicUrl = await uploadProfileImage(user.id, file);
-      if (!publicUrl) throw new Error("No se pudo obtener la URL pública");
-
-      // 2. Actualizar la tabla student_profiles
-      const { error: dbError } = await supabase
-        .from("student_profiles")
-        .update({ profile_image_url: publicUrl })
-        .eq("id", user.id);
-
-      if (dbError) throw dbError;
-
-      // 3. Actualizar el estado local de Zustand para reflejo inmediato
-      useAuthStore.setState((state) => ({
-        professor: state.professor
-          ? { ...state.professor, profileImage: publicUrl }
-          : null,
-      }));
-
-      toast.success("¡Foto de perfil actualizada!");
-    } catch (error) {
-      console.error("[handleImageChange] Error al subir imagen:", error);
-      const message =
-        error instanceof Error ? error.message : "Error al subir la imagen";
-      toast.error(message);
-    } finally {
-      setIsUploadingImage(false);
-    }
+    // TODO: Subir imagen a Supabase Storage y actualizar el perfil
+    console.log("Archivo seleccionado:", file);
+    toast.info("Función de subida de imagen en desarrollo");
   };
 
   useEffect(() => {
@@ -266,13 +215,8 @@ export default function TrainingProfile() {
           <div className="absolute top-0 left-1/2 -translate-x-1/2 w-64 h-64 bg-primary/5 dark:bg-primary/10 blur-[100px] -z-10 rounded-full" />
 
           <div className="relative group">
-            {/* Avatar */}
             <div
-              className={cn(
-                "w-28 h-28 rounded-full shadow-2xl border-4 border-white dark:border-slate-800 relative z-10 overflow-hidden ring-4 ring-primary/5 transition-all duration-500",
-                !isUploadingImage && "group-hover:scale-[1.02]",
-                isUploadingImage && "opacity-50",
-              )}
+              className="w-28 h-28 rounded-full shadow-2xl border-4 border-white dark:border-slate-800 relative z-10 overflow-hidden ring-4 ring-primary/5 transition-transform duration-500 group-hover:scale-[1.02]"
               style={{
                 backgroundImage: professor?.profileImage
                   ? `url("${professor.profileImage}")`
@@ -281,28 +225,12 @@ export default function TrainingProfile() {
                 backgroundPosition: "center",
               }}
             />
-
-            {/* Spinner overlay mientras se sube la imagen */}
-            {isUploadingImage && (
-              <div className="absolute inset-0 z-30 flex items-center justify-center rounded-full">
-                <Loader2 size={28} className="text-primary animate-spin" />
-              </div>
-            )}
-
-            {/* Pulsing ring effect (solo cuando no carga) */}
-            {!isUploadingImage && (
-              <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping opacity-20" />
-            )}
+            {/* Pulsing ring effect */}
+            <div className="absolute inset-0 rounded-full border-2 border-primary/20 animate-ping opacity-20" />
 
             <button
               onClick={handleImageClick}
-              disabled={isUploadingImage}
-              className={cn(
-                "absolute bottom-0 left-0 z-20 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center shadow-md shadow-primary/20 transition-all outline-none border-2 border-background-light dark:border-background-dark",
-                !isUploadingImage
-                  ? "hover:bg-primary-hover hover:scale-105 active:scale-95"
-                  : "opacity-50 cursor-not-allowed",
-              )}
+              className="absolute bottom-0 left-0 z-20 w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center shadow-md shadow-primary/20 hover:bg-primary-hover hover:scale-105 active:scale-95 transition-all outline-none border-2 border-background-light dark:border-background-dark"
               aria-label="Cambiar foto de perfil"
             >
               <Pencil size={14} />
@@ -310,7 +238,7 @@ export default function TrainingProfile() {
             <input
               type="file"
               accept="image/*"
-              className="hidden"
+              hidden
               ref={fileInputRef}
               onChange={handleImageChange}
             />

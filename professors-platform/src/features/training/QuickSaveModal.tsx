@@ -211,7 +211,7 @@ export function QuickSaveModal({
           </button>
         </div>
 
-        <div className="px-5 py-5 space-y-6 safe-area-pb">
+        <div className="px-5 py-5 space-y-6">
           {/* ── RPE ─────────────────────────────────────────────── */}
           <div>
             <div className="flex items-center justify-between mb-3">
