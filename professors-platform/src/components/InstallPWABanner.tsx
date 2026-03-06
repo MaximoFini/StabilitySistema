@@ -50,7 +50,7 @@ export function InstallPWABanner() {
             {/* Texto */}
             <div className="flex-1 min-w-0">
                 <p className="text-sm font-semibold text-text-main dark:text-white leading-tight">
-                    Instala Sistema Stability
+                    Instala Stability
                 </p>
                 <p className="text-xs text-text-secondary dark:text-slate-400 leading-tight mt-0.5 truncate">
                     Acceso rápido y modo offline desde tu celular

@@ -189,24 +189,7 @@ export const useAuthStore = create<AuthState>()(
         tokenExpiry: null,
 
         initializeAuth: async () => {
-          // Guardia: si ya inicializó, no repetir
-          const currentState = get();
-          if (!currentState.isInitializing && currentState.isAuthenticated) {
-            return;
-          }
-
           set({ isInitializing: true });
-
-          // Timeout de seguridad: si getSession() o userToProfessor() cuelgan,
-          // finalizamos la inicialización igualmente para evitar pantalla blanca
-          const safetyTimeout = setTimeout(() => {
-            const state = get();
-            if (state.isInitializing) {
-              console.warn("Auth initialization timed out");
-              set({ isInitializing: false });
-            }
-          }, 8000);
-
           try {
             const {
               data: { session },
@@ -222,9 +205,9 @@ export const useAuthStore = create<AuthState>()(
               });
             } else {
               // Hay sesión activa
-              const hydrated = get();
+              const currentState = get();
 
-              if (hydrated.professor && hydrated.isAuthenticated) {
+              if (currentState.professor && currentState.isAuthenticated) {
                 // Zustand ya tiene datos hidratados desde localStorage → no hacer fetch
                 // Solo actualizar timestamps
                 const now = Date.now();
@@ -249,7 +232,6 @@ export const useAuthStore = create<AuthState>()(
               get().updateActivity();
             }
 
-            clearTimeout(safetyTimeout);
             set({ isInitializing: false });
 
             // Listen for auth changes (e.g., token expiration, sign out from another tab)
@@ -287,7 +269,6 @@ export const useAuthStore = create<AuthState>()(
               }
             });
           } catch (error) {
-            clearTimeout(safetyTimeout);
             console.error("Error initializing auth:", error);
             // En caso de error, limpiar estado para evitar pantalla blanca
             set({
