@@ -11,6 +11,7 @@ createRoot(document.getElementById("root")!).render(
 );
 
 // Importar PWA de forma asíncrona para que nunca bloquee el render
-import("./pwa").catch(() => {
-  // Si falla la carga del módulo PWA, la app sigue funcionando
+import("./pwa").catch((error) => {
+  console.error("[main.tsx] Error cargando módulo PWA:", error);
+  // La app sigue funcionando sin PWA
 });
